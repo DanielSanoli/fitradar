@@ -1,9 +1,12 @@
 package com.sanoli.fitradar.exception;
 
+import com.sanoli.fitradar.observability.RequestCorrelationFilter;
+import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -74,7 +77,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception, HttpServletRequest request) {
-        log.error("Erro inesperado em {} {}", request.getMethod(), request.getRequestURI(), exception);
+        String requestId = MDC.get(RequestCorrelationFilter.REQUEST_ID);
+        log.error("Erro inesperado requestId={} method={} path={}",
+                requestId, request.getMethod(), request.getRequestURI(), exception);
+        Sentry.configureScope(scope -> scope.setTag("requestId", requestId != null ? requestId : "unknown"));
+        Sentry.captureException(exception);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "Erro inesperado", request.getRequestURI());
     }
 

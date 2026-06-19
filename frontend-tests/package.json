@@ -1,0 +1,14 @@
+{
+  "name": "fitradar-frontend-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.3",
+    "jsdom": "^26.0.0",
+    "vitest": "^3.0.5"
+  }
+}

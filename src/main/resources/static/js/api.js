@@ -107,22 +107,23 @@ const FR = (() => {
   }
 
   function setPanelLoading(elOrId, rows) {
-    const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
-    if (!el) return;
-    const n = rows || 3;
-    el.innerHTML = Array.from({ length: n }, () => '<div class="skeleton" style="margin-bottom:.5rem"></div>').join("");
+    if (typeof FRUI !== "undefined") FRUI.setLoading(elOrId, { rows: rows || 3 });
   }
 
   function setPanelEmpty(elOrId, message) {
-    const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
-    if (!el) return;
-    el.innerHTML = `<div class="panel-empty">${esc(message || "Nada por aqui ainda.")}</div>`;
+    if (typeof FRUI !== "undefined") FRUI.setEmpty(elOrId, { message });
+    else {
+      const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
+      if (el) el.innerHTML = `<div class="panel-empty">${esc(message || "Nada por aqui ainda.")}</div>`;
+    }
   }
 
-  function setPanelError(elOrId, message) {
-    const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
-    if (!el) return;
-    el.innerHTML = `<div class="panel-error">${esc(message || "Erro ao carregar.")}</div>`;
+  function setPanelError(elOrId, message, onRetry) {
+    if (typeof FRUI !== "undefined") FRUI.setError(elOrId, { message, onRetry });
+    else {
+      const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
+      if (el) el.innerHTML = `<div class="panel-error">${esc(message || "Erro ao carregar.")}</div>`;
+    }
   }
 
   let loadingCount = 0;
@@ -149,3 +150,7 @@ const FR = (() => {
            login, register, requireRole, logout, toast, esc,
            setPanelLoading, setPanelEmpty, setPanelError, showLoading };
 })();
+
+if (typeof globalThis !== "undefined") {
+  globalThis.FR = FR;
+}

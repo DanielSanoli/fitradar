@@ -73,13 +73,17 @@ public class RetentionCopilotService {
 
         if (copilotProperties.isEnabled() && chatClient.isPresent()) {
             try {
-                return askWithSpringAi(question, role);
+                CopilotAskResponse response = askWithSpringAi(question, role);
+                log.info("[copilot] outcome=success mode=ai function={}", response.usedFunction());
+                return response;
             } catch (RuntimeException exception) {
-                log.warn("Falha no copiloto Spring AI; usando roteador determinístico", exception);
+                log.warn("[copilot] outcome=degraded mode=deterministic reason=ai_failure");
             }
         }
 
-        return askDeterministic(question, role);
+        CopilotAskResponse response = askDeterministic(question, role);
+        log.info("[copilot] outcome=success mode=deterministic function={}", response.usedFunction());
+        return response;
     }
 
     private CopilotAskResponse askWithSpringAi(String question, UserRole role) {

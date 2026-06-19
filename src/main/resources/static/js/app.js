@@ -64,8 +64,12 @@ function initTabs() {
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach((t) => {
     t.onclick = () => {
-      tabs.forEach((x) => x.classList.remove("active"));
+      tabs.forEach((x) => {
+        x.classList.remove("active");
+        x.setAttribute("aria-selected", "false");
+      });
       t.classList.add("active");
+      t.setAttribute("aria-selected", "true");
       ["retention", "students", "programs", "ranking", "marketplace", "space"].forEach((name) => {
         document.getElementById("tab-" + name).classList.toggle("hidden", name !== t.dataset.tab);
       });
@@ -102,13 +106,17 @@ async function loadRetention() {
       ${stat(ov.atRiskCount, "Em risco")}
       ${stat(ov.checkInsThisWeek, "Check-ins na semana")}
       ${stat(ov.newStudentsThisWeek, "Novos na semana")}`;
-  } catch (e) { FR.setPanelError("overview-stats", e.message); }
+  } catch (e) { FR.setPanelError("overview-stats", e.message, loadRetention); }
 
   try {
     const risk = await FR.get("/api/v1/retention/students-at-risk?minLevel=MEDIUM");
-    const box = document.getElementById("at-risk");
-    if (!risk.length) { FR.setPanelEmpty("at-risk", "Nenhum aluno em risco. 🎉"); }
-    else box.innerHTML = risk.map((r) => `
+    if (!risk.length) {
+      FRUI.setEmpty("at-risk", {
+        icon: "🎉",
+        title: "Comunidade saudável",
+        message: "Nenhum aluno em risco médio ou alto no momento.",
+      });
+    } else FRUI.setContent("at-risk", risk.map((r) => `
       <div class="item">
         <div class="grow">
           <div class="title">${FR.esc(r.studentName)} <span class="badge ${r.level}">${r.level}</span></div>
@@ -116,8 +124,8 @@ async function loadRetention() {
           <div class="bar" style="margin-top:.45rem"><span style="width:${r.score}%"></span></div>
         </div>
         <button class="btn-ghost btn-sm" onclick="genNudge('${r.studentId}')">Gerar nudge</button>
-      </div>`).join("");
-  } catch (e) { FR.setPanelError("at-risk", e.message); }
+      </div>`).join(""));
+  } catch (e) { FR.setPanelError("at-risk", e.message, () => loadRetention()); }
 
   loadAlerts();
 }
@@ -126,16 +134,23 @@ async function loadAlerts() {
   try {
     const alerts = await FR.pageContent("/api/v1/retention/alerts");
     const box = document.getElementById("alerts");
-    if (!alerts.length) { FR.setPanelEmpty("alerts", "Sem alertas no momento."); return; }
-    box.innerHTML = alerts.map((a) => `
+    if (!alerts.length) {
+      FRUI.setEmpty("alerts", {
+        icon: "🔔",
+        title: "Sem alertas",
+        message: "Quando o Radar detectar algo, os alertas aparecem aqui.",
+      });
+      return;
+    }
+    FRUI.setContent("alerts", alerts.map((a) => `
       <div class="item" style="${a.read ? 'opacity:.55' : ''}">
         <div class="grow">
           <div class="title"><span class="badge ${a.severity}">${a.severity}</span> ${FR.esc(a.message)}</div>
           <div class="sub">${FR.esc(a.actionSuggestion || "")}</div>
         </div>
         ${a.read ? "" : `<button class="btn-ghost btn-sm" onclick="markRead('${a.id}')">Marcar lido</button>`}
-      </div>`).join("");
-  } catch (e) { FR.setPanelError("alerts", e.message); }
+      </div>`).join(""));
+  } catch (e) { FR.setPanelError("alerts", e.message, loadAlerts); }
 }
 
 async function markRead(id) {
@@ -178,12 +193,15 @@ async function ask(question) {
   question = (question || "").trim();
   if (!question) return;
   const chat = document.getElementById("chat");
+  const submitBtn = document.querySelector("#ask-form button[type=submit]");
   addMsg(chat, "user", question);
   document.getElementById("ask-input").value = "";
+  FRUI.buttonLoading(submitBtn, true, "Enviando…");
   try {
     const r = await FR.post("/api/v1/copilot/ask", { question });
     addMsg(chat, "bot", r.answer);
-  } catch (e) { addMsg(chat, "bot", "Erro: " + e.message); }
+  } catch (e) { addMsg(chat, "bot", "Não consegui responder agora. Tente de novo em instantes.\n\n" + e.message); }
+  finally { FRUI.buttonLoading(submitBtn, false); }
 }
 
 function addMsg(chat, who, text) {
@@ -198,16 +216,26 @@ function addMsg(chat, who, text) {
 let programCache = [];
 
 async function loadStudents() {
+  FRUI.setLoading("students", { rows: 4, variant: "card" });
   try {
     const students = await FR.pageContent("/api/v1/students");
-    const box = document.getElementById("students");
-    if (!students.length) { box.innerHTML = `<p class="muted">Nenhum aluno ainda. Convide o primeiro!</p>`; return; }
-    box.innerHTML = students.map((s) => `
+    if (!students.length) {
+      FRUI.setEmpty("students", {
+        icon: "👥",
+        title: "Nenhum aluno ainda",
+        message: "Convide seu primeiro aluno para acompanhar aderência e risco de churn.",
+        actionLabel: "+ Convidar aluno",
+        actionId: "empty-invite-student",
+        onAction: () => document.getElementById("add-student").click(),
+      });
+      return;
+    }
+    FRUI.setContent("students", students.map((s) => `
       <div class="item">
         <div class="grow"><div class="title">${FR.esc(s.name)}</div><div class="sub">${FR.esc(s.email)}</div></div>
         <button class="btn-ghost btn-sm" onclick="manageEnroll('${s.id}','${FR.esc(s.name)}')">Matrículas</button>
-      </div>`).join("");
-  } catch (e) { FR.toast(e.message, true); }
+      </div>`).join(""));
+  } catch (e) { FRUI.setError("students", { message: e.message, onRetry: loadStudents }); }
 }
 
 document.getElementById("add-student").onclick = () => {
@@ -276,11 +304,21 @@ async function ensurePrograms() {
 }
 
 async function loadPrograms() {
+  FRUI.setLoading("programs", { rows: 3, variant: "card" });
   try {
     programCache = await FR.get("/api/v1/programs");
-    const box = document.getElementById("programs");
-    if (!programCache.length) { box.innerHTML = `<p class="muted">Nenhum programa. Crie o primeiro!</p>`; return; }
-    box.innerHTML = programCache.map((p) => `
+    if (!programCache.length) {
+      FRUI.setEmpty("programs", {
+        icon: "📋",
+        title: "Nenhum programa",
+        message: "Crie seu primeiro programa de treinos para matricular alunos.",
+        actionLabel: "+ Novo programa",
+        actionId: "empty-add-program",
+        onAction: () => document.getElementById("add-program").click(),
+      });
+      return;
+    }
+    FRUI.setContent("programs", programCache.map((p) => `
       <div class="card">
         <div class="row" style="align-items:center">
           <div class="grow"><div class="title">${FR.esc(p.title)} ${p.active ? "" : '<span class="badge MEDIUM">inativo</span>'}</div>
@@ -289,8 +327,8 @@ async function loadPrograms() {
           <button class="btn-danger btn-sm" onclick="delProgram('${p.id}')">Excluir</button>
         </div>
         <div id="workouts-${p.id}" class="list hidden" style="margin-top:.8rem"></div>
-      </div>`).join("");
-  } catch (e) { FR.toast(e.message, true); }
+      </div>`).join(""));
+  } catch (e) { FRUI.setError("programs", { message: e.message, onRetry: loadPrograms }); }
 }
 
 document.getElementById("add-program").onclick = () => {
@@ -319,7 +357,7 @@ document.getElementById("add-program").onclick = () => {
 };
 
 async function delProgram(id) {
-  if (!confirm("Excluir este programa?")) return;
+  if (!FRUI.confirmAction("Excluir este programa e todos os treinos? Essa ação não pode ser desfeita.")) return;
   try { await FR.del(`/api/v1/programs/${id}`); FR.toast("Programa excluído"); loadPrograms(); }
   catch (e) { FR.toast(e.message, true); }
 }
@@ -401,11 +439,12 @@ document.getElementById("space-form").onsubmit = async (e) => {
 };
 
 /* ----------------------------- Modal ----------------------------- */
-function openModal(html) {
-  document.getElementById("modal-card").innerHTML = html;
-  document.getElementById("modal").classList.remove("hidden");
-}
-function closeModal() { document.getElementById("modal").classList.add("hidden"); }
+function openModal(html, label) { FRUI.openModal(html, { label: label || "Diálogo" }); }
+function closeModal() { FRUI.closeModal(); }
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeModal();
+});
 
 function priceLabel(p) {
   return p.paid && p.price != null ? `R$ ${p.price}` : "gratuito";
@@ -413,43 +452,60 @@ function priceLabel(p) {
 
 /* ----------------------------- Ranking ----------------------------- */
 async function loadLeaderboard() {
+  FRUI.setLoading("leaderboard", { rows: 5, variant: "card" });
   try {
     const rows = await FR.get("/api/v1/gamification/leaderboard?limit=20");
-    const box = document.getElementById("leaderboard");
-    if (!rows.length) { box.innerHTML = `<p class="muted">Sem dados ainda — incentive check-ins!</p>`; return; }
-    box.innerHTML = rows.map((r) => `
+    if (!rows.length) {
+      FRUI.setEmpty("leaderboard", {
+        icon: "🏆",
+        title: "Ranking vazio",
+        message: "Incentive check-ins — o ranking aparece quando houver atividade.",
+      });
+      return;
+    }
+    FRUI.setContent("leaderboard", rows.map((r) => `
       <div class="item">
         <div class="title" style="width:2rem">#${r.rank}</div>
         <div class="grow">
           <div class="title">${FR.esc(r.studentName)}</div>
           <div class="sub">Streak ${r.currentStreak} · ${r.totalCheckInsDone} check-in(s)</div>
         </div>
-      </div>`).join("");
-  } catch (e) { FR.toast(e.message, true); }
+      </div>`).join(""));
+  } catch (e) { FRUI.setError("leaderboard", { message: e.message, onRetry: loadLeaderboard }); }
 }
 
 /* ----------------------------- Marketplace ----------------------------- */
 async function loadMarketplace() {
+  FRUI.setLoading("sales", { rows: 3, variant: "card" });
   try {
     const st = await FR.get("/api/v1/billing/marketplace/status");
     document.getElementById("marketplace-status").innerHTML = st.connected
       ? `<span class="badge LOW">Conectado</span> Taxa plataforma: ${st.platformFeePercent}%`
       : `<span class="badge MEDIUM">Não conectado</span> Taxa plataforma: ${st.platformFeePercent}%`;
     if (st.walletId) document.getElementById("wallet-id").value = st.walletId;
-  } catch (e) { FR.toast(e.message, true); }
+  } catch (e) {
+    document.getElementById("marketplace-status").innerHTML =
+      `<span class="badge MEDIUM">Indisponível</span> <span class="muted">${FR.esc(e.message)}</span>`;
+  }
 
   try {
     const sales = await FR.get("/api/v1/billing/marketplace/sales");
-    const box = document.getElementById("sales");
-    if (!sales.length) { box.innerHTML = `<p class="muted">Nenhuma venda ainda.</p>`; return; }
-    box.innerHTML = sales.map((s) => `
+    if (!sales.length) {
+      FRUI.setEmpty("sales", {
+        icon: "💳",
+        title: "Nenhuma venda",
+        message: "Quando você vender programas pagos, as vendas aparecem aqui.",
+      });
+      return;
+    }
+    FRUI.setContent("sales", sales.map((s) => `
       <div class="item">
         <div class="grow">
           <div class="title">${FR.esc(s.programTitle)} · ${FR.esc(s.studentName)}</div>
           <div class="sub">R$ ${s.amount} (você: R$ ${s.creatorNet}, taxa: R$ ${s.platformFee}) · ${s.status}</div>
         </div>
-      </div>`).join("");
-  } catch (e) { FR.toast(e.message, true); }
+      </div>`).join(""));
+  } catch (e) { FRUI.setError("sales", { message: e.message, onRetry: loadMarketplace }); }
 }
 
 function initMarketplaceForm() {

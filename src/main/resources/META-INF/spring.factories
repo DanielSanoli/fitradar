@@ -1,3 +1,4 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
 com.sanoli.fitradar.config.RailwayDatabaseUrlEnvironmentPostProcessor,\
-com.sanoli.fitradar.config.CopilotOpenAiEnvironmentPostProcessor
+com.sanoli.fitradar.config.CopilotOpenAiEnvironmentPostProcessor,\
+com.sanoli.fitradar.config.ObservabilityEnvironmentPostProcessor

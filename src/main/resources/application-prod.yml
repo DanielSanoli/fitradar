@@ -1,0 +1,8 @@
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    root: INFO
+    com.sanoli.fitradar: INFO
+    org.springframework: WARN

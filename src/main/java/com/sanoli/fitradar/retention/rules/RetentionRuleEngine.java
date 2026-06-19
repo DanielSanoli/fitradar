@@ -16,6 +16,8 @@ import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.retention.engine.ChurnRiskResult;
 import com.sanoli.fitradar.retention.engine.RetentionEngineService;
 import com.sanoli.fitradar.retention.engine.StudentProgressResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class RetentionRuleEngine {
+
+    private static final Logger log = LoggerFactory.getLogger(RetentionRuleEngine.class);
 
     private final RetentionEngineService engine;
     private final AlertRepository alertRepository;
@@ -158,7 +162,10 @@ public class RetentionRuleEngine {
         alert.setMessage(message);
         alert.setActionSuggestion(actionSuggestion);
         alert.setDataSnapshot(toJson(snapshot));
-        created.add(alertRepository.save(alert));
+        Alert saved = alertRepository.save(alert);
+        log.info("[retention:alert] creatorId={} studentId={} type={} severity={}",
+                creatorId, studentId, type, severity);
+        created.add(saved);
     }
 
     private String toJson(Map<String, ?> snapshot) {

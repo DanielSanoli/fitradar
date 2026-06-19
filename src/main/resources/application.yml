@@ -29,18 +29,25 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
       probes:
         enabled: true
-  info:
-    env:
+      show-details: never
+      show-components: never
+  health:
+    livenessstate:
       enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: fitradar
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+    correlation: "[%X{requestId}] "
 
 springdoc:
   swagger-ui:
@@ -95,3 +102,12 @@ app:
     enabled: ${DIGEST_ENABLED:true}
     weekly-cron: ${DIGEST_WEEKLY_CRON:0 0 8 * * MON}
     nudge-cron: ${DIGEST_NUDGE_CRON:0 0 9 * * *}
+  observability:
+    metrics-enabled: ${METRICS_ENABLED:false}
+    management-token: ${MANAGEMENT_TOKEN:}
+
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:production}
+  send-default-pii: false
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}

@@ -9,8 +9,11 @@ import com.sanoli.fitradar.domain.SubscriptionStatus;
 import com.sanoli.fitradar.dto.CheckoutResponse;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.WebhookUnauthorizedException;
+import com.sanoli.fitradar.observability.LoggingSanitizer;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,8 @@ import java.time.LocalDateTime;
 
 @Service
 public class BillingService {
+
+    private static final Logger log = LoggerFactory.getLogger(BillingService.class);
 
     private final CurrentUserService currentUserService;
     private final UserRepository userRepository;
@@ -83,14 +88,18 @@ public class BillingService {
         validateWebhookToken(accessToken);
 
         String event = payload.path("event").asText("");
+        log.info("[billing:webhook] recebido event={}", event);
+
         JsonNode payment = payload.path("payment");
 
         if (marketplaceBillingService.handlePaymentWebhook(event, payment)) {
+            log.info("[billing:webhook] processado event={} channel=marketplace", event);
             return;
         }
 
         String subscriptionId = payment.path("subscription").asText(null);
         if (subscriptionId == null || subscriptionId.isBlank()) {
+            log.info("[billing:webhook] ignorado event={} motivo=sem_subscription", event);
             return;
         }
 
@@ -107,6 +116,9 @@ public class BillingService {
         if (changed) {
             userRepository.save(user);
         }
+
+        log.info("[billing:webhook] processado event={} subscriptionRef={} changed={}",
+                event, LoggingSanitizer.refId(subscriptionId), changed);
     }
 
     private void validateWebhookToken(String accessToken) {
