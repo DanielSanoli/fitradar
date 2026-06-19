@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="Check-in, progresso e programas do seu criador fitness." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FitRadar" />
+  <title>FitRadar — Área do aluno</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <!-- LOGIN -->
+  <div class="auth-wrap" id="auth">
+    <div class="card auth-card">
+      <div class="brand" style="margin-bottom:1rem"><span class="dot"></span> FitRadar</div>
+      <h2>Entrar</h2>
+      <p class="muted" style="margin-top:-.5rem">Use o acesso que seu treinador enviou.</p>
+      <form id="login-form">
+        <label>E-mail</label>
+        <input type="email" id="email" required autocomplete="email" />
+        <label>Senha</label>
+        <input type="password" id="password" required autocomplete="current-password" />
+        <button type="submit" style="width:100%">Entrar</button>
+      </form>
+      <p class="center" style="margin-top:1rem"><a href="/">Sou criador</a></p>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> <span id="space-name">FitRadar</span></div>
+      <div class="spacer"></div>
+      <span class="muted" id="who" style="font-size:.85rem"></span>
+      <button class="btn-ghost btn-sm" id="logout">Sair</button>
+    </div>
+
+    <div class="container">
+      <h1>Meu progresso</h1>
+      <div class="stats" id="progress-stats"></div>
+      <div class="card" id="next-card" style="margin-top:1rem"></div>
+      <div class="card" id="badges-card" style="margin-top:1rem"></div>
+
+      <h2 style="margin-top:1.6rem">Programas</h2>
+      <p class="muted" style="margin-top:-.5rem">Matricule-se ou compre acesso.</p>
+      <div class="list" id="programs"></div>
+
+      <h2 style="margin-top:1.6rem">Meus treinos</h2>
+      <p class="muted" style="margin-top:-.5rem">Marque como feito quando concluir.</p>
+      <div class="list" id="workouts"></div>
+    </div>
+  </div>
+
+  <!-- Modal check-in -->
+  <div class="auth-wrap hidden" id="modal" style="background:rgba(0,0,0,.55)">
+    <div class="card auth-card" id="modal-card"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/pwa.js"></script>
+  <script src="/js/student.js"></script>
+</body>
+</html>

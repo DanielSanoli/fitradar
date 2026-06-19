@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: fitradar
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/fitradar}
+    username: ${DATABASE_USERNAME:fitradar}
+    password: ${DATABASE_PASSWORD:fitradar}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    default-property-inclusion: non_null
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:sk-noop}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+          temperature: 0.2
+
+server:
+  port: ${SERVER_PORT:8080}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+app:
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  security:
+    jwt:
+      secret: ${JWT_SECRET:fitradar-dev-secret-please-change-this-to-a-long-random-value}
+      access-token-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:60}
+      refresh-token-ttl-days: ${JWT_REFRESH_TTL_DAYS:30}
+  billing:
+    trial-days: ${BILLING_TRIAL_DAYS:14}
+    asaas:
+      base-url: ${ASAAS_BASE_URL:https://sandbox.asaas.com/api/v3}
+      api-key: ${ASAAS_API_KEY:}
+      monthly-price: ${ASAAS_MONTHLY_PRICE:49.90}
+      webhook-token: ${ASAAS_WEBHOOK_TOKEN:}
+    marketplace:
+      platform-fee-percent: ${MARKETPLACE_PLATFORM_FEE_PERCENT:10.00}
+  email:
+    resend:
+      api-key: ${RESEND_API_KEY:}
+      from: ${EMAIL_FROM:FitRadar <no-reply@fitradar.app>}
+  copilot:
+    enabled: ${COPILOT_AI_ENABLED:false}
+  retention:
+    timezone: ${RETENTION_TIMEZONE:America/Sao_Paulo}
+    alerts-cron: ${RETENTION_ALERTS_CRON:0 0 8 * * *}
+    weights:
+      inactivity: ${RETENTION_W_INACTIVITY:0.45}
+      adherence-drop: ${RETENTION_W_ADHERENCE_DROP:0.30}
+      low-adherence: ${RETENTION_W_LOW_ADHERENCE:0.25}
+    high-threshold: ${RETENTION_HIGH_THRESHOLD:70}
+    medium-threshold: ${RETENTION_MEDIUM_THRESHOLD:40}
+    inactivity-saturation-days: ${RETENTION_INACTIVITY_SATURATION_DAYS:14}
+    inactive-alert-days: ${RETENTION_INACTIVE_ALERT_DAYS:7}
+    min-history-days: ${RETENTION_MIN_HISTORY_DAYS:7}
+  digest:
+    enabled: ${DIGEST_ENABLED:true}
+    weekly-cron: ${DIGEST_WEEKLY_CRON:0 0 8 * * MON}
+    nudge-cron: ${DIGEST_NUDGE_CRON:0 0 9 * * *}

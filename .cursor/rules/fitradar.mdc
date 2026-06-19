@@ -1,0 +1,14 @@
+---
+description: Regras do FitRadar
+globs: ["src/**/*.java"]
+alwaysApply: true
+---
+
+- A IA/LLM NUNCA calcula métricas/valores. Todo número vem do retention.engine via DTO.
+- Percentuais e valores em BigDecimal (HALF_EVEN, 2 casas). Nunca double.
+- Multi-tenant de 2 níveis: criador (tenant) e aluno (pertence a um creatorId). Toda query filtra pelo escopo; testar isolamento entre criadores e entre alunos.
+- Cada função do motor tem teste unitário cobrindo caminho feliz e bordas (aluno novo, sem matrícula, sem check-in, divisão por zero).
+- Respostas da IA terminam com: ação + premissas (assumptions do DTO) + "sugestão, não orientação médica/profissional".
+- API REST /api/v1/**; DTOs separados das entidades; erros no formato padrão.
+- Stack: Java 21, Spring Boot 3, Spring Data JPA, PostgreSQL, Spring AI, Asaas, Resend. Camadas: retention.engine / retention.rules / retention.ai / retention.digest.
+- Cobrança digital fica no web (fora de in-app purchase) para evitar a comissão de 15–30% das lojas.
