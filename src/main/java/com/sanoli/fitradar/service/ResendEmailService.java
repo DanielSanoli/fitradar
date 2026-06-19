@@ -3,7 +3,6 @@ package com.sanoli.fitradar.service;
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.sanoli.fitradar.config.MailProperties;
-import com.sanoli.fitradar.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,8 +85,8 @@ public class ResendEmailService implements EmailService {
             resend.emails().send(params);
             log.info("E-mail enviado via Resend para conta terminando em {}", maskEmail(to));
         } catch (Exception exception) {
-            log.error("Falha ao enviar e-mail via Resend para conta terminando em {}", maskEmail(to), exception);
-            throw new BusinessException("Não foi possível enviar o e-mail. Tente novamente mais tarde.");
+            log.warn("Falha ao enviar e-mail via Resend para conta terminando em {} — operação principal continua",
+                    maskEmail(to), exception);
         }
     }
 

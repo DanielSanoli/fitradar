@@ -7,9 +7,11 @@ import com.sanoli.fitradar.domain.CreatorSpace;
 import com.sanoli.fitradar.domain.Enrollment;
 import com.sanoli.fitradar.domain.Program;
 import com.sanoli.fitradar.domain.Workout;
+import com.sanoli.fitradar.config.PaginationProperties;
 import com.sanoli.fitradar.dto.CheckInRequest;
 import com.sanoli.fitradar.dto.CheckInResponse;
 import com.sanoli.fitradar.dto.CreatorSpaceResponse;
+import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.WorkoutResponse;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.ForbiddenException;
@@ -19,6 +21,8 @@ import com.sanoli.fitradar.repository.CreatorSpaceRepository;
 import com.sanoli.fitradar.repository.EnrollmentRepository;
 import com.sanoli.fitradar.repository.ProgramRepository;
 import com.sanoli.fitradar.repository.WorkoutRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +43,7 @@ public class MemberService {
     private final CheckInRepository checkInRepository;
     private final CreatorSpaceRepository creatorSpaceRepository;
     private final GamificationService gamificationService;
+    private final PaginationProperties paginationProperties;
 
     public MemberService(
             EnrollmentRepository enrollmentRepository,
@@ -46,7 +51,8 @@ public class MemberService {
             WorkoutRepository workoutRepository,
             CheckInRepository checkInRepository,
             CreatorSpaceRepository creatorSpaceRepository,
-            GamificationService gamificationService
+            GamificationService gamificationService,
+            PaginationProperties paginationProperties
     ) {
         this.enrollmentRepository = enrollmentRepository;
         this.programRepository = programRepository;
@@ -54,6 +60,7 @@ public class MemberService {
         this.checkInRepository = checkInRepository;
         this.creatorSpaceRepository = creatorSpaceRepository;
         this.gamificationService = gamificationService;
+        this.paginationProperties = paginationProperties;
     }
 
     @Transactional(readOnly = true)
@@ -67,12 +74,14 @@ public class MemberService {
 
     @Transactional(readOnly = true)
     public List<WorkoutResponse> getMyWorkouts(AppUser student) {
-        List<WorkoutResponse> workouts = new ArrayList<>();
-        for (Enrollment enrollment : enrollmentRepository.findByStudentIdAndActiveTrue(student.getId())) {
-            workoutRepository.findByProgramIdOrderByDayIndexAsc(enrollment.getProgramId())
-                    .forEach(workout -> workouts.add(WorkoutResponse.fromEntity(workout)));
+        List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndActiveTrue(student.getId());
+        if (enrollments.isEmpty()) {
+            return List.of();
         }
-        return workouts;
+        var programIds = enrollments.stream().map(Enrollment::getProgramId).distinct().toList();
+        return workoutRepository.findByProgramIdInOrderByProgramIdAscDayIndexAsc(programIds).stream()
+                .map(WorkoutResponse::fromEntity)
+                .toList();
     }
 
     @Transactional
@@ -112,9 +121,10 @@ public class MemberService {
     }
 
     @Transactional(readOnly = true)
-    public List<CheckInResponse> listMyCheckIns(AppUser student) {
-        return checkInRepository.findByStudentIdOrderByDateDesc(student.getId()).stream()
-                .map(CheckInResponse::fromEntity)
-                .toList();
+    public PageResponse<CheckInResponse> listMyCheckIns(AppUser student, Integer page, Integer size) {
+        Page<CheckIn> checkIns = checkInRepository.findByStudentIdOrderByDateDesc(
+                student.getId(),
+                paginationProperties.toPageable(page, size, Sort.by(Sort.Direction.DESC, "date")));
+        return PageResponse.from(checkIns.map(CheckInResponse::fromEntity));
     }
 }

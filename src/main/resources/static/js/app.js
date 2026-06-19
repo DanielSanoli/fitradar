@@ -13,6 +13,51 @@ if (me) {
   loadSpace();
   initAsk();
   initMarketplaceForm();
+  initOnboarding();
+}
+
+async function initOnboarding() {
+  if (localStorage.getItem("fitradar_onboarding_done")) return;
+  try {
+    const status = await FR.get("/api/v1/onboarding/status");
+    if (status.onboardingComplete) {
+      localStorage.setItem("fitradar_onboarding_done", "1");
+      return;
+    }
+    const banner = document.createElement("div");
+    banner.id = "onboarding-banner";
+    banner.className = "card onboarding-banner";
+    banner.innerHTML = `
+      <h2 style="margin:0">Primeiros passos</h2>
+      <p class="muted">Configure seu espaço, crie um programa e convide seu primeiro aluno.</p>
+      <div class="onboarding-steps">
+        <span class="onboarding-step ${status.hasSpace ? "done" : ""}">1. Espaço</span>
+        <span class="onboarding-step ${status.hasProgram ? "done" : ""}">2. Programa</span>
+        <span class="onboarding-step ${status.hasStudent ? "done" : ""}">3. Aluno</span>
+      </div>
+      <div class="row">
+        ${status.demoSeedAvailable ? '<button class="btn-ghost btn-sm" id="demo-seed">Ver demo preenchido</button>' : ""}
+        <button class="btn-ghost btn-sm" id="dismiss-onboarding">Entendi</button>
+      </div>`;
+    document.querySelector(".container").prepend(banner);
+    const demoBtn = document.getElementById("demo-seed");
+    if (demoBtn) {
+      demoBtn.onclick = async () => {
+        try {
+          FR.showLoading(true);
+          await FR.post("/api/v1/onboarding/demo-seed");
+          FR.toast("Demo criado — explore em Programas");
+          banner.remove();
+          loadPrograms();
+        } catch (e) { FR.toast(e.message, true); }
+        finally { FR.showLoading(false); }
+      };
+    }
+    document.getElementById("dismiss-onboarding").onclick = () => {
+      localStorage.setItem("fitradar_onboarding_done", "1");
+      banner.remove();
+    };
+  } catch (_) { /* onboarding opcional */ }
 }
 
 function initTabs() {
@@ -45,6 +90,9 @@ function renderAccessBanner() {
 
 /* ----------------------------- Retenção ----------------------------- */
 async function loadRetention() {
+  FR.setPanelLoading("overview-stats", 5);
+  FR.setPanelLoading("at-risk", 4);
+  FR.setPanelLoading("alerts", 3);
   try {
     const ov = await FR.get("/api/v1/retention/overview");
     const adh = ov.avgAdherence != null ? ov.avgAdherence + "%" : "—";
@@ -54,12 +102,12 @@ async function loadRetention() {
       ${stat(ov.atRiskCount, "Em risco")}
       ${stat(ov.checkInsThisWeek, "Check-ins na semana")}
       ${stat(ov.newStudentsThisWeek, "Novos na semana")}`;
-  } catch (e) { FR.toast(e.message, true); }
+  } catch (e) { FR.setPanelError("overview-stats", e.message); }
 
   try {
     const risk = await FR.get("/api/v1/retention/students-at-risk?minLevel=MEDIUM");
     const box = document.getElementById("at-risk");
-    if (!risk.length) { box.innerHTML = `<p class="muted">Nenhum aluno em risco. 🎉</p>`; }
+    if (!risk.length) { FR.setPanelEmpty("at-risk", "Nenhum aluno em risco. 🎉"); }
     else box.innerHTML = risk.map((r) => `
       <div class="item">
         <div class="grow">
@@ -69,16 +117,16 @@ async function loadRetention() {
         </div>
         <button class="btn-ghost btn-sm" onclick="genNudge('${r.studentId}')">Gerar nudge</button>
       </div>`).join("");
-  } catch (e) { FR.toast(e.message, true); }
+  } catch (e) { FR.setPanelError("at-risk", e.message); }
 
   loadAlerts();
 }
 
 async function loadAlerts() {
   try {
-    const alerts = await FR.get("/api/v1/retention/alerts");
+    const alerts = await FR.pageContent("/api/v1/retention/alerts");
     const box = document.getElementById("alerts");
-    if (!alerts.length) { box.innerHTML = `<p class="muted">Sem alertas no momento.</p>`; return; }
+    if (!alerts.length) { FR.setPanelEmpty("alerts", "Sem alertas no momento."); return; }
     box.innerHTML = alerts.map((a) => `
       <div class="item" style="${a.read ? 'opacity:.55' : ''}">
         <div class="grow">
@@ -87,7 +135,7 @@ async function loadAlerts() {
         </div>
         ${a.read ? "" : `<button class="btn-ghost btn-sm" onclick="markRead('${a.id}')">Marcar lido</button>`}
       </div>`).join("");
-  } catch (e) { FR.toast(e.message, true); }
+  } catch (e) { FR.setPanelError("alerts", e.message); }
 }
 
 async function markRead(id) {
@@ -151,7 +199,7 @@ let programCache = [];
 
 async function loadStudents() {
   try {
-    const students = await FR.get("/api/v1/students");
+    const students = await FR.pageContent("/api/v1/students");
     const box = document.getElementById("students");
     if (!students.length) { box.innerHTML = `<p class="muted">Nenhum aluno ainda. Convide o primeiro!</p>`; return; }
     box.innerHTML = students.map((s) => `

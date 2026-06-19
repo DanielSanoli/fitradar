@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -16,7 +17,9 @@ import java.util.UUID;
  * Programa de treino criado por um criador. Escopado por creatorId (tenant).
  */
 @Entity
-@Table(name = "programs")
+@Table(name = "programs", indexes = {
+        @Index(name = "idx_programs_creator", columnList = "creator_id")
+})
 public class Program {
 
     @Id

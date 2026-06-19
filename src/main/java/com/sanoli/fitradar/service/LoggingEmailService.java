@@ -9,27 +9,28 @@ public class LoggingEmailService implements EmailService {
 
     @Override
     public void sendPasswordResetEmail(String email, String resetUrl) {
-        log.info("[email:reset] conta {} link {}", maskEmail(email), resetUrl);
+        log.info("[email:reset] enviado para conta {} (link omitido nos logs)", maskEmail(email));
     }
 
     @Override
     public void sendEmailVerification(String email, String verificationUrl) {
-        log.info("[email:verify] conta {} link {}", maskEmail(email), verificationUrl);
+        log.info("[email:verify] enviado para conta {} (link omitido nos logs)", maskEmail(email));
     }
 
     @Override
     public void sendStudentInvite(String email, String creatorName, String inviteUrl, String tempPassword) {
-        log.info("[email:invite] conta {} criador {} link {} senha-temp {}", maskEmail(email), creatorName, inviteUrl, tempPassword);
+        log.info("[email:invite] enviado para conta {} criador {} (credenciais omitidas nos logs)",
+                maskEmail(email), creatorName);
     }
 
     @Override
     public void sendWeeklyDigest(String email, String subject, String body) {
-        log.info("[email:digest] conta {} assunto {} corpo {}", maskEmail(email), subject, body);
+        log.info("[email:digest] enviado para conta {} assunto {}", maskEmail(email), subject);
     }
 
     @Override
     public void sendStudentNudge(String email, String subject, String body) {
-        log.info("[email:nudge] conta {} assunto {} corpo {}", maskEmail(email), subject, body);
+        log.info("[email:nudge] enviado para conta {} assunto {}", maskEmail(email), subject);
     }
 
     private String maskEmail(String email) {

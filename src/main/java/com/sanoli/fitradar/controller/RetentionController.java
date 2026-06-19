@@ -2,6 +2,7 @@ package com.sanoli.fitradar.controller;
 
 import com.sanoli.fitradar.domain.RiskLevel;
 import com.sanoli.fitradar.dto.AlertResponse;
+import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.retention.engine.ChurnRiskResult;
 import com.sanoli.fitradar.retention.engine.CreatorOverviewResult;
 import com.sanoli.fitradar.retention.engine.RetentionEngineService;
@@ -80,10 +81,12 @@ public class RetentionController {
 
     @GetMapping("/alerts")
     @Operation(summary = "Lista os alertas de retenção do criador")
-    public ResponseEntity<List<AlertResponse>> alerts(
-            @RequestParam(name = "unreadOnly", defaultValue = "false") boolean unreadOnly
+    public ResponseEntity<PageResponse<AlertResponse>> alerts(
+            @RequestParam(name = "unreadOnly", defaultValue = "false") boolean unreadOnly,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
     ) {
-        return ResponseEntity.ok(alertService.listForCurrentCreator(unreadOnly));
+        return ResponseEntity.ok(alertService.listForCurrentCreator(unreadOnly, page, size));
     }
 
     @PostMapping("/alerts/{id}/read")

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -15,7 +16,9 @@ import java.util.UUID;
  * Treino (uma "sessão") pertencente a um Program. dayIndex define a ordem/cadência.
  */
 @Entity
-@Table(name = "workouts")
+@Table(name = "workouts", indexes = {
+        @Index(name = "idx_workouts_program", columnList = "program_id")
+})
 public class Workout {
 
     @Id

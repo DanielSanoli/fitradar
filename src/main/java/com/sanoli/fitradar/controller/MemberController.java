@@ -6,6 +6,7 @@ import com.sanoli.fitradar.dto.CheckInResponse;
 import com.sanoli.fitradar.dto.CreatorSpaceResponse;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.GamificationProfileResponse;
+import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.ProgramCheckoutResponse;
 import com.sanoli.fitradar.dto.StudentProgramResponse;
 import com.sanoli.fitradar.dto.WorkoutResponse;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -77,8 +79,11 @@ public class MemberController {
 
     @GetMapping("/check-ins")
     @Operation(summary = "Lista os check-ins do aluno")
-    public ResponseEntity<List<CheckInResponse>> myCheckIns() {
-        return ResponseEntity.ok(memberService.listMyCheckIns(currentUserService.requireStudent()));
+    public ResponseEntity<PageResponse<CheckInResponse>> myCheckIns(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        return ResponseEntity.ok(memberService.listMyCheckIns(currentUserService.requireStudent(), page, size));
     }
 
     @GetMapping("/progress")

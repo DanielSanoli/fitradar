@@ -70,6 +70,7 @@ public class SubscriptionAccessFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/v1/retention")
                 || path.startsWith("/api/v1/copilot")
                 || path.startsWith("/api/v1/gamification")
+                || path.startsWith("/api/v1/onboarding")
                 || path.startsWith("/api/v1/billing/marketplace/sales");
     }
 

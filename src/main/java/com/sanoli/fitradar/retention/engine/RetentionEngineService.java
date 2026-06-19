@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Motor determinístico de retenção (camada retention.engine).
@@ -184,9 +185,16 @@ public class RetentionEngineService {
     @Transactional(readOnly = true)
     public List<ChurnRiskResult> studentsAtRisk(UUID creatorId, RiskLevel minLevel) {
         RiskLevel threshold = minLevel != null ? minLevel : RiskLevel.MEDIUM;
+        List<AppUser> active = activeStudents(creatorId);
+        if (active.isEmpty()) {
+            return List.of();
+        }
+        RetentionBatchContext batch = RetentionBatchContext.load(
+                active, enrollmentRepository, workoutRepository, checkInRepository, today(), properties);
+        LocalDate today = today();
         List<ChurnRiskResult> atRisk = new ArrayList<>();
-        for (AppUser student : activeStudents(creatorId)) {
-            ChurnRiskResult risk = churnRiskScore(student.getId());
+        for (AppUser student : active) {
+            ChurnRiskResult risk = batch.churnRisk(student.getId(), today);
             if (risk.level().ordinal() >= threshold.ordinal()) {
                 atRisk.add(risk);
             }
@@ -206,13 +214,21 @@ public class RetentionEngineService {
         List<AppUser> students = userRepository.findByCreatorIdAndRole(creatorId, UserRole.STUDENT);
         List<AppUser> active = activeStudents(creatorId);
 
+        RetentionBatchContext batch = RetentionBatchContext.load(
+                students, enrollmentRepository, workoutRepository, checkInRepository, today, properties);
+
         BigDecimal sum = BigDecimal.ZERO;
         int counted = 0;
+        int atRiskCount = 0;
         for (AppUser student : active) {
-            BigDecimal adherence = adherenceRate(student.getId(), today.minusDays(29), today);
+            BigDecimal adherence = batch.adherenceRate(student.getId(), today.minusDays(29), today);
             if (adherence != null) {
                 sum = sum.add(adherence);
                 counted++;
+            }
+            ChurnRiskResult risk = batch.churnRisk(student.getId(), today);
+            if (risk.level().ordinal() >= RiskLevel.MEDIUM.ordinal()) {
+                atRiskCount++;
             }
         }
         BigDecimal avgAdherence = counted > 0
@@ -221,16 +237,13 @@ public class RetentionEngineService {
 
         int checkInsThisWeek = 0;
         for (AppUser student : students) {
-            checkInsThisWeek += (int) checkInRepository.countByStudentIdAndStatusAndDateBetween(
-                    student.getId(), CheckInStatus.DONE, weekStart, today);
+            checkInsThisWeek += (int) batch.countDoneInRange(student.getId(), weekStart, today);
         }
 
         LocalDateTime weekStartDateTime = weekStart.atStartOfDay();
         int newStudentsThisWeek = (int) students.stream()
                 .filter(s -> s.getCreatedAt() != null && !s.getCreatedAt().isBefore(weekStartDateTime))
                 .count();
-
-        int atRiskCount = studentsAtRisk(creatorId, RiskLevel.MEDIUM).size();
 
         List<String> assumptions = new ArrayList<>();
         assumptions.add(String.format("%d aluno(s) ativo(s) (com matrícula ativa)", active.size()));
@@ -296,13 +309,17 @@ public class RetentionEngineService {
     // ---------------------------------------------------------------------
 
     private List<AppUser> activeStudents(UUID creatorId) {
-        List<AppUser> result = new ArrayList<>();
-        for (AppUser student : userRepository.findByCreatorIdAndRole(creatorId, UserRole.STUDENT)) {
-            if (!enrollmentRepository.findByStudentIdAndActiveTrue(student.getId()).isEmpty()) {
-                result.add(student);
-            }
+        List<AppUser> students = userRepository.findByCreatorIdAndRole(creatorId, UserRole.STUDENT);
+        if (students.isEmpty()) {
+            return List.of();
         }
-        return result;
+        Set<UUID> enrolledIds = enrollmentRepository.findByStudentIdInAndActiveTrue(
+                        students.stream().map(AppUser::getId).toList()).stream()
+                .map(Enrollment::getStudentId)
+                .collect(Collectors.toSet());
+        return students.stream()
+                .filter(student -> enrolledIds.contains(student.getId()))
+                .toList();
     }
 
     private long expectedWorkouts(UUID studentId, LocalDate from, LocalDate to) {

@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -14,7 +15,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "alerts")
+@Table(name = "alerts", indexes = {
+        @Index(name = "idx_alerts_recipient_read_created", columnList = "recipient_user_id, is_read, created_at")
+})
 public class Alert {
 
     @Id

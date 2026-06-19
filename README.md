@@ -17,7 +17,7 @@ A IA **nunca** calcula métricas nem valores. Aderência, dias de inatividade e 
 - Spring AI (copiloto, function calling)
 - Asaas (cobrança do criador)
 - Resend (e-mail / digest)
-- Frontend estático servido pelo Spring (PWA aluno instalável; push pendente)
+- Frontend estático servido pelo Spring (PWA aluno instalável; push configurado no SW)
 
 ## Arquitetura
 
@@ -58,10 +58,8 @@ $env:DATABASE_USERNAME="fitradar"
 $env:DATABASE_PASSWORD="fitradar"
 $env:SERVER_PORT="8080"
 $env:JWT_SECRET="troque-por-um-segredo-bem-grande-com-no-minimo-32-bytes"
-# Opcionais (têm fallback no-op/log quando ausentes)
-$env:ASAAS_API_KEY=""
-$env:RESEND_API_KEY=""
-$env:OPENAI_API_KEY=""
+$env:CORS_ALLOWED_ORIGINS="http://localhost:8080"
+# Ver .env.example para lista completa
 ```
 
 ## PWA (aluno)
@@ -74,7 +72,16 @@ A tela do aluno (`/student.html`) é instalável como app no celular:
 
 O service worker faz cache do shell (CSS/JS/HTML) para abrir offline com página informativa; chamadas `/api/**` sempre vão à rede.
 
-Push no celular fica para fase posterior.
+Push no celular: handler no service worker pronto; configure VAPID e subscription no frontend quando for ativar em produção.
+
+## Pós-MVP (hardening)
+
+- [x] Testes de auth, billing webhook, multi-tenant e E2E do fluxo central
+- [x] CORS restrito, headers de segurança, validação fail-fast em produção
+- [x] Índices DB, correção N+1 em listagens críticas
+- [x] Actuator health, logging estruturado em erros
+- [x] UX: loading/empty/error, a11y básica, onboarding guiado + demo seed
+- [x] Checklist de go-live (acima)
 
 ## Refatoração pendente (API-only)
 
@@ -97,6 +104,30 @@ mvn test
 
 - UI: `http://localhost:8080/swagger-ui.html`
 - JSON: `http://localhost:8080/v3/api-docs`
+
+## Checklist de go-live
+
+Antes de abrir para criadores reais:
+
+- [ ] `APP_PRODUCTION=true` e `JWT_SECRET` forte (≥32 caracteres, único)
+- [ ] `CORS_ALLOWED_ORIGINS` com domínios de produção (nunca `*`)
+- [ ] `PUBLIC_BASE_URL` apontando para HTTPS de produção
+- [ ] PostgreSQL gerenciado com backup automático
+- [ ] Se billing ativo: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, URL de produção Asaas (não sandbox)
+- [ ] Se copiloto ativo: `OPENAI_API_KEY` válida
+- [ ] `RESEND_API_KEY` + domínio verificado (ou aceitar fallback de log)
+- [ ] Health check: `GET /actuator/health` retorna `UP`
+- [ ] `mvn test` verde (inclui E2E e isolamento multi-tenant)
+- [ ] PWA: `/student.html` instalável, SW ativo, push testado se VAPID configurado
+- [ ] Política de privacidade publicada em `/privacy.html`
+- [ ] Copiar `.env.example` → `.env` no servidor (nunca commitar `.env`)
+
+### Deploy (monorepo, 2 serviços)
+
+1. **Backend:** build JAR/Docker da API Spring Boot; expor porta 8080 (ou atrás de reverse proxy).
+2. **Frontend estático:** servido pelo próprio Spring (`static/`) ou CDN apontando para os mesmos assets; PWA em `/student.html`.
+3. Configure `CORS_ALLOWED_ORIGINS` com a URL pública do frontend se servido separadamente.
+4. Variáveis por ambiente via `.env` ou secrets do provedor (Railway, Fly, AWS, etc.).
 
 ## Status do MVP
 

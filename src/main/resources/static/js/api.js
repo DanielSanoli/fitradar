@@ -106,6 +106,46 @@ const FR = (() => {
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  return { setAuth, clearAuth, token, user, request, get, post, put, del,
-           login, register, requireRole, logout, toast, esc };
+  function setPanelLoading(elOrId, rows) {
+    const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
+    if (!el) return;
+    const n = rows || 3;
+    el.innerHTML = Array.from({ length: n }, () => '<div class="skeleton" style="margin-bottom:.5rem"></div>').join("");
+  }
+
+  function setPanelEmpty(elOrId, message) {
+    const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
+    if (!el) return;
+    el.innerHTML = `<div class="panel-empty">${esc(message || "Nada por aqui ainda.")}</div>`;
+  }
+
+  function setPanelError(elOrId, message) {
+    const el = typeof elOrId === "string" ? document.getElementById(elOrId) : elOrId;
+    if (!el) return;
+    el.innerHTML = `<div class="panel-error">${esc(message || "Erro ao carregar.")}</div>`;
+  }
+
+  let loadingCount = 0;
+  function showLoading(on) {
+    let el = document.getElementById("global-loading");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "global-loading";
+      el.innerHTML = '<div class="spinner" role="status" aria-label="Carregando"></div>';
+      document.body.appendChild(el);
+    }
+    loadingCount = Math.max(0, loadingCount + (on ? 1 : -1));
+    el.classList.toggle("show", loadingCount > 0);
+  }
+
+  async function pageContent(path) {
+    const data = await get(path);
+    if (data && Array.isArray(data.content)) return data.content;
+    if (Array.isArray(data)) return data;
+    return [];
+  }
+
+  return { setAuth, clearAuth, token, user, request, get, post, put, del, pageContent,
+           login, register, requireRole, logout, toast, esc,
+           setPanelLoading, setPanelEmpty, setPanelError, showLoading };
 })();

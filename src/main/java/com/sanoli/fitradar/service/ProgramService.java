@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProgramService {
@@ -28,8 +30,16 @@ public class ProgramService {
 
     @Transactional(readOnly = true)
     public List<ProgramResponse> listForCreator(UUID creatorId) {
-        return programRepository.findByCreatorIdOrderByCreatedAtDesc(creatorId).stream()
-                .map(program -> ProgramResponse.fromEntity(program, workoutRepository.countByProgramId(program.getId())))
+        List<Program> programs = programRepository.findByCreatorIdOrderByCreatedAtDesc(creatorId);
+        if (programs.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> programIds = programs.stream().map(Program::getId).toList();
+        Map<UUID, Long> workoutCounts = workoutRepository.countGroupByProgramIdIn(programIds).stream()
+                .collect(Collectors.toMap(row -> (UUID) row[0], row -> (Long) row[1]));
+        return programs.stream()
+                .map(program -> ProgramResponse.fromEntity(
+                        program, workoutCounts.getOrDefault(program.getId(), 0L)))
                 .toList();
     }
 

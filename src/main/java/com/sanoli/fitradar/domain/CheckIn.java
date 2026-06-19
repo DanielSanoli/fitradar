@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -18,7 +19,10 @@ import java.util.UUID;
  * Registro de execução (ou não) de um treino por um aluno. Alimenta o Radar.
  */
 @Entity
-@Table(name = "check_ins")
+@Table(name = "check_ins", indexes = {
+        @Index(name = "idx_check_ins_student_date", columnList = "student_id, date"),
+        @Index(name = "idx_check_ins_student_status_date", columnList = "student_id, status, date")
+})
 public class CheckIn {
 
     @Id

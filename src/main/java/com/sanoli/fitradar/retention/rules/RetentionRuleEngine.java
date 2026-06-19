@@ -6,6 +6,7 @@ import com.sanoli.fitradar.config.RetentionProperties;
 import com.sanoli.fitradar.domain.Alert;
 import com.sanoli.fitradar.domain.AlertType;
 import com.sanoli.fitradar.domain.AppUser;
+import com.sanoli.fitradar.domain.Enrollment;
 import com.sanoli.fitradar.domain.RiskLevel;
 import com.sanoli.fitradar.domain.Severity;
 import com.sanoli.fitradar.domain.UserRole;
@@ -25,7 +26,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Motor de regras (camada retention.rules). Consome os DTOs do motor (não recalcula)
@@ -62,12 +65,25 @@ public class RetentionRuleEngine {
 
     @Transactional
     public List<Alert> evaluateCreator(UUID creatorId) {
+        List<AppUser> students = userRepository.findByCreatorIdAndRole(creatorId, UserRole.STUDENT);
+        if (students.isEmpty()) {
+            return List.of();
+        }
+        Set<UUID> enrolledIds = enrollmentRepository.findByStudentIdInAndActiveTrue(
+                        students.stream().map(AppUser::getId).toList()).stream()
+                .map(Enrollment::getStudentId)
+                .collect(Collectors.toSet());
+
         List<Alert> created = new ArrayList<>();
-        for (AppUser student : userRepository.findByCreatorIdAndRole(creatorId, UserRole.STUDENT)) {
-            if (enrollmentRepository.findByStudentIdAndActiveTrue(student.getId()).isEmpty()) {
+        for (AppUser student : students) {
+            if (!enrolledIds.contains(student.getId())) {
                 continue;
             }
-            created.addAll(evaluateStudent(creatorId, student));
+            try {
+                created.addAll(evaluateStudent(creatorId, student));
+            } catch (RuntimeException exception) {
+                // Isola falha por aluno — não derruba a rodada do criador.
+            }
         }
         return created;
     }

@@ -20,6 +20,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +62,27 @@ class RetentionEngineServiceTest {
     void adherenceRate_withoutEnrollment_returnsNull() {
         UUID student = UUID.randomUUID();
         when(enrollmentRepository.findByStudentIdAndActiveTrue(student)).thenReturn(List.of());
+
+        assertThat(engine.adherenceRate(student, TODAY.minusDays(6), TODAY)).isNull();
+    }
+
+    @Test
+    void adherenceRate_invertedPeriod_returnsNull() {
+        UUID student = UUID.randomUUID();
+        UUID program = UUID.randomUUID();
+        when(enrollmentRepository.findByStudentIdAndActiveTrue(student))
+                .thenReturn(List.of(enrollment(student, program, TODAY.minusDays(60))));
+
+        assertThat(engine.adherenceRate(student, TODAY, TODAY.minusDays(7))).isNull();
+    }
+
+    @Test
+    void adherenceRate_programWithoutWorkouts_returnsNull() {
+        UUID student = UUID.randomUUID();
+        UUID program = UUID.randomUUID();
+        when(enrollmentRepository.findByStudentIdAndActiveTrue(student))
+                .thenReturn(List.of(enrollment(student, program, TODAY.minusDays(60))));
+        when(workoutRepository.countByProgramId(program)).thenReturn(0L);
 
         assertThat(engine.adherenceRate(student, TODAY.minusDays(6), TODAY)).isNull();
     }
@@ -143,6 +166,21 @@ class RetentionEngineServiceTest {
     }
 
     @Test
+    void studentsAtRisk_excludesHealthyStudentsWhenMinLevelIsMedium() {
+        UUID creator = UUID.randomUUID();
+        UUID student = UUID.randomUUID();
+        UUID program = UUID.randomUUID();
+
+        when(userRepository.findByCreatorIdAndRole(creator, UserRole.STUDENT))
+                .thenReturn(List.of(user(student, "Saudável", UserRole.STUDENT)));
+        when(enrollmentRepository.findByStudentIdInAndActiveTrue(List.of(student)))
+                .thenReturn(List.of(enrollment(student, program, TODAY.minusDays(30))));
+        stubBatchHealthy(student, program);
+
+        assertThat(engine.studentsAtRisk(creator, RiskLevel.MEDIUM)).isEmpty();
+    }
+
+    @Test
     void studentsAtRisk_isScopedToCreator_neverLeaksOtherTenant() {
         UUID creatorA = UUID.randomUUID();
         UUID creatorB = UUID.randomUUID();
@@ -151,14 +189,9 @@ class RetentionEngineServiceTest {
 
         when(userRepository.findByCreatorIdAndRole(creatorA, UserRole.STUDENT))
                 .thenReturn(List.of(user(studentA, "Aluno A", UserRole.STUDENT)));
-        // studentA está em risco alto
-        when(userRepository.findById(studentA)).thenReturn(Optional.of(user(studentA, "Aluno A", UserRole.STUDENT)));
-        when(enrollmentRepository.findByStudentIdAndActiveTrue(studentA))
+        when(enrollmentRepository.findByStudentIdInAndActiveTrue(List.of(studentA)))
                 .thenReturn(List.of(enrollment(studentA, program, TODAY.minusDays(60))));
-        when(workoutRepository.countByProgramId(program)).thenReturn(3L);
-        when(checkInRepository.findMaxDateByStudentId(studentA)).thenReturn(Optional.of(TODAY.minusDays(30)));
-        when(checkInRepository.countByStudentIdAndStatusAndDateBetween(
-                eq(studentA), eq(CheckInStatus.DONE), any(), any())).thenReturn(0L);
+        stubBatchAtRisk(studentA, program);
 
         List<ChurnRiskResult> result = engine.studentsAtRisk(creatorA, RiskLevel.MEDIUM);
 
@@ -180,6 +213,7 @@ class RetentionEngineServiceTest {
         assertThat(overview.atRiskCount()).isZero();
         assertThat(overview.checkInsThisWeek()).isZero();
         assertThat(overview.newStudentsThisWeek()).isZero();
+        assertThat(overview.assumptions()).isNotEmpty();
     }
 
     // ----------------------------- 5.6 studentProgress -----------------------------
@@ -193,8 +227,9 @@ class RetentionEngineServiceTest {
         StudentProgressResult progress = engine.studentProgress(student);
 
         assertThat(progress.enrolled()).isFalse();
-        assertThat(progress.currentStreak()).isGreaterThanOrEqualTo(0);
+        assertThat(progress.currentStreak()).isZero();
         assertThat(progress.message()).contains("Comece um programa");
+        assertThat(progress.assumptions()).anyMatch(a -> a.contains("Sem matrícula"));
     }
 
     @Test
@@ -259,5 +294,28 @@ class RetentionEngineServiceTest {
         checkIn.setDate(date);
         checkIn.setStatus(CheckInStatus.DONE);
         return checkIn;
+    }
+
+    private void stubBatchHealthy(UUID student, UUID program) {
+        when(checkInRepository.findMaxDateByStudentIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{student, TODAY}));
+        when(workoutRepository.countGroupByProgramIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{program, 3L}));
+        when(checkInRepository.findByStudentIdInAndStatusAndDateBetween(
+                any(), eq(CheckInStatus.DONE), any(), any()))
+                .thenReturn(List.of(
+                        checkIn(student, UUID.randomUUID(), TODAY),
+                        checkIn(student, UUID.randomUUID(), TODAY.minusDays(1)),
+                        checkIn(student, UUID.randomUUID(), TODAY.minusDays(2))));
+    }
+
+    private void stubBatchAtRisk(UUID student, UUID program) {
+        when(checkInRepository.findMaxDateByStudentIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{student, TODAY.minusDays(30)}));
+        when(workoutRepository.countGroupByProgramIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{program, 3L}));
+        when(checkInRepository.findByStudentIdInAndStatusAndDateBetween(
+                any(), eq(CheckInStatus.DONE), any(), any()))
+                .thenReturn(List.of());
     }
 }

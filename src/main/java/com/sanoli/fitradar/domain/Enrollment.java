@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -16,7 +17,10 @@ import java.util.UUID;
  * Matrícula de um aluno em um programa.
  */
 @Entity
-@Table(name = "enrollments")
+@Table(name = "enrollments", indexes = {
+        @Index(name = "idx_enrollments_student_active", columnList = "student_id, active"),
+        @Index(name = "idx_enrollments_program", columnList = "program_id")
+})
 public class Enrollment {
 
     @Id

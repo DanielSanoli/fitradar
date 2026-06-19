@@ -63,4 +63,21 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-/* Push notifications: implementar em fase posterior (R5+). */
+/* Push: handler configurado — ative VAPID no servidor quando as chaves estiverem disponíveis. */
+self.addEventListener("push", (event) => {
+  const data = event.data ? event.data.json() : { title: "FitRadar", body: "Nova notificação" };
+  event.waitUntil(
+    self.registration.showNotification(data.title || "FitRadar", {
+      body: data.body || "",
+      icon: "/icons/icon.svg",
+      badge: "/icons/icon.svg",
+      data: data.url ? { url: data.url } : {},
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/student.html";
+  event.waitUntil(clients.openWindow(url));
+});

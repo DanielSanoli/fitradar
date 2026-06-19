@@ -1,11 +1,13 @@
 package com.sanoli.fitradar.service;
 
+import com.sanoli.fitradar.config.PaginationProperties;
 import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.Enrollment;
 import com.sanoli.fitradar.domain.Program;
 import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.dto.EnrollmentRequest;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
+import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.StudentInviteRequest;
 import com.sanoli.fitradar.dto.StudentInviteResponse;
 import com.sanoli.fitradar.dto.StudentResponse;
@@ -17,6 +19,8 @@ import com.sanoli.fitradar.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +45,7 @@ public class StudentService {
     private final EnrollmentRepository enrollmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final PaginationProperties paginationProperties;
     private final String publicBaseUrl;
 
     public StudentService(
@@ -49,6 +54,7 @@ public class StudentService {
             EnrollmentRepository enrollmentRepository,
             PasswordEncoder passwordEncoder,
             EmailService emailService,
+            PaginationProperties paginationProperties,
             @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl
     ) {
         this.userRepository = userRepository;
@@ -56,6 +62,7 @@ public class StudentService {
         this.enrollmentRepository = enrollmentRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.paginationProperties = paginationProperties;
         this.publicBaseUrl = publicBaseUrl;
     }
 
@@ -85,10 +92,12 @@ public class StudentService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudentResponse> list(UUID creatorId) {
-        return userRepository.findByCreatorIdAndRole(creatorId, UserRole.STUDENT).stream()
-                .map(StudentResponse::fromEntity)
-                .toList();
+    public PageResponse<StudentResponse> list(UUID creatorId, Integer page, Integer size) {
+        Page<AppUser> students = userRepository.findByCreatorIdAndRole(
+                creatorId,
+                UserRole.STUDENT,
+                paginationProperties.toPageable(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return PageResponse.from(students.map(StudentResponse::fromEntity));
     }
 
     @Transactional(readOnly = true)
@@ -128,10 +137,17 @@ public class StudentService {
     @Transactional(readOnly = true)
     public List<EnrollmentResponse> listEnrollments(UUID creatorId, UUID studentId) {
         requireStudent(creatorId, studentId);
-        return enrollmentRepository.findByStudentId(studentId).stream()
+        List<Enrollment> enrollments = enrollmentRepository.findByStudentId(studentId);
+        if (enrollments.isEmpty()) {
+            return List.of();
+        }
+        var programIds = enrollments.stream().map(Enrollment::getProgramId).distinct().toList();
+        var titlesById = programRepository.findByIdIn(programIds).stream()
+                .collect(java.util.stream.Collectors.toMap(Program::getId, Program::getTitle));
+        return enrollments.stream()
                 .map(enrollment -> EnrollmentResponse.fromEntity(
                         enrollment,
-                        programRepository.findById(enrollment.getProgramId()).map(Program::getTitle).orElse("—")))
+                        titlesById.getOrDefault(enrollment.getProgramId(), "—")))
                 .toList();
     }
 

@@ -106,7 +106,7 @@ let doneWorkoutIds = new Set();
 
 async function loadWorkouts() {
   try {
-    const checkIns = await FR.get("/api/v1/my/check-ins");
+    const checkIns = await FR.pageContent("/api/v1/my/check-ins");
     const today = new Date().toISOString().slice(0, 10);
     doneWorkoutIds = new Set(checkIns.filter((c) => c.date === today && c.status === "DONE").map((c) => c.workoutId));
   } catch (e) {}
@@ -135,6 +135,10 @@ function openCheckIn(workoutId, title) {
       <option value="3" selected>3 · ok</option><option value="4">4</option><option value="5">5 · ótimo</option>
     </select>
     <label>Notas (opcional)</label><textarea id="ci-notes"></textarea>
+    <label class="row" style="align-items:flex-start;gap:.5rem;font-size:.85rem;color:var(--text-dim);cursor:pointer">
+      <input type="checkbox" id="ci-consent" style="width:auto;margin:.15rem 0 0" />
+      <span>Ao informar sensação ou notas, autorizo compartilhar com meu criador conforme a <a href="/privacy.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
+    </label>
     <div class="row">
       <button class="grow" id="ci-done">Concluí 💪</button>
       <button class="btn-ghost" id="ci-skip">Pulei</button>
@@ -144,11 +148,17 @@ function openCheckIn(workoutId, title) {
   const submit = async (skipped) => {
     try {
       const feeling = document.getElementById("ci-feeling").value;
+      const notes = document.getElementById("ci-notes").value.trim();
+      const hasSensitive = (!skipped && feeling) || notes.length > 0;
+      if (hasSensitive && !document.getElementById("ci-consent").checked) {
+        FR.toast("Marque o consentimento para compartilhar sensação ou notas.", true);
+        return;
+      }
       await FR.post("/api/v1/my/check-ins", {
         workoutId,
         skipped,
         feeling: feeling ? parseInt(feeling, 10) : null,
-        notes: document.getElementById("ci-notes").value || null,
+        notes: notes || null,
       });
       closeModal();
       FR.toast(skipped ? "Check-in registrado" : "Boa! Treino registrado");

@@ -14,6 +14,8 @@ import com.sanoli.fitradar.security.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 
 @Service
@@ -113,9 +115,15 @@ public class BillingService {
             throw new WebhookUnauthorizedException("Webhook Asaas não configurado");
         }
 
-        if (accessToken == null || !expectedToken.equals(accessToken)) {
+        if (accessToken == null || !constantTimeEquals(expectedToken, accessToken)) {
             throw new WebhookUnauthorizedException("Webhook Asaas inválido");
         }
+    }
+
+    private static boolean constantTimeEquals(String expected, String actual) {
+        byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+        byte[] actualBytes = actual.getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expectedBytes, actualBytes);
     }
 
     private boolean activateSubscription(AppUser user) {

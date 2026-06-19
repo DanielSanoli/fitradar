@@ -3,6 +3,7 @@ package com.sanoli.fitradar.controller;
 import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.dto.EnrollmentRequest;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
+import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.StudentInviteRequest;
 import com.sanoli.fitradar.dto.StudentInviteResponse;
 import com.sanoli.fitradar.dto.StudentResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -44,8 +46,11 @@ public class StudentController {
 
     @GetMapping
     @Operation(summary = "Lista os alunos do criador")
-    public ResponseEntity<List<StudentResponse>> list() {
-        return ResponseEntity.ok(studentService.list(currentUserService.requireCreator().getId()));
+    public ResponseEntity<PageResponse<StudentResponse>> list(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        return ResponseEntity.ok(studentService.list(currentUserService.requireCreator().getId(), page, size));
     }
 
     @GetMapping("/{id}")

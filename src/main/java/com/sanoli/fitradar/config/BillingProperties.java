@@ -36,10 +36,20 @@ public class BillingProperties {
     }
 
     public boolean isAsaasEnabled() {
-        return asaas != null && asaas.getApiKey() != null && !asaas.getApiKey().isBlank();
+        return asaas != null && asaas.isEnabled() && hasText(asaas.getApiKey());
+    }
+
+    /** Billing explicitamente ligado via ASAAS_ENABLED — dispara validação fail-fast no startup. */
+    public boolean isBillingEnabled() {
+        return asaas != null && asaas.isEnabled();
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     public static class Asaas {
+        private boolean enabled = false;
         private String baseUrl = "https://sandbox.asaas.com/api/v3";
         private String apiKey = "";
         private BigDecimal monthlyPrice = new BigDecimal("49.90");
@@ -75,6 +85,14 @@ public class BillingProperties {
 
         public void setWebhookToken(String webhookToken) {
             this.webhookToken = webhookToken;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 

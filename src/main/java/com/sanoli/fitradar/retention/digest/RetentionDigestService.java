@@ -14,6 +14,8 @@ import com.sanoli.fitradar.retention.engine.RetentionEngineService;
 import com.sanoli.fitradar.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,9 @@ import java.util.UUID;
 public class RetentionDigestService {
 
     private static final Logger log = LoggerFactory.getLogger(RetentionDigestService.class);
+
+    private static final int CREATOR_PAGE_SIZE = 50;
+    private static final int STUDENT_PAGE_SIZE = 100;
 
     private final RetentionEngineService engine;
     private final NudgeService nudgeService;
@@ -52,15 +57,20 @@ public class RetentionDigestService {
     @Transactional(readOnly = true)
     public int sendWeeklyDigests() {
         int sent = 0;
-        for (AppUser creator : userRepository.findByRole(UserRole.CREATOR)) {
-            try {
-                if (sendWeeklyDigest(creator)) {
-                    sent++;
+        int page = 0;
+        Page<AppUser> creators;
+        do {
+            creators = userRepository.findByRole(UserRole.CREATOR, PageRequest.of(page++, CREATOR_PAGE_SIZE));
+            for (AppUser creator : creators) {
+                try {
+                    if (sendWeeklyDigest(creator)) {
+                        sent++;
+                    }
+                } catch (RuntimeException exception) {
+                    log.warn("Falha ao enviar resumo semanal ao criador {}", creator.getId(), exception);
                 }
-            } catch (RuntimeException exception) {
-                log.warn("Falha ao enviar resumo semanal ao criador {}", creator.getId(), exception);
             }
-        }
+        } while (creators.hasNext());
         return sent;
     }
 
@@ -79,22 +89,33 @@ public class RetentionDigestService {
     public int sendInactiveNudges() {
         int sent = 0;
         int threshold = retentionProperties.getInactiveAlertDays();
-        for (AppUser creator : userRepository.findByRole(UserRole.CREATOR)) {
-            for (AppUser student : userRepository.findByCreatorIdAndRole(creator.getId(), UserRole.STUDENT)) {
-                try {
-                    Long daysInactive = engine.daysSinceLastActivity(student.getId());
-                    if (daysInactive != null && daysInactive > threshold
-                            && student.getEmail() != null && !student.getEmail().isBlank()) {
-                        NudgeSuggestion nudge = nudgeService.buildNudge(student.getId());
-                        String body = nudge.message() + "\n\n— " + creator.getName();
-                        emailService.sendStudentNudge(student.getEmail(), "Senti sua falta nos treinos 💪", body);
-                        sent++;
+        int creatorPage = 0;
+        Page<AppUser> creators;
+        do {
+            creators = userRepository.findByRole(UserRole.CREATOR, PageRequest.of(creatorPage++, CREATOR_PAGE_SIZE));
+            for (AppUser creator : creators) {
+                int studentPage = 0;
+                Page<AppUser> students;
+                do {
+                    students = userRepository.findByCreatorIdAndRole(
+                            creator.getId(), UserRole.STUDENT, PageRequest.of(studentPage++, STUDENT_PAGE_SIZE));
+                    for (AppUser student : students) {
+                        try {
+                            Long daysInactive = engine.daysSinceLastActivity(student.getId());
+                            if (daysInactive != null && daysInactive > threshold
+                                    && student.getEmail() != null && !student.getEmail().isBlank()) {
+                                NudgeSuggestion nudge = nudgeService.buildNudge(student.getId());
+                                String body = nudge.message() + "\n\n— " + creator.getName();
+                                emailService.sendStudentNudge(student.getEmail(), "Senti sua falta nos treinos 💪", body);
+                                sent++;
+                            }
+                        } catch (RuntimeException exception) {
+                            log.warn("Falha ao enviar nudge ao aluno {}", student.getId(), exception);
+                        }
                     }
-                } catch (RuntimeException exception) {
-                    log.warn("Falha ao enviar nudge ao aluno {}", student.getId(), exception);
-                }
+                } while (students.hasNext());
             }
-        }
+        } while (creators.hasNext());
         return sent;
     }
 
