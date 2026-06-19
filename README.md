@@ -18,6 +18,7 @@ A IA **nunca** calcula métricas nem valores. Aderência, dias de inatividade e 
 - Asaas (cobrança do criador)
 - Resend (e-mail / digest)
 - Frontend estático servido pelo Spring (PWA aluno instalável; push configurado no SW)
+- **Novo:** `frontend/` — React + Vite + Tailwind + shadcn/ui (FE-1; consome a mesma API). Ver `frontend/README.md`.
 
 ## Arquitetura
 

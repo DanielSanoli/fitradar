@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* FitRadar brand — dark + acento mint (#1ed7a6) */
+:root {
+  --radius: 0.875rem;
+  --background: 215 28% 7%;
+  --foreground: 210 17% 93%;
+  --card: 215 18% 14%;
+  --card-foreground: 210 17% 93%;
+  --popover: 215 18% 14%;
+  --popover-foreground: 210 17% 93%;
+  --primary: 165 76% 48%;
+  --primary-foreground: 165 80% 8%;
+  --secondary: 215 16% 18%;
+  --secondary-foreground: 210 17% 93%;
+  --muted: 215 14% 16%;
+  --muted-foreground: 210 10% 65%;
+  --accent: 165 76% 48%;
+  --accent-foreground: 165 80% 8%;
+  --destructive: 0 72% 67%;
+  --border: 215 14% 22%;
+  --input: 215 14% 22%;
+  --ring: 165 76% 48%;
+  --sidebar: 215 21% 11%;
+  --sidebar-foreground: 210 17% 93%;
+  --sidebar-border: 215 14% 22%;
+  --sidebar-accent: 215 16% 18%;
+  --sidebar-accent-foreground: 210 17% 93%;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(1200px 600px at 80% -10%, hsl(165 40% 12%) 0%, hsl(var(--background)) 55%);
+    min-height: 100vh;
+  }
+}
