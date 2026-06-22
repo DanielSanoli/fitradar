@@ -12,6 +12,7 @@ import com.sanoli.fitradar.retention.engine.ChurnRiskResult;
 import com.sanoli.fitradar.retention.engine.CreatorOverviewResult;
 import com.sanoli.fitradar.retention.engine.RetentionEngineService;
 import com.sanoli.fitradar.service.EmailService;
+import com.sanoli.fitradar.service.PushNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -39,19 +40,22 @@ public class RetentionDigestService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final RetentionProperties retentionProperties;
+    private final PushNotificationService pushNotificationService;
 
     public RetentionDigestService(
             RetentionEngineService engine,
             NudgeService nudgeService,
             UserRepository userRepository,
             EmailService emailService,
-            RetentionProperties retentionProperties
+            RetentionProperties retentionProperties,
+            PushNotificationService pushNotificationService
     ) {
         this.engine = engine;
         this.nudgeService = nudgeService;
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.retentionProperties = retentionProperties;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @Transactional(readOnly = true)
@@ -107,6 +111,16 @@ public class RetentionDigestService {
                                 NudgeSuggestion nudge = nudgeService.buildNudge(student.getId());
                                 String body = nudge.message() + "\n\n— " + creator.getName();
                                 emailService.sendStudentNudge(student.getEmail(), "Senti sua falta nos treinos 💪", body);
+                                try {
+                                    pushNotificationService.sendToUser(
+                                            student.getId(),
+                                            "Senti sua falta nos treinos 💪",
+                                            nudge.message(),
+                                            "/student"
+                                    );
+                                } catch (RuntimeException pushEx) {
+                                    log.warn("Falha push nudge aluno {}", student.getId(), pushEx);
+                                }
                                 sent++;
                             }
                         } catch (RuntimeException exception) {

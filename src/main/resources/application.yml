@@ -102,6 +102,12 @@ app:
     enabled: ${DIGEST_ENABLED:true}
     weekly-cron: ${DIGEST_WEEKLY_CRON:0 0 8 * * MON}
     nudge-cron: ${DIGEST_NUDGE_CRON:0 0 9 * * *}
+  push:
+    enabled: ${PUSH_ENABLED:false}
+    vapid-public-key: ${VAPID_PUBLIC_KEY:}
+    vapid-private-key: ${VAPID_PRIVATE_KEY:}
+    vapid-subject: ${VAPID_SUBJECT:mailto:support@fitradar.app}
+    frontend-base-url: ${PUSH_FRONTEND_BASE_URL:http://localhost:5173}
   observability:
     metrics-enabled: ${METRICS_ENABLED:false}
     management-token: ${MANAGEMENT_TOKEN:}

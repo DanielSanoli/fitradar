@@ -16,6 +16,7 @@ import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.retention.engine.ChurnRiskResult;
 import com.sanoli.fitradar.retention.engine.RetentionEngineService;
 import com.sanoli.fitradar.retention.engine.StudentProgressResult;
+import com.sanoli.fitradar.service.PushNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class RetentionRuleEngine {
     private final RetentionProperties properties;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final PushNotificationService pushNotificationService;
 
     public RetentionRuleEngine(
             RetentionEngineService engine,
@@ -56,7 +58,8 @@ public class RetentionRuleEngine {
             EnrollmentRepository enrollmentRepository,
             RetentionProperties properties,
             ObjectMapper objectMapper,
-            Clock clock
+            Clock clock,
+            PushNotificationService pushNotificationService
     ) {
         this.engine = engine;
         this.alertRepository = alertRepository;
@@ -65,6 +68,7 @@ public class RetentionRuleEngine {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.clock = clock;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @Transactional
@@ -166,6 +170,17 @@ public class RetentionRuleEngine {
         log.info("[retention:alert] creatorId={} studentId={} type={} severity={}",
                 creatorId, studentId, type, severity);
         created.add(saved);
+        notifyCreatorPush(creatorId, severity, message);
+    }
+
+    private void notifyCreatorPush(UUID creatorId, Severity severity, String message) {
+        if (severity == Severity.WARNING || severity == Severity.CRITICAL) {
+            try {
+                pushNotificationService.sendToUser(creatorId, "FitRadar — Atenção", message, "/app");
+            } catch (RuntimeException exception) {
+                log.warn("[push] falha ao notificar criador {}", creatorId, exception);
+            }
+        }
     }
 
     private String toJson(Map<String, ?> snapshot) {
