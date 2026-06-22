@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Topbar } from "@/components/layout/Topbar";
 import { cn } from "@/lib/utils";
 
@@ -12,17 +13,22 @@ const titles: Record<string, string> = {
   "/app": "Painel do criador",
   "/app/retention": "Retenção",
   "/app/students": "Alunos",
+  "/app/programs": "Programas",
+  "/app/space": "Construtor do Espaço",
   "/app/ranking": "Ranking",
   "/app/settings": "Configurações",
   "/student": "Área do aluno",
   "/student/progress": "Progresso",
-  "/student/workouts": "Treinos",
 };
 
 export function AppLayout({ variant }: AppLayoutProps) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const title = titles[location.pathname] ?? "FitRadar";
+
+  if (variant === "student") {
+    return <StudentLayout />;
+  }
 
   return (
     <div className="flex min-h-screen">

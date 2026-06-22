@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-print-defaults>
+@media print {
+  @page { margin: 0; }
+  body { padding: 0.5in; box-sizing: border-box; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  figure, table, pre, blockquote, img, svg, tr, [class~="card" i] { break-inside: avoid; }
+  img, svg { max-width: 100%; }
+  p { orphans: 3; widows: 3; }
+}
+</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @keyframes ce-rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes ce-pop { 0% { transform:scale(0.6); opacity:0; } 60% { transform:scale(1.08); } 100% { transform:scale(1); opacity:1; } }
+    *::-webkit-scrollbar { width:9px; height:9px; }
+    *::-webkit-scrollbar-thumb { background:hsl(215 14% 26%); border-radius:999px; }
+    *::-webkit-scrollbar-track { background:transparent; }
+    .ce-input::placeholder { color:hsl(210 10% 42%); }
+    .ce-input:focus { outline:none; }
+  </style>
+</helmet>
+
+<div data-screen-label="Construtor do Espaço" style="min-height:100vh; display:flex; flex-direction:column; background:radial-gradient(1100px 560px at 82% -14%, hsl(165 40% 12%) 0%, hsl(215 28% 7%) 56%); color:hsl(210 17% 93%); font-family:'Segoe UI', system-ui, -apple-system, sans-serif;">
+
+  <header style="position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:16px; height:64px; padding:0 28px; border-bottom:1px solid hsl(215 14% 22%); background:hsl(215 28% 7% / 0.82); backdrop-filter:blur(12px);">
+    <div style="display:flex; align-items:center; gap:9px; font-weight:800; letter-spacing:-0.01em; font-size:16px;">
+      <span style="width:13px; height:13px; border-radius:999px; background:hsl(165 76% 48%); box-shadow:0 0 16px hsl(165 76% 48%);"></span>
+      FitRadar
+    </div>
+    <span style="width:1px; height:22px; background:hsl(215 14% 22%);"></span>
+    <span style="font-size:13.5px; color:hsl(210 10% 64%);">Bem-vinda, Marina — vamos montar seu espaço</span>
+    <div style="margin-left:auto; display:flex; align-items:center; gap:14px;">
+      <span style="font-size:13px; color:hsl(210 10% 56%);">Passo {{ step }} de 3</span>
+      <button style="cursor:pointer; height:38px; padding:0 15px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 14% 80%); font-size:13px; font-weight:600; font-family:inherit; transition:all .15s;" style-hover="background:hsl(215 16% 16%);">Salvar rascunho</button>
+    </div>
+  </header>
+
+  <div style="flex:1; display:grid; grid-template-columns:repeat(auto-fit, minmax(440px, 1fr)); gap:0; align-items:start;">
+
+    <!-- ===== BUILDER (left) ===== -->
+    <div style="display:flex; flex-direction:column; gap:26px; padding:34px 40px 48px; max-width:620px; width:100%; margin-left:auto; box-sizing:border-box;">
+
+      <!-- Stepper -->
+      <div style="display:flex; align-items:stretch; gap:10px;">
+        <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+          <button onClick="{{ st.onClick }}" style="{{ st.wrapStyle }}">
+            <span style="{{ st.dotStyle }}">
+              <sc-if value="{{ st.done }}" hint-placeholder-val="{{ false }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </sc-if>
+              <sc-if value="{{ st.showNum }}" hint-placeholder-val="{{ true }}">{{ st.n }}</sc-if>
+            </span>
+            <span style="display:flex; flex-direction:column; gap:1px; text-align:left; min-width:0;">
+              <span style="{{ st.labelStyle }}">{{ st.label }}</span>
+              <span style="font-size:11.5px; color:hsl(210 10% 52%); white-space:nowrap;">{{ st.sub }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- STEP 1 — Espaço -->
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:24px; animation:ce-rise .3s ease both;">
+          <div>
+            <h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0.025em; color:hsl(210 20% 96%);">A identidade do seu espaço</h1>
+            <p style="margin:7px 0 0; font-size:14.5px; color:hsl(210 10% 64%); text-wrap:pretty;">Dê um nome, uma cara e uma voz. Tudo o que você mudar aqui aparece na hora na pré-visualização ao lado.</p>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Nome do espaço</label>
+            <input class="ce-input" type="text" value="{{ name }}" onChange="{{ onName }}" placeholder="Ex.: Studio Corpo & Movimento" style="height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 17% 94%); font-size:15px; font-family:inherit; transition:border-color .15s, box-shadow .15s;" style-focus="border-color:{{ accent }}; box-shadow:0 0 0 3px {{ accentSoft }};">
+          </div>
+
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <div style="display:flex; flex-direction:column; gap:8px; flex:1; min-width:200px;">
+              <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Logo</label>
+              <button onClick="{{ onLogo }}" style="display:flex; align-items:center; gap:13px; height:72px; padding:0 16px; border-radius:13px; border:1px dashed hsl(215 14% 30%); background:hsl(215 18% 12%); cursor:pointer; text-align:left; transition:all .15s; font-family:inherit;" style-hover="border-color:{{ accent }}; background:hsl(215 18% 14%);">
+                <span style="{{ logoChipStyle }}">{{ initials }}</span>
+                <span style="display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:13px; font-weight:600; color:hsl(210 17% 88%);">{{ logoTitle }}</span>
+                  <span style="font-size:11.5px; color:hsl(210 10% 56%);">PNG ou SVG · até 2 MB</span>
+                </span>
+              </button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; flex:1; min-width:200px;">
+              <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Cor de destaque</label>
+              <div style="display:flex; align-items:center; gap:10px; height:72px; padding:0 14px; border-radius:13px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 12%);">
+                <sc-for list="{{ swatches }}" as="sw" hint-placeholder-count="6">
+                  <button onClick="{{ sw.onClick }}" title="{{ sw.hex }}" style="{{ sw.style }}"></button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Bio do espaço</label>
+              <span style="font-size:11.5px; color:hsl(210 10% 50%);">{{ bioCount }}/140</span>
+            </div>
+            <textarea class="ce-input" maxlength="140" onChange="{{ onBio }}" placeholder="Conte em uma frase o que torna seu espaço especial." style="min-height:84px; resize:none; padding:12px 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 17% 94%); font-size:14.5px; line-height:1.5; font-family:inherit; transition:border-color .15s, box-shadow .15s;" style-focus="border-color:{{ accent }}; box-shadow:0 0 0 3px {{ accentSoft }};">{{ bio }}</textarea>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 2 — Primeiro programa -->
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:24px; animation:ce-rise .3s ease both;">
+          <div>
+            <h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0.025em; color:hsl(210 20% 96%);">Seu primeiro programa</h1>
+            <p style="margin:7px 0 0; font-size:14.5px; color:hsl(210 10% 64%); text-wrap:pretty;">Um espaço vivo começa com um programa. Crie um agora — você refina os treinos depois.</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Nome do programa</label>
+            <input class="ce-input" type="text" value="{{ programName }}" onChange="{{ onProgramName }}" placeholder="Ex.: Base de Força" style="height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 17% 94%); font-size:15px; font-family:inherit; transition:border-color .15s, box-shadow .15s;" style-focus="border-color:{{ accent }}; box-shadow:0 0 0 3px {{ accentSoft }};">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Duração</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <sc-for list="{{ durations }}" as="d" hint-placeholder-count="4">
+                <button onClick="{{ d.onClick }}" style="{{ d.style }}">{{ d.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Descrição curta</label>
+            <textarea class="ce-input" maxlength="160" onChange="{{ onProgramDesc }}" placeholder="Para quem é e o que promete." style="min-height:84px; resize:none; padding:12px 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 17% 94%); font-size:14.5px; line-height:1.5; font-family:inherit; transition:border-color .15s, box-shadow .15s;" style-focus="border-color:{{ accent }}; box-shadow:0 0 0 3px {{ accentSoft }};">{{ programDesc }}</textarea>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 3 — Convidar aluno -->
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:24px; animation:ce-rise .3s ease both;">
+          <div>
+            <h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0.025em; color:hsl(210 20% 96%);">Convide seu primeiro aluno</h1>
+            <p style="margin:7px 0 0; font-size:14.5px; color:hsl(210 10% 64%); text-wrap:pretty;">Seu espaço está pronto para receber gente. Compartilhe o link ou mande um convite direto.</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Link do espaço</label>
+            <div style="display:flex; gap:10px;">
+              <div style="flex:1; min-width:0; display:flex; align-items:center; height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); font-size:14px; color:hsl(210 14% 80%); font-family:ui-monospace, 'SF Mono', Menlo, monospace; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ fullLink }}</div>
+              <button onClick="{{ onCopy }}" style="{{ copyBtnStyle }}">
+                <sc-if value="{{ copied }}" hint-placeholder-val="{{ false }}">✓ Copiado</sc-if>
+                <sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}">Copiar link</sc-if>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Ou convide por e-mail</label>
+            <div style="display:flex; gap:10px;">
+              <input class="ce-input" type="email" placeholder="aluno@email.com" style="flex:1; min-width:0; height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 17% 94%); font-size:14.5px; font-family:inherit; transition:border-color .15s, box-shadow .15s;" style-focus="border-color:{{ accent }}; box-shadow:0 0 0 3px {{ accentSoft }};">
+              <button style="height:46px; padding:0 18px; border-radius:11px; border:1px solid hsl(215 14% 28%); background:hsl(215 16% 17%); color:hsl(210 16% 86%); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap; transition:all .15s;" style-hover="background:hsl(215 16% 20%);">Enviar convite</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Nav buttons -->
+      <div style="display:flex; align-items:center; gap:12px; margin-top:2px;">
+        <sc-if value="{{ canGoBack }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onBack }}" style="height:46px; padding:0 20px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 14% 82%); font-size:14.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .15s;" style-hover="background:hsl(215 16% 16%);">Voltar</button>
+        </sc-if>
+        <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onPublish }}" style="{{ primaryBtnStyle }}">Publicar espaço</button>
+        </sc-if>
+        <sc-if value="{{ notStep3 }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onNext }}" style="{{ primaryBtnStyle }}">{{ nextLabel }}</button>
+        </sc-if>
+        <span style="margin-left:auto; font-size:12.5px; color:hsl(210 10% 50%);">Leva uns 3 minutos</span>
+      </div>
+    </div>
+
+    <!-- ===== LIVE PREVIEW (right) ===== -->
+    <div style="position:sticky; top:64px; align-self:start; padding:34px 40px 48px; max-width:640px; width:100%; box-sizing:border-box;">
+      <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px;">
+        <span style="position:relative; width:8px; height:8px;">
+          <span style="position:absolute; inset:0; border-radius:999px; background:hsl(165 76% 52%);"></span>
+          <span style="position:absolute; inset:-3px; border-radius:999px; border:1px solid hsl(165 76% 48% / 0.5);"></span>
+        </span>
+        <span style="font-size:12.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:hsl(210 14% 74%);">Pré-visualização ao vivo</span>
+        <span style="font-size:12px; color:hsl(210 10% 52%);">como seus alunos veem</span>
+      </div>
+
+      <!-- browser frame -->
+      <div style="border-radius:16px; overflow:hidden; border:1px solid hsl(215 14% 24%); background:hsl(215 22% 9%); box-shadow:0 24px 70px rgba(0,0,0,0.5);">
+        <div style="display:flex; align-items:center; gap:8px; height:42px; padding:0 14px; background:hsl(215 20% 12%); border-bottom:1px solid hsl(215 14% 20%);">
+          <span style="width:11px; height:11px; border-radius:999px; background:hsl(0 60% 60%);"></span>
+          <span style="width:11px; height:11px; border-radius:999px; background:hsl(40 70% 58%);"></span>
+          <span style="width:11px; height:11px; border-radius:999px; background:hsl(140 45% 55%);"></span>
+          <div style="flex:1; margin-left:8px; display:flex; align-items:center; gap:8px; height:26px; padding:0 12px; border-radius:7px; background:hsl(215 18% 8%); font-size:12px; color:hsl(210 12% 64%); font-family:ui-monospace, 'SF Mono', Menlo, monospace; overflow:hidden; white-space:nowrap;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="hsl(165 60% 55%)" stroke-width="2.2"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+            {{ fullLink }}
+          </div>
+        </div>
+
+        <!-- member-facing space -->
+        <div style="position:relative;">
+          <div style="{{ coverStyle }}"></div>
+          <div style="padding:0 28px 28px; margin-top:-34px; display:flex; flex-direction:column;">
+            <div style="{{ avatarStyle }}">{{ initials }}</div>
+            <div style="margin-top:16px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px;">
+              <div style="min-width:0;">
+                <h2 style="margin:0; font-size:23px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 96%); text-wrap:balance;">{{ displayName }}</h2>
+                <div style="margin-top:5px; display:flex; align-items:center; gap:8px; font-size:12.5px; color:hsl(210 10% 58%);">
+                  <span style="{{ verifiedDotStyle }}"></span>
+                  Espaço no FitRadar · {{ memberLabel }}
+                </div>
+              </div>
+              <button style="{{ joinBtnStyle }}">Entrar no espaço</button>
+            </div>
+            <p style="margin:16px 0 0; font-size:14.5px; line-height:1.55; color:hsl(210 13% 78%); text-wrap:pretty;">{{ displayBio }}</p>
+
+            <!-- program card -->
+            <sc-if value="{{ hasProgram }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:20px; animation:ce-rise .3s ease both;">
+                <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:hsl(210 10% 52%); margin-bottom:10px;">Programas</div>
+                <div style="display:flex; gap:14px; align-items:center; padding:15px 16px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 13%);">
+                  <div style="{{ progIconStyle }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5"></path><circle cx="5" cy="5" r="2.2"></circle><circle cx="19" cy="19" r="2.2"></circle><path d="m3 9 2-2 2 2M17 21l2-2 2 2"></path></svg>
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:15px; font-weight:700; color:hsl(210 18% 92%);">{{ displayProgram }}</div>
+                    <div style="font-size:12.5px; color:hsl(210 10% 60%); margin-top:2px; text-wrap:pretty;">{{ displayProgramSub }}</div>
+                  </div>
+                  <span style="{{ progPillStyle }}">{{ programWeeks }} sem</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="margin-top:22px; padding-top:16px; border-top:1px solid hsl(215 14% 20%); display:flex; align-items:center; gap:7px; font-size:11.5px; color:hsl(210 10% 48%);">
+              <span style="width:9px; height:9px; border-radius:999px; background:hsl(165 76% 48%);"></span>
+              Powered by FitRadar
+            </div>
+          </div>
+
+          <!-- published overlay -->
+          <sc-if value="{{ published }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; left:14px; right:14px; bottom:14px; display:flex; align-items:center; gap:12px; padding:13px 16px; border-radius:13px; background:{{ accentSoftStrong }}; border:1px solid {{ accentBorder }}; backdrop-filter:blur(8px); animation:ce-pop .35s ease both;">
+              <span style="flex:none; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:{{ accent }}; color:{{ accentFg }};">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:14px; font-weight:700; color:hsl(210 18% 95%);">Espaço publicado e no ar</div>
+                <div style="font-size:12px; color:hsl(210 12% 72%);">Já pode receber alunos pelo link acima.</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; display:flex; align-items:center; gap:10px;">
+        <button onClick="{{ onCopy }}" style="flex:1; height:42px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 14% 84%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all .15s;" style-hover="background:hsl(215 16% 17%);">
+          <sc-if value="{{ copied }}" hint-placeholder-val="{{ false }}">✓ Link copiado</sc-if>
+          <sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}">Copiar link do espaço</sc-if>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:900}}">
+function hexToRgb(hex) {
+  hex = (hex || "#1ed7a6").replace("#", "");
+  if (hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+  const n = parseInt(hex, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgba(hex, a) { const [r, g, b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function fgOn(hex) { const [r, g, b] = hexToRgb(hex); return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#0b1712" : "#ffffff"; }
+function slugify(s) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "e").replace(/[^a-z0-9\s-]/g, "").trim().replace(/\s+/g, "-").replace(/-+/g, "-");
+}
+function initialsOf(s) {
+  const w = (s || "").trim().split(/\s+/).filter(Boolean);
+  if (!w.length) return "FR";
+  return (w[0][0] + (w[1] ? w[1][0] : "")).toUpperCase();
+}
+
+const SWATCHES = ["#1ed7a6", "#5b8cff", "#b07cff", "#ff7a59", "#ffc24b", "#ff5d8f"];
+const DURATIONS = [{ w: "4", label: "4 semanas" }, { w: "8", label: "8 semanas" }, { w: "12", label: "12 semanas" }, { w: "0", label: "Contínuo" }];
+
+class Component extends DCLogic {
+  state = {
+    step: 1,
+    name: "Studio Corpo & Movimento",
+    logoUploaded: false,
+    accent: "#1ed7a6",
+    bio: "Treinos de força e mobilidade para a vida real. Pequenos grupos, acompanhamento de perto.",
+    programName: "Base de Força",
+    programWeeks: "8",
+    programDesc: "Para quem quer construir força do zero, sem pressa e com técnica.",
+    published: false,
+    copied: false,
+  };
+
+  set = (k) => (e) => this.setState({ [k]: e.target.value, published: false });
+  setVal = (k, v) => this.setState({ [k]: v, published: false });
+  toggleLogo = () => this.setState(s => ({ logoUploaded: !s.logoUploaded }));
+  go = (n) => this.setState({ step: n });
+  next = () => this.setState(s => ({ step: Math.min(3, s.step + 1) }));
+  back = () => this.setState(s => ({ step: Math.max(1, s.step - 1) }));
+  publish = () => {
+    this.setState({ published: true });
+    this.copy();
+  };
+  copy = () => {
+    const link = "fitradar.app/c/" + (slugify(this.state.name) || "seu-espaco");
+    try { navigator.clipboard && navigator.clipboard.writeText("https://" + link); } catch (e) {}
+    this.setState({ copied: true });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ copied: false }), 2000);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const accent = s.accent;
+    const accentSoft = rgba(accent, 0.16);
+    const accentSoftStrong = rgba(accent, 0.22);
+    const accentBorder = rgba(accent, 0.4);
+    const accentFg = fgOn(accent);
+
+    const slug = slugify(s.name) || "seu-espaco";
+    const fullLink = "fitradar.app/c/" + slug;
+    const displayName = s.name.trim() || "Seu espaço aqui";
+    const displayBio = s.bio.trim() || "Sua bio aparece aqui — conte o que torna seu espaço especial.";
+    const inits = initialsOf(s.name);
+
+    // stepper
+    const stepsDef = [
+      { n: 1, label: "Espaço", sub: "Identidade" },
+      { n: 2, label: "Primeiro programa", sub: "Conteúdo" },
+      { n: 3, label: "Convidar aluno", sub: "Lançar" },
+    ];
+    const steps = stepsDef.map(d => {
+      const done = d.n < s.step;
+      const active = d.n === s.step;
+      const wrapStyle = "flex:1; display:flex; align-items:center; gap:11px; padding:13px 14px; border-radius:13px; cursor:pointer; font-family:inherit; text-align:left; transition:all .15s; border:1px solid " +
+        (active ? accentBorder + "; background:" + accentSoft : "hsl(215 14% 22%); background:hsl(215 18% 12%)") + ";";
+      const dotStyle = "flex:none; width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; " +
+        (active ? "background:" + accent + "; color:" + accentFg + ";"
+          : done ? "background:" + accentSoft + "; color:" + accent + "; border:1px solid " + accentBorder + ";"
+          : "background:hsl(215 16% 18%); color:hsl(210 10% 56%); border:1px solid hsl(215 14% 26%);");
+      const labelStyle = "font-size:13.5px; font-weight:700; white-space:nowrap; color:" + (active || done ? "hsl(210 18% 92%)" : "hsl(210 10% 64%)") + ";";
+      return { n: String(d.n), label: d.label, sub: d.sub, done, showNum: !done, wrapStyle, dotStyle, labelStyle, onClick: () => this.go(d.n) };
+    });
+
+    // swatches
+    const swatches = SWATCHES.map(hex => {
+      const on = hex === accent;
+      const style = "width:30px; height:30px; border-radius:9px; cursor:pointer; padding:0; background:" + hex + "; transition:transform .12s, box-shadow .12s; transform:" + (on ? "scale(1.12)" : "scale(1)") + "; box-shadow:" + (on ? "0 0 0 2px hsl(215 18% 12%), 0 0 0 4px " + hex : "none") + "; border:1px solid " + rgba(hex, 0.6) + ";";
+      return { hex, style, onClick: () => this.setVal("accent", hex) };
+    });
+
+    // durations
+    const durations = DURATIONS.map(d => {
+      const on = d.w === s.programWeeks;
+      const style = "cursor:pointer; height:40px; padding:0 16px; border-radius:10px; font-size:13.5px; font-weight:600; font-family:inherit; transition:all .15s; border:1px solid " +
+        (on ? accentBorder + "; background:" + accentSoft + "; color:" + "hsl(210 16% 90%)" : "hsl(215 14% 26%); background:transparent; color:hsl(210 10% 64%)") + ";";
+      return { label: d.label, style, onClick: () => this.setVal("programWeeks", d.w) };
+    });
+
+    const primaryBtnStyle = "height:46px; padding:0 26px; border-radius:11px; border:none; cursor:pointer; font-size:14.5px; font-weight:700; font-family:inherit; background:" + accent + "; color:" + accentFg + "; box-shadow:0 6px 20px " + rgba(accent, 0.28) + "; transition:filter .15s;";
+    const copyBtnStyle = "flex:none; height:46px; padding:0 18px; border-radius:11px; border:1px solid " + (s.copied ? accentBorder : "hsl(215 14% 28%)") + "; background:" + (s.copied ? accentSoft : "hsl(215 16% 17%)") + "; color:" + (s.copied ? accent : "hsl(210 16% 86%)") + "; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap; transition:all .15s;";
+
+    // preview styles (accent-driven, live)
+    const coverStyle = "height:104px; background:linear-gradient(125deg, " + rgba(accent, 0.55) + ", " + rgba(accent, 0.12) + " 60%, hsl(215 22% 11%));";
+    const avatarStyle = "width:72px; height:72px; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; color:" + accentFg + "; background:linear-gradient(140deg, " + accent + ", " + rgba(accent, 0.7) + "); border:3px solid hsl(215 22% 9%); box-shadow:0 10px 26px " + rgba(accent, 0.35) + ";";
+    const joinBtnStyle = "flex:none; height:42px; padding:0 20px; border-radius:11px; border:none; cursor:pointer; font-size:14px; font-weight:700; font-family:inherit; background:" + accent + "; color:" + accentFg + "; box-shadow:0 6px 18px " + rgba(accent, 0.3) + ";";
+    const verifiedDotStyle = "width:7px; height:7px; border-radius:999px; background:" + accent + "; box-shadow:0 0 8px " + accent + ";";
+    const progIconStyle = "flex:none; width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; color:" + accent + "; background:" + accentSoft + "; border:1px solid " + accentBorder + ";";
+    const progPillStyle = "flex:none; font-size:12px; font-weight:700; padding:5px 11px; border-radius:999px; color:" + accent + "; background:" + accentSoft + "; border:1px solid " + accentBorder + ";";
+    const logoChipStyle = "flex:none; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:" + accentFg + "; background:linear-gradient(140deg, " + accent + ", " + rgba(accent, 0.7) + ");";
+
+    const hasProgram = (s.programName.trim().length > 0) || s.step >= 2;
+    const displayProgram = s.programName.trim() || "Seu primeiro programa";
+    const weeksLabel = s.programWeeks === "0" ? "Contínuo" : s.programWeeks + " semanas";
+    const displayProgramSub = s.programDesc.trim() || weeksLabel;
+
+    return {
+      step: String(s.step),
+      isStep1: s.step === 1, isStep2: s.step === 2, isStep3: s.step === 3,
+      notStep3: s.step !== 3, canGoBack: s.step > 1,
+      nextLabel: s.step === 1 ? "Continuar para o programa" : "Continuar para o convite",
+      name: s.name, bio: s.bio, bioCount: String(s.bio.length),
+      programName: s.programName, programDesc: s.programDesc,
+      programWeeks: s.programWeeks === "0" ? "∞" : s.programWeeks,
+      onName: this.set("name"), onBio: this.set("bio"),
+      onProgramName: this.set("programName"), onProgramDesc: this.set("programDesc"),
+      onLogo: this.toggleLogo, onNext: this.next, onBack: this.back, onPublish: this.publish, onCopy: this.copy,
+      logoTitle: s.logoUploaded ? "logo-espaco.svg" : "Arraste ou clique para enviar",
+      initials: inits,
+      accent, accentSoft, accentSoftStrong, accentBorder, accentFg,
+      swatches, durations, steps,
+      primaryBtnStyle, copyBtnStyle,
+      coverStyle, avatarStyle, joinBtnStyle, verifiedDotStyle, progIconStyle, progPillStyle, logoChipStyle,
+      fullLink, displayName, displayBio,
+      hasProgram, displayProgram, displayProgramSub,
+      memberLabel: "0 alunos",
+      published: s.published, copied: s.copied, notCopied: !s.copied,
+    };
+  }
+}
+</script>
+<script>
+(async () => {
+  if (!document.title || !document.title.trim()) document.title = "ConstrutorDoEspaco";
+  // Prepend so page-supplied @page / break rules (deck-stage's margin:0,
+  // author CSS) keep source-order precedence over the baseline.
+  const baseCss = document.createElement('style');
+  baseCss.textContent = "@media print {\n  @page { margin: 0.5cm; }\n  figure, table { break-inside: avoid; }\n  *, *::before, *::after {\n    print-color-adjust: exact; -webkit-print-color-adjust: exact;\n    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;\n    animation-delay: -99s !important; animation-duration: .001s !important;\n    animation-iteration-count: 1 !important; animation-fill-mode: both !important;\n    animation-play-state: running !important; transition-duration: 0s !important;\n  }\n}";
+  document.head.prepend(baseCss);
+  if (document.readyState === 'loading') {
+    await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  }
+  let ds = document.querySelector('deck-stage');
+  // whenDefined never resolves when nothing registers the element, so only
+  // await it when a <deck-stage> tag exists (and race a timeout regardless).
+  if (ds && !customElements.get('deck-stage')) {
+    try {
+      await Promise.race([
+        customElements.whenDefined('deck-stage'),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
+    } catch (e) {}
+    ds = document.querySelector('deck-stage');
+  }
+  // dc-runtime assigns window.DCLogic at init and mounts into #dc-root on
+  // DOMContentLoaded; settle on that subtree so React has rendered before
+  // print(). Non-DC pages fall through to weighing body.
+  const isDc = !ds && 'DCLogic' in window;
+  const settleRoot = ds || (isDc ? document.getElementById('dc-root') : null) || document.body;
+  if (settleRoot) {
+    // Weigh only content children — skip script/style/template so inline
+    // Babel/CSS doesn't register as stable "content" before the framework
+    // has mounted anything.
+    const MEDIA = 'img,svg,canvas,video,picture,iframe,embed,object';
+    const weigh = () => {
+      let text = 0, media = 0;
+      for (const c of settleRoot.children) {
+        const t = c.tagName;
+        if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+        text += (c.textContent || '').trim().length;
+        media += c.querySelectorAll(MEDIA).length + (c.matches(MEDIA) ? 1 : 0);
+      }
+      return text + media * 100;
+    };
+    // "Non-zero and stable" alone is not sufficient to mean rendered: generic
+    // body can carry a static shell while async main content is pending, and
+    // #dc-root can carry the root DC's static text while child refs are still
+    // .sc-placeholder boxes. Gate generic on readyState 'complete', and never
+    // accept stability while a dc-runtime placeholder is present.
+    const isGeneric = settleRoot === document.body;
+    const deadline = Date.now() + 15000;
+    let last = -1, stable = 0;
+    while (Date.now() < deadline) {
+      const n = weigh();
+      const ready =
+        (!isGeneric || document.readyState === 'complete') &&
+        !settleRoot.querySelector('.sc-placeholder');
+      if (n > 0 && n === last && ready) { if (++stable >= 2) break; } else { stable = 0; }
+      last = n;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  // Reveal content gated on scroll or visibility before printing. Lazy <img>,
+  // IntersectionObserver fade-ins, and collapsed <details> don't render while
+  // off-screen, so a long page would print with them blank or closed. Open
+  // every <details>, force native-lazy images eager, and scroll the document
+  // through its full height to trip lazy-load + IO; then wait (bounded) for the
+  // newly-triggered images. Inert for deck-stage (slides aren't scroll-gated).
+  try {
+    for (const d of document.querySelectorAll('details')) d.open = true;
+    for (const img of document.querySelectorAll('img[loading="lazy"]'))
+      img.loading = 'eager';
+    const scroller = document.scrollingElement || document.documentElement;
+    const full = Math.max(scroller.scrollHeight, document.body.scrollHeight);
+    const step = window.innerHeight || 800;
+    for (let y = 0; y <= full; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    window.scrollTo(0, 0);
+    await Promise.race([
+      Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((res) => {
+                img.addEventListener('load', res, { once: true });
+                img.addEventListener('error', res, { once: true });
+              })
+        )
+      ),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]);
+  } catch (e) {}
+  try { await document.fonts.ready; } catch (e) {}
+  // Jump every animation to its end state so print() never captures a slide
+  // mid-entrance. Ordering matters: the 0s-transition style must be live
+  // BEFORE data-deck-active is set so attribute-keyed transitions don't
+  // start a (now-0s) run from the pre-active base.
+  const st = document.createElement('style');
+  st.textContent = '*,*::before,*::after{animation-delay:-99s !important;animation-duration:.001s !important;animation-iteration-count:1 !important;animation-fill-mode:both !important;animation-play-state:running !important;transition-duration:0s !important}';
+  document.head.appendChild(st);
+  for (const d of document.querySelectorAll('deck-stage')) {
+    for (const c of d.children) {
+      const t = c.tagName;
+      if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+      c.setAttribute('data-deck-active', '');
+    }
+  }
+  // Re-append deck-stage's @page last so no author @page can add a margin and
+  // spill each full-bleed slide onto two sheets. Backstop for old copies.
+  if (ds) {
+    let pg = document.getElementById('deck-stage-print-page');
+    if (!pg) {
+      pg = document.createElement('style');
+      pg.textContent = '@page{size:' + (+ds.getAttribute('width') || 1920) +
+        'px ' + (+ds.getAttribute('height') || 1080) + 'px;margin:0}';
+    }
+    document.body.appendChild(pg);
+  }
+  try {
+    const sweep = () => {
+      for (const a of document.getAnimations()) {
+        try { a.finish(); } catch (e) {
+          try { a.currentTime = (a.effect && a.effect.getComputedTiming().duration) || 0; a.pause(); } catch (e2) {}
+        }
+      }
+    };
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+    sweep();
+    await new Promise((r) => requestAnimationFrame(r));
+  } catch (e) {}
+  // Relax break-inside on oversized elements. An element taller than a
+  // printable page can't honor break-inside: avoid — browsers either overflow
+  // it or push it whole to the next page, leaving a blank gap, then break it
+  // anyway at an arbitrary point. After the final layout (content revealed,
+  // animations jumped), find elements taller than a page that still compute
+  // break-inside: avoid and reset them to auto, so the browser breaks them at
+  // their children's boundaries instead (children keep their own avoid). PAGE_PX
+  // is a conservative portrait estimate at 96 CSS px/in — Letter/A4 usable
+  // height minus our 0.5in margins — so only clearly-oversized elements are
+  // touched and under-page elements still stay whole. Skipped for decks, whose
+  // slides are sized to the page.
+  try {
+    if (!document.querySelector('deck-stage')) {
+      const PAGE_PX = 1024;
+      // Our print defaults add a body padding inset only when we also zero the
+      // @page margin; computed style can't tell us (it reports screen media),
+      // so read the injected rule directly.
+      const defaults = document.querySelector('style[data-omelette-print-defaults]');
+      const pageInset = /body\s*\{[^}]*padding/.test(defaults ? defaults.textContent || '' : '');
+      const SEL = 'section,article,figure,table,pre,blockquote,[class~="card" i],[class~="page" i],[class~="sheet" i]';
+      for (const el of document.body.querySelectorAll(SEL)) {
+        if (el instanceof HTMLElement && el.offsetHeight > PAGE_PX) {
+          el.setAttribute('data-om-oversized', '');
+          // Fake-paged docs simulate sheets with over-tall break-after:page
+          // boxes; honoring the break spills half-blank pages and ends a
+          // colored box mid-sheet. Flow them, and (only when we own the page
+          // inset) drop the redundant padding/background via the rule below.
+          const cs = getComputedStyle(el);
+          if (cs.breakAfter === 'page' || cs.pageBreakAfter === 'always') {
+            el.setAttribute('data-om-fakepage', '');
+          }
+        }
+      }
+      const ost = document.createElement('style');
+      ost.textContent = '@media print{' +
+        '[data-om-oversized]{break-inside:auto !important;page-break-inside:auto !important}' +
+        '[data-om-fakepage]{break-after:auto !important;page-break-after:auto !important}' +
+        (pageInset ? '[data-om-fakepage]{padding:0 !important;background:none !important}' : '') +
+        '}';
+      document.head.appendChild(ost);
+    }
+  } catch (e) {}
+  // macOS Preview renders Skia-PDF Luminosity soft-masks as opaque grey boxes;
+  // swap the CSS that triggers them for Preview-safe forms.
+  try {
+    for (const el of document.body.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+
+      if (cs.boxShadow !== 'none' && cs.filter === 'none') {
+        const outs = [], kept = [];
+        for (const s of cs.boxShadow.split(/,(?![^(]*[)])/)) {
+          const t = s.trim();
+          const m = t.match(/^(rgba?[(][^)]+[)]) (-?[0-9.]+px) (-?[0-9.]+px) ([0-9.]+px) -?[0-9.]+px$/);
+          if (m && parseFloat(m[4]) > 0) outs.push('drop-shadow(' + m[2] + ' ' + m[3] + ' ' + m[4] + ' ' + m[1] + ')');
+          else kept.push(t);
+        }
+        if (outs.length) {
+          el.style.setProperty('filter', outs.join(' '), 'important');
+          el.style.setProperty('box-shadow', kept.join(', ') || 'none', 'important');
+        }
+      }
+
+      const mask = cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : cs.webkitMaskImage;
+      if (mask && mask !== 'none' && cs.filter === 'none') el.style.setProperty('filter', 'opacity(1)', 'important');
+    }
+  } catch (e) {}
+  setTimeout(() => { try { window.print(); } catch (e) {} }, 200);
+})();
+</script>
+</body>
+</html>

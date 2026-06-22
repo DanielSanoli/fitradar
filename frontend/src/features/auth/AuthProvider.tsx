@@ -17,6 +17,7 @@ import {
   readStoredUser,
 } from "@/lib/auth/storage";
 import { AUTH_STORAGE } from "@/lib/auth/constants";
+import { resyncPushIfGranted } from "@/lib/pwa/push-utils";
 
 export type AuthContextValue = {
   user: User | null;
@@ -78,13 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     refreshUser()
       .catch(() => logout())
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        setIsLoading(false);
+        const u = readStoredUser();
+        if (u?.role === "STUDENT") void resyncPushIfGranted();
+      });
   }, [logout, refreshUser]);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
       const auth = await loginRequest(credentials);
       setUser(auth.user);
+      if (auth.user.role === "STUDENT") void resyncPushIfGranted();
       navigate(homeForRole(auth.user.role), { replace: true });
     },
     [navigate],
@@ -94,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (payload: RegisterRequest) => {
       const auth = await registerRequest(payload);
       setUser(auth.user);
+      if (auth.user.role === "STUDENT") void resyncPushIfGranted();
       navigate(homeForRole(auth.user.role), { replace: true });
     },
     [navigate],

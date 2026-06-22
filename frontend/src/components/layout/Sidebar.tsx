@@ -1,5 +1,14 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, LogOut, Radar, Settings, Trophy, Users } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutDashboard,
+  LogOut,
+  Radar,
+  Settings,
+  Sparkles,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -8,16 +17,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 const creatorLinks = [
   { to: "/app", label: "Visão geral", icon: LayoutDashboard, end: true },
-  { to: "/app/retention", label: "Retenção", icon: Radar },
   { to: "/app/students", label: "Alunos", icon: Users },
+  { to: "/app/programs", label: "Programas", icon: ClipboardList },
+  { to: "/app/space", label: "Espaço", icon: Sparkles },
+  { to: "/app/retention", label: "Retenção", icon: Radar },
   { to: "/app/ranking", label: "Ranking", icon: Trophy },
   { to: "/app/settings", label: "Configurações", icon: Settings },
-];
-
-const studentLinks = [
-  { to: "/student", label: "Início", icon: LayoutDashboard, end: true },
-  { to: "/student/progress", label: "Progresso", icon: Radar },
-  { to: "/student/workouts", label: "Treinos", icon: Trophy },
 ];
 
 type SidebarProps = {
@@ -28,7 +33,11 @@ type SidebarProps = {
 
 export function Sidebar({ variant, className, onNavigate }: SidebarProps) {
   const { logout } = useAuth();
-  const links = variant === "creator" ? creatorLinks : studentLinks;
+  const links = creatorLinks;
+
+  if (variant === "student") {
+    return null;
+  }
 
   return (
     <aside

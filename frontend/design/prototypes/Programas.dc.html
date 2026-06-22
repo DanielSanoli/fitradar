@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @keyframes pt-in { from { transform:scale(0.97) translateY(6px); } to { transform:none; } }
+    @keyframes pt-ov { from { opacity:0; } to { opacity:1; } }
+    *::-webkit-scrollbar { width:9px; }
+    *::-webkit-scrollbar-thumb { background:hsl(215 14% 26%); border-radius:999px; }
+    *::-webkit-scrollbar-track { background:transparent; }
+    .pt-in::placeholder { color:hsl(210 10% 36%); }
+    .pt-in:focus { outline:none; border-color:hsl(165 76% 48% / 0.55) !important; box-shadow:0 0 0 3px hsl(165 76% 48% / 0.14); }
+    .pt-ta::placeholder { color:hsl(210 10% 36%); }
+    .pt-ta:focus { outline:none; border-color:hsl(165 76% 48% / 0.55) !important; box-shadow:0 0 0 3px hsl(165 76% 48% / 0.14); }
+    [draggable=true] { user-select:none; }
+  </style>
+</helmet>
+
+<div data-screen-label="{{ screenLabel }}" style="min-height:100vh; display:flex; background:radial-gradient(1200px 620px at 78% -12%, hsl(165 40% 12%) 0%, hsl(215 28% 7%) 56%); color:hsl(210 17% 93%); font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside style="flex:none; width:256px; display:flex; flex-direction:column; border-right:1px solid hsl(215 14% 22%); background:hsl(215 21% 11%);">
+    <div style="display:flex; align-items:center; gap:9px; height:64px; padding:0 20px; font-weight:800; letter-spacing:-0.01em; font-size:16px;">
+      <span style="width:13px; height:13px; border-radius:999px; background:hsl(165 76% 48%); box-shadow:0 0 16px hsl(165 76% 48%);"></span>
+      FitRadar
+    </div>
+    <div style="height:1px; background:hsl(215 14% 22%);"></div>
+    <nav style="flex:1; display:flex; flex-direction:column; gap:4px; padding:14px 12px;">
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+        Visão geral
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><line x1="12" y1="12" x2="19" y2="5"></line></svg>
+        Retenção
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 12 0v1"></path></svg>
+        Alunos
+      </div>
+      <div style="position:relative; display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; background:hsl(215 16% 18%); color:hsl(210 17% 95%); font-size:14px; font-weight:600;">
+        <span style="position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:999px; background:hsl(165 76% 48%); box-shadow:0 0 10px hsl(165 76% 48%);"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(165 76% 54%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect><path d="M9 12h6"></path><path d="M9 16h4"></path></svg>
+        Programas
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v3a6 6 0 0 1-12 0z"></path><path d="M10 14h4v4h-4z"></path><path d="M8 20h8"></path></svg>
+        Ranking
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"></line><circle cx="9" cy="8" r="2.4" fill="hsl(215 21% 11%)"></circle><line x1="4" y1="16" x2="20" y2="16"></line><circle cx="15" cy="16" r="2.4" fill="hsl(215 21% 11%)"></circle></svg>
+        Configurações
+      </div>
+    </nav>
+    <div style="padding:14px 12px;">
+      <div style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; background:hsl(215 16% 15%); border:1px solid hsl(215 14% 22%);">
+        <div style="flex:none; width:34px; height:34px; border-radius:10px; background:hsl(165 76% 48% / 0.16); border:1px solid hsl(165 76% 48% / 0.3); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:hsl(165 70% 64%);">MD</div>
+        <div style="min-width:0; display:flex; flex-direction:column;"><span style="font-size:13px; font-weight:600; color:hsl(210 17% 92%);">Marina Duarte</span><span style="font-size:11.5px; color:hsl(210 10% 58%);">Plano Pro</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ CONTENT ══ -->
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+
+    <!-- TOPBAR -->
+    <header style="position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:8px; height:64px; padding:0 32px; border-bottom:1px solid hsl(215 14% 22%); background:hsl(215 28% 7% / 0.82); backdrop-filter:blur(12px);">
+      <div style="display:flex; align-items:center; gap:8px; font-size:13.5px; color:hsl(210 10% 62%);">
+        <span style="color:hsl(210 17% 88%); font-weight:600;">Comunidade</span>
+        <span style="color:hsl(210 10% 38%);">/</span>
+        <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}"><span>Programas</span></sc-if>
+        <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onBackToList }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:hsl(210 10% 62%);padding:0;" style-hover="color:hsl(210 17% 90%);">Programas</button>
+          <span style="color:hsl(210 10% 38%);">/</span>
+          <span style="color:hsl(210 17% 88%); font-weight:600;">{{ curProgram.name }}</span>
+        </sc-if>
+        <sc-if value="{{ isEditProg }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onCancelProg }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:hsl(210 10% 62%);padding:0;" style-hover="color:hsl(210 17% 90%);">Programas</button>
+          <span style="color:hsl(210 10% 38%);">/</span>
+          <span style="color:hsl(210 17% 88%); font-weight:600;">{{ editProgTitle }}</span>
+        </sc-if>
+        <sc-if value="{{ isEditWork }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onBackToList }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:hsl(210 10% 62%);padding:0;" style-hover="color:hsl(210 17% 90%);">Programas</button>
+          <span style="color:hsl(210 10% 38%);">/</span>
+          <button onClick="{{ onCancelWork }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:hsl(210 10% 62%);padding:0;" style-hover="color:hsl(210 17% 90%);">{{ curProgram.name }}</button>
+          <span style="color:hsl(210 10% 38%);">/</span>
+          <span style="color:hsl(210 17% 88%); font-weight:600;">{{ editWorkTitle }}</span>
+        </sc-if>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:14px;">
+        <div style="position:relative; width:38px; height:38px; border-radius:10px; border:1px solid hsl(215 14% 24%); display:flex; align-items:center; justify-content:center; color:hsl(210 10% 66%); cursor:pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+          <span style="position:absolute; top:8px; right:9px; width:7px; height:7px; border-radius:999px; background:hsl(0 72% 67%); border:1.5px solid hsl(215 28% 7%);"></span>
+        </div>
+        <div style="width:1px; height:24px; background:hsl(215 14% 22%);"></div>
+        <span style="font-size:13.5px; color:hsl(210 10% 66%);">Marina Duarte</span>
+      </div>
+    </header>
+
+    <!-- ════════════════════════════════ -->
+    <!-- VIEW A — LISTA DE PROGRAMAS     -->
+    <!-- ════════════════════════════════ -->
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+      <main style="flex:1; overflow-y:auto; padding:28px 32px 52px; display:flex; flex-direction:column; gap:22px;">
+
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h1 style="margin:0; font-size:26px; font-weight:800; letter-spacing:-0.025em; color:hsl(210 20% 96%);">Programas & Treinos</h1>
+            <p style="margin:6px 0 0; font-size:14px; color:hsl(210 10% 64%);">{{ listSubtitle }}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+              <span style="font-size:10.5px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 42%);">Simular estado</span>
+              <div style="display:inline-flex; padding:2px; gap:2px; background:hsl(215 18% 13%); border:1px solid hsl(215 14% 22%); border-radius:9px;">
+                <button onClick="{{ onSimFull }}" style="{{ simFullStyle }}">Com programas</button>
+                <button onClick="{{ onSimEmpty }}" style="{{ simEmptyStyle }}">Vazio</button>
+              </div>
+            </div>
+            <button onClick="{{ onNewProgram }}" style="display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 20px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.28); transition:filter .14s;" style-hover="filter:brightness(1.07);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Criar programa
+            </button>
+          </div>
+        </div>
+
+        <!-- Program grid -->
+        <sc-if value="{{ hasPrograms }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:16px;">
+            <sc-for list="{{ programs }}" as="p" hint-placeholder-count="3">
+              <div style="display:flex; flex-direction:column; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); box-shadow:0 6px 24px rgba(0,0,0,0.28); overflow:hidden; transition:border-color .14s, box-shadow .14s;" style-hover="border-color:hsl(215 14% 30%); box-shadow:0 10px 32px rgba(0,0,0,0.38);">
+                <div style="height:4px; background:{{ p.accentBar }};"></div>
+                <div style="flex:1; padding:20px 22px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                    <h2 style="margin:0; font-size:17px; font-weight:700; letter-spacing:-0.01em; color:hsl(210 20% 94%);">{{ p.name }}</h2>
+                    <button onClick="{{ p.onEdit }}" style="flex:none; height:30px; padding:0 12px; border-radius:8px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 10% 72%); font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .13s;" style-hover="background:hsl(215 16% 18%); color:hsl(210 17% 90%);">Editar</button>
+                  </div>
+                  <p style="margin:0; font-size:13.5px; line-height:1.5; color:hsl(210 10% 66%); text-wrap:pretty;">{{ p.desc }}</p>
+                </div>
+                <div style="padding:13px 22px; border-top:1px solid hsl(215 14% 20%); background:hsl(215 20% 12%); display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:hsl(210 10% 60%);">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      {{ p.weeksLabel }}
+                    </span>
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:hsl(210 10% 60%);">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>
+                      {{ p.workoutCount }} treinos
+                    </span>
+                    <span style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:hsl(210 10% 60%);">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20v-1a6 6 0 0 1 12 0v1"></path></svg>
+                      {{ p.enrolledCount }} alunos
+                    </span>
+                  </div>
+                  <button onClick="{{ p.onOpen }}" style="flex:none; display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 14px; border-radius:9px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:13px; font-weight:700; font-family:inherit; cursor:pointer; transition:filter .13s;" style-hover="filter:brightness(1.08);">Abrir</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- Empty state -->
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:80px 24px; text-align:center;">
+            <div style="position:relative; width:82px; height:82px; display:flex; align-items:center; justify-content:center;">
+              <span style="position:absolute; width:82px; height:82px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.24);"></span>
+              <span style="position:absolute; width:56px; height:56px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.38);"></span>
+              <span style="position:absolute; width:30px; height:30px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.52);"></span>
+              <span style="width:10px; height:10px; border-radius:50%; background:hsl(165 76% 52%); box-shadow:0 0 14px hsl(165 76% 50%);"></span>
+            </div>
+            <div>
+              <div style="font-size:22px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 95%);">Crie seu primeiro programa</div>
+              <p style="margin:10px auto 0; max-width:400px; font-size:15px; line-height:1.55; color:hsl(210 10% 64%); text-wrap:pretty;">Estruture seus treinos, organize o conteúdo por dia e acompanhe a progressão dos alunos.</p>
+            </div>
+            <button onClick="{{ onNewProgram }}" style="height:46px; padding:0 28px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.3); transition:filter .14s;" style-hover="filter:brightness(1.07);">Criar primeiro programa</button>
+          </div>
+        </sc-if>
+
+      </main>
+    </sc-if>
+
+    <!-- ════════════════════════════════ -->
+    <!-- VIEW B — DETALHE DO PROGRAMA    -->
+    <!-- ════════════════════════════════ -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+      <main style="flex:1; overflow-y:auto; padding:28px 32px 52px; display:flex; flex-direction:column; gap:20px; max-width:1200px; width:100%; margin:0 auto; box-sizing:border-box;">
+
+        <button onClick="{{ onBackToList }}" style="align-self:flex-start; display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 14px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 14% 78%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 16%);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Programas
+        </button>
+
+        <!-- Program header -->
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:22px 24px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); box-shadow:0 6px 24px rgba(0,0,0,0.28);">
+          <div style="display:flex; align-items:flex-start; gap:16px; min-width:0;">
+            <div style="flex:none; width:52px; height:52px; border-radius:14px; background:hsl(165 76% 48% / 0.14); border:1px solid hsl(165 76% 48% / 0.32); display:flex; align-items:center; justify-content:center;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(165 70% 58%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect><path d="M9 12h6"></path><path d="M9 16h4"></path></svg>
+            </div>
+            <div>
+              <h1 style="margin:0; font-size:21px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 96%);">{{ curProgram.name }}</h1>
+              <p style="margin:5px 0 0; font-size:14px; line-height:1.5; color:hsl(210 10% 66%); text-wrap:pretty;">{{ curProgram.desc }}</p>
+              <div style="display:flex; gap:14px; margin-top:10px; flex-wrap:wrap;">
+                <span style="font-size:12.5px; color:hsl(210 10% 58%);">{{ curProgram.weeksLabel }}</span>
+                <span style="font-size:12.5px; color:hsl(210 10% 42%);">·</span>
+                <span style="font-size:12.5px; color:hsl(210 10% 58%);">{{ curProgram.workoutCount }} treinos</span>
+                <span style="font-size:12.5px; color:hsl(210 10% 42%);">·</span>
+                <span style="font-size:12.5px; color:hsl(210 10% 58%);">{{ curProgram.enrolledCount }} alunos matriculados</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; flex-shrink:0;">
+            <button onClick="{{ onEditCurProgram }}" style="height:40px; padding:0 16px; border-radius:10px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 82%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Editar programa</button>
+            <button onClick="{{ onEnroll }}" style="height:40px; padding:0 16px; border-radius:10px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 82%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Matricular aluno</button>
+            <button onClick="{{ onNewWorkout }}" style="display:inline-flex; align-items:center; gap:7px; height:40px; padding:0 16px; border-radius:10px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:13.5px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 14px hsl(165 76% 48% / 0.26); transition:filter .14s;" style-hover="filter:brightness(1.08);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Adicionar treino
+            </button>
+          </div>
+        </div>
+
+        <!-- Workout list -->
+        <sc-if value="{{ curProgram.hasWorkouts }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <span style="font-size:13px; font-weight:700; color:hsl(210 17% 90%);">Treinos</span>
+              <span style="font-size:12.5px; color:hsl(210 10% 54%);">arraste para reordenar</span>
+              <svg width="13" height="13" viewBox="0 0 10 16" fill="hsl(210 10% 44%)"><circle cx="2.5" cy="2.5" r="1.3"></circle><circle cx="7.5" cy="2.5" r="1.3"></circle><circle cx="2.5" cy="8" r="1.3"></circle><circle cx="7.5" cy="8" r="1.3"></circle><circle cx="2.5" cy="13.5" r="1.3"></circle><circle cx="7.5" cy="13.5" r="1.3"></circle></svg>
+            </div>
+            <div style="border-radius:14px; border:1px solid hsl(215 14% 22%); overflow:hidden; background:hsl(215 18% 14%); box-shadow:0 6px 24px rgba(0,0,0,0.28);">
+              <sc-for list="{{ curProgram.workouts }}" as="w" hint-placeholder-count="4">
+                <div draggable="{{ w.draggable }}" onDragStart="{{ w.onDragStart }}" onDragOver="{{ w.onDragOver }}" onDrop="{{ w.onDrop }}" onDragEnd="{{ w.onDragEnd }}" style="{{ w.rowStyle }}">
+                  <div style="flex:none; display:flex; align-items:center; justify-content:center; width:30px; height:30px; cursor:grab; color:hsl(210 10% 42%); transition:color .12s;" style-hover="color:hsl(210 10% 64%);">
+                    <svg width="14" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="2.5" r="1.3"></circle><circle cx="7.5" cy="2.5" r="1.3"></circle><circle cx="2.5" cy="8" r="1.3"></circle><circle cx="7.5" cy="8" r="1.3"></circle><circle cx="2.5" cy="13.5" r="1.3"></circle><circle cx="7.5" cy="13.5" r="1.3"></circle></svg>
+                  </div>
+                  <div style="flex:none; width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; background:hsl(165 76% 48% / 0.12); border:1px solid hsl(165 76% 48% / 0.28); color:hsl(165 65% 68%);">{{ w.day }}</div>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-size:15px; font-weight:600; color:hsl(210 17% 93%);">{{ w.title }}</span>
+                    <span style="font-size:12.5px; color:hsl(210 10% 58%); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ w.preview }}</span>
+                  </div>
+                  <span style="flex:none; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; background:hsl(215 16% 20%); color:hsl(210 10% 64%); border:1px solid hsl(215 14% 26%);">{{ w.exCount }} exercícios</span>
+                  <button onClick="{{ w.onEdit }}" style="flex:none; height:34px; padding:0 14px; border-radius:9px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 10% 72%); font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .13s;" style-hover="background:hsl(215 16% 18%); color:hsl(210 17% 90%);">Editar</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- No workouts -->
+        <sc-if value="{{ curProgram.noWorkouts }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:60px 24px; text-align:center; border-radius:14px; border:1px dashed hsl(215 14% 28%); background:hsl(215 18% 12%);">
+            <div style="width:52px; height:52px; border-radius:14px; border:1px dashed hsl(215 14% 30%); display:flex; align-items:center; justify-content:center;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 48%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>
+            </div>
+            <div>
+              <div style="font-size:18px; font-weight:700; color:hsl(210 17% 84%);">Nenhum treino ainda</div>
+              <p style="margin:7px auto 0; max-width:340px; font-size:14px; line-height:1.5; color:hsl(210 10% 58%); text-wrap:pretty;">Adicione o primeiro treino para estruturar a semana dos seus alunos.</p>
+            </div>
+            <button onClick="{{ onNewWorkout }}" style="height:42px; padding:0 22px; border-radius:10px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 14px hsl(165 76% 48% / 0.26); transition:filter .14s;" style-hover="filter:brightness(1.08);">Adicionar primeiro treino</button>
+          </div>
+        </sc-if>
+
+      </main>
+    </sc-if>
+
+    <!-- ════════════════════════════════ -->
+    <!-- VIEW C — EDITAR PROGRAMA        -->
+    <!-- ════════════════════════════════ -->
+    <sc-if value="{{ isEditProg }}" hint-placeholder-val="{{ false }}">
+      <main style="flex:1; overflow-y:auto; padding:28px 32px 52px; display:flex; flex-direction:column; gap:20px; max-width:760px; width:100%; margin:0 auto; box-sizing:border-box;">
+
+        <button onClick="{{ onCancelProg }}" style="align-self:flex-start; display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 14px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 14% 78%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 16%);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Voltar
+        </button>
+
+        <div style="padding:28px 32px; border-radius:16px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); box-shadow:0 6px 24px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:22px; animation:pt-in .25s ease;">
+          <div>
+            <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 96%);">{{ editProgTitle }}</h1>
+            <p style="margin:6px 0 0; font-size:14px; color:hsl(210 10% 62%);">Preencha os detalhes do programa.</p>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Nome do programa</label>
+            <input class="pt-in" type="text" value="{{ pForm.name }}" onChange="{{ onPName }}" placeholder="Ex.: Base de Força" style="height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 11%); color:hsl(210 17% 94%); font-size:15px; font-family:inherit; transition:border-color .14s;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Descrição</label>
+            <textarea class="pt-ta" value="{{ pForm.desc }}" onChange="{{ onPDesc }}" placeholder="Para quem é e o que promete." style="min-height:80px; resize:vertical; padding:12px 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 11%); color:hsl(210 17% 94%); font-size:14.5px; line-height:1.5; font-family:inherit; transition:border-color .14s;"></textarea>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Duração</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <sc-for list="{{ weekOptions }}" as="wo" hint-placeholder-count="5">
+                <button onClick="{{ wo.onClick }}" style="{{ wo.style }}">{{ wo.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="height:1px; background:hsl(215 14% 22%);"></div>
+
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button onClick="{{ onCancelProg }}" style="height:46px; padding:0 22px; border-radius:11px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 82%); font-size:14.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Cancelar</button>
+            <button onClick="{{ onSaveProg }}" style="height:46px; padding:0 28px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14.5px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.28); transition:filter .14s;" style-hover="filter:brightness(1.07);">{{ saveProgLabel }}</button>
+          </div>
+        </div>
+
+      </main>
+    </sc-if>
+
+    <!-- ════════════════════════════════ -->
+    <!-- VIEW D — EDITAR TREINO          -->
+    <!-- ════════════════════════════════ -->
+    <sc-if value="{{ isEditWork }}" hint-placeholder-val="{{ false }}">
+      <main style="flex:1; overflow-y:auto; padding:28px 32px 52px; display:flex; flex-direction:column; gap:20px; max-width:900px; width:100%; margin:0 auto; box-sizing:border-box;">
+
+        <button onClick="{{ onCancelWork }}" style="align-self:flex-start; display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 14px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 14% 78%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 16%);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Voltar para o programa
+        </button>
+
+        <div style="padding:28px 32px; border-radius:16px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); box-shadow:0 6px 24px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:22px; animation:pt-in .25s ease;">
+          <div>
+            <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 96%);">{{ editWorkTitle }}</h1>
+            <p style="margin:6px 0 0; font-size:14px; color:hsl(210 10% 62%);">Dê um título, escreva uma descrição e adicione os exercícios.</p>
+          </div>
+
+          <div style="display:flex; gap:18px; flex-wrap:wrap;">
+            <div style="display:flex; flex-direction:column; gap:7px; flex:1; min-width:240px;">
+              <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Título do treino</label>
+              <input class="pt-in" type="text" value="{{ wForm.title }}" onChange="{{ onWTitle }}" placeholder="Ex.: Lower Body A" style="height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 11%); color:hsl(210 17% 94%); font-size:15px; font-family:inherit; transition:border-color .14s;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:7px; flex:1.5; min-width:260px;">
+              <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 78%);">Descrição curta</label>
+              <input class="pt-in" type="text" value="{{ wForm.desc }}" onChange="{{ onWDesc }}" placeholder="Foco do treino, músculo alvo..." style="height:46px; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 11%); color:hsl(210 17% 94%); font-size:15px; font-family:inherit; transition:border-color .14s;">
+            </div>
+          </div>
+
+          <!-- Exercises section -->
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <div>
+                <span style="font-size:15px; font-weight:700; color:hsl(210 17% 93%);">Exercícios</span>
+                <span style="margin-left:10px; font-size:13px; color:hsl(210 10% 58%);">{{ exCount }}</span>
+              </div>
+              <button onClick="{{ onAddEx }}" style="display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 15px; border-radius:9px; border:1px solid hsl(165 76% 48% / 0.38); background:hsl(165 76% 48% / 0.1); color:hsl(165 55% 74%); font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(165 76% 48% / 0.18); border-color:hsl(165 76% 48% / 0.55);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Adicionar exercício
+              </button>
+            </div>
+
+            <sc-if value="{{ hasExercises }}" hint-placeholder-val="{{ true }}">
+              <div style="border-radius:12px; border:1px solid hsl(215 14% 22%); overflow:hidden; background:hsl(215 20% 12%);">
+                <div style="display:grid; grid-template-columns:1fr 70px 94px 74px 36px; gap:8px; padding:9px 16px; border-bottom:1px solid hsl(215 14% 20%); align-items:center;">
+                  <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 48%);">Exercício</span>
+                  <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 48%);">Séries</span>
+                  <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 48%);">Repetições</span>
+                  <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 48%);">Descanso</span>
+                  <span></span>
+                </div>
+                <sc-for list="{{ wExercises }}" as="ex" hint-placeholder-count="3">
+                  <div style="display:grid; grid-template-columns:1fr 70px 94px 74px 36px; gap:8px; padding:10px 16px; align-items:center; border-bottom:1px solid hsl(215 14% 18%);">
+                    <input class="pt-in" type="text" value="{{ ex.name }}" onChange="{{ ex.onName }}" placeholder="Nome do exercício" style="height:38px; padding:0 12px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 14%); color:hsl(210 17% 92%); font-size:13.5px; font-family:inherit; transition:border-color .14s;">
+                    <input class="pt-in" type="text" value="{{ ex.sets }}" onChange="{{ ex.onSets }}" placeholder="3" style="height:38px; padding:0 10px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 14%); color:hsl(210 17% 92%); font-size:13.5px; font-family:inherit; text-align:center; transition:border-color .14s;">
+                    <input class="pt-in" type="text" value="{{ ex.reps }}" onChange="{{ ex.onReps }}" placeholder="10–12" style="height:38px; padding:0 10px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 14%); color:hsl(210 17% 92%); font-size:13.5px; font-family:inherit; text-align:center; transition:border-color .14s;">
+                    <input class="pt-in" type="text" value="{{ ex.rest }}" onChange="{{ ex.onRest }}" placeholder="60s" style="height:38px; padding:0 10px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 14%); color:hsl(210 17% 92%); font-size:13.5px; font-family:inherit; text-align:center; transition:border-color .14s;">
+                    <button onClick="{{ ex.onDel }}" style="width:34px; height:34px; border-radius:8px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 10% 54%); font-size:18px; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .13s; line-height:1;" style-hover="background:hsl(0 72% 67% / 0.12); border-color:hsl(0 72% 67% / 0.32); color:hsl(0 72% 72%);">×</button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ noExercises }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:32px 20px; text-align:center; border-radius:12px; border:1px dashed hsl(215 14% 28%); background:hsl(215 18% 12%);">
+                <p style="margin:0; font-size:14px; color:hsl(210 10% 56%);">Nenhum exercício adicionado. Clique em "Adicionar exercício" para começar.</p>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="height:1px; background:hsl(215 14% 22%);"></div>
+
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button onClick="{{ onCancelWork }}" style="height:46px; padding:0 22px; border-radius:11px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 82%); font-size:14.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Cancelar</button>
+            <button onClick="{{ onSaveWork }}" style="height:46px; padding:0 28px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14.5px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.28); transition:filter .14s;" style-hover="filter:brightness(1.07);">{{ saveWorkLabel }}</button>
+          </div>
+        </div>
+
+      </main>
+    </sc-if>
+
+  </div>
+
+  <!-- ════════════════════════════════ -->
+  <!-- MODAL — MATRICULAR ALUNO        -->
+  <!-- ════════════════════════════════ -->
+  <sc-if value="{{ showEnroll }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseEnroll }}" style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(6,10,18,0.8); backdrop-filter:blur(6px); animation:pt-ov .2s ease;">
+      <div onClick="{{ noop }}" style="width:min(480px,92vw); border-radius:18px; border:1px solid hsl(215 14% 26%); background:hsl(215 20% 13%); box-shadow:0 32px 80px rgba(0,0,0,0.55); animation:pt-in .22s ease; overflow:hidden; display:flex; flex-direction:column; max-height:80vh;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:20px 24px; border-bottom:1px solid hsl(215 14% 22%); flex-shrink:0;">
+          <div>
+            <div style="font-size:17px; font-weight:700; color:hsl(210 17% 95%);">Matricular alunos</div>
+            <div style="font-size:13px; color:hsl(210 10% 62%); margin-top:3px;">{{ curProgram.name }} · selecione quem vai seguir este programa</div>
+          </div>
+          <button onClick="{{ onCloseEnroll }}" style="flex:none; width:34px; height:34px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 10% 66%); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" style-hover="background:hsl(215 16% 18%); color:hsl(210 17% 90%);">×</button>
+        </div>
+        <div style="overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:4px;">
+          <sc-for list="{{ enrollStudents }}" as="es" hint-placeholder-count="6">
+            <button onClick="{{ es.onToggle }}" style="{{ es.style }}">
+              <div style="{{ es.avatarStyle }}">{{ es.initials }}</div>
+              <span style="flex:1; font-size:14.5px; font-weight:600; text-align:left; color:hsl(210 17% 92%);">{{ es.name }}</span>
+              <div style="{{ es.checkStyle }}">
+                <sc-if value="{{ es.checked }}" hint-placeholder-val="{{ false }}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </sc-if>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 24px 20px; border-top:1px solid hsl(215 14% 22%); flex-shrink:0;">
+          <span style="font-size:13px; color:hsl(210 10% 58%);">{{ tempEnrollCount }} aluno(s) selecionado(s)</span>
+          <div style="display:flex; gap:10px;">
+            <button onClick="{{ onCloseEnroll }}" style="height:40px; padding:0 18px; border-radius:10px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 80%); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Cancelar</button>
+            <button onClick="{{ onSaveEnroll }}" style="height:40px; padding:0 22px; border-radius:10px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 14px hsl(165 76% 48% / 0.24); transition:filter .14s;" style-hover="filter:brightness(1.08);">Salvar matrículas</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1340,&quot;height&quot;:900}}">
+// ─── helpers ────────────────────────────────────────────────────────────────
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+function uid() { return "x" + Date.now() + Math.floor(Math.random() * 1e4); }
+
+// ─── static data ────────────────────────────────────────────────────────────
+const ACCENT_BARS = [
+  "linear-gradient(90deg,hsl(165 76% 48%),hsl(165 70% 62%))",
+  "linear-gradient(90deg,hsl(258 80% 64%),hsl(258 70% 74%))",
+  "linear-gradient(90deg,hsl(38 100% 56%),hsl(38 90% 68%))",
+];
+
+const INIT_PROGRAMS = [
+  { id:"p1", name:"Base de Força", desc:"Construção de força funcional em 8 semanas para iniciantes e intermediários.", weeks:"8",
+    workouts:[
+      { id:"w1", day:1, title:"Lower Body A", desc:"Foco em quadríceps e glúteos.", exercises:[
+        {id:"e1",name:"Agachamento livre",sets:"4",reps:"8–10",rest:"90s"},
+        {id:"e2",name:"Leg press 45°",sets:"3",reps:"12",rest:"60s"},
+        {id:"e3",name:"Cadeira extensora",sets:"3",reps:"15",rest:"45s"},
+        {id:"e4",name:"Afundo com halteres",sets:"3",reps:"10 cada",rest:"60s"},
+        {id:"e5",name:"Panturrilha em pé",sets:"4",reps:"15",rest:"30s"},
+      ]},
+      { id:"w2", day:2, title:"Upper Body A", desc:"Peito e ombros.", exercises:[
+        {id:"e6",name:"Supino reto com barra",sets:"4",reps:"8–10",rest:"90s"},
+        {id:"e7",name:"Desenvolvimento c/ halteres",sets:"3",reps:"10",rest:"60s"},
+        {id:"e8",name:"Crucifixo inclinado",sets:"3",reps:"12",rest:"60s"},
+        {id:"e9",name:"Elevação lateral",sets:"4",reps:"15",rest:"30s"},
+      ]},
+      { id:"w3", day:3, title:"Lower Body B", desc:"Posterior e isquiotibiais.", exercises:[
+        {id:"e10",name:"Levantamento terra",sets:"4",reps:"6–8",rest:"120s"},
+        {id:"e11",name:"Mesa flexora",sets:"3",reps:"12",rest:"60s"},
+        {id:"e12",name:"Stiff com halteres",sets:"3",reps:"10",rest:"75s"},
+      ]},
+      { id:"w4", day:4, title:"Upper Body B", desc:"Costas e bíceps.", exercises:[
+        {id:"e13",name:"Puxada frontal",sets:"4",reps:"10",rest:"75s"},
+        {id:"e14",name:"Remada curvada",sets:"4",reps:"8–10",rest:"90s"},
+        {id:"e15",name:"Rosca direta",sets:"3",reps:"12",rest:"45s"},
+      ]},
+    ]
+  },
+  { id:"p2", name:"Mobilidade Funcional", desc:"Programa de 6 semanas focado em mobilidade, flexibilidade e controle motor.", weeks:"6",
+    workouts:[
+      { id:"w5", day:1, title:"Quadril & Mobilidade", desc:"Aberturas, rotações e controle profundo.", exercises:[
+        {id:"e16",name:"90/90 stretch",sets:"3",reps:"60s cada",rest:"30s"},
+        {id:"e17",name:"Hip circle",sets:"2",reps:"10 cada lado",rest:"20s"},
+        {id:"e18",name:"Deep squat hold",sets:"3",reps:"45s",rest:"30s"},
+      ]},
+      { id:"w6", day:2, title:"Cadeia Posterior", desc:"Posteriores e lombar.", exercises:[
+        {id:"e19",name:"Ragdoll stretch",sets:"3",reps:"60s",rest:"20s"},
+        {id:"e20",name:"Bom dia com barra leve",sets:"3",reps:"12",rest:"45s"},
+        {id:"e21",name:"Ponte de glúteo",sets:"3",reps:"15",rest:"30s"},
+      ]},
+      { id:"w7", day:3, title:"Ombros & Coluna", desc:"Mobilidade torácica e escapular.", exercises:[
+        {id:"e22",name:"Cat-cow",sets:"3",reps:"10",rest:"20s"},
+        {id:"e23",name:"Thread the needle",sets:"3",reps:"8 cada",rest:"20s"},
+      ]},
+    ]
+  },
+  { id:"p3", name:"Força & Resistência", desc:"Combinação de força e condicionamento cardiovascular em 12 semanas.", weeks:"12",
+    workouts:[
+      { id:"w8", day:1, title:"Full Body Força", desc:"Movimentos compostos.", exercises:[
+        {id:"e24",name:"Clean & press",sets:"5",reps:"5",rest:"120s"},
+        {id:"e25",name:"Pull-up",sets:"4",reps:"6–8",rest:"90s"},
+        {id:"e26",name:"Agachamento goblet",sets:"4",reps:"10",rest:"75s"},
+      ]},
+      { id:"w9", day:2, title:"Condicionamento", desc:"Circuito de alta intensidade.", exercises:[
+        {id:"e27",name:"Burpee",sets:"4",reps:"10",rest:"60s"},
+        {id:"e28",name:"Kettlebell swing",sets:"4",reps:"15",rest:"60s"},
+        {id:"e29",name:"Box jump",sets:"3",reps:"8",rest:"75s"},
+        {id:"e30",name:"Battle rope",sets:"3",reps:"30s",rest:"60s"},
+      ]},
+    ]
+  },
+];
+
+const INIT_ENROLLMENTS = { p1:["s1","s3","s6"], p2:["s2","s7"], p3:["s4","s5"] };
+
+const STUDENTS_LIST = [
+  {id:"s1",name:"Marcos Vieira",initials:"MV"},
+  {id:"s2",name:"Letícia Alves",initials:"LA"},
+  {id:"s3",name:"Bruno Tavares",initials:"BT"},
+  {id:"s4",name:"Renata Pires",initials:"RP"},
+  {id:"s5",name:"Carla Souza",initials:"CS"},
+  {id:"s6",name:"Diego Lima",initials:"DL"},
+  {id:"s7",name:"Ana Prado",initials:"AP"},
+  {id:"s8",name:"Lucas Ferreira",initials:"LF"},
+];
+
+const WEEK_OPTS = [{v:"4",l:"4 semanas"},{v:"6",l:"6 semanas"},{v:"8",l:"8 semanas"},{v:"12",l:"12 semanas"},{v:"0",l:"Contínuo"}];
+
+// ─── component ──────────────────────────────────────────────────────────────
+class Component extends DCLogic {
+  state = {
+    view: "list",
+    selectedProgId: null,
+    editingProgId: null,
+    editingWorkId: null,
+    programs: clone(INIT_PROGRAMS),
+    enrollments: clone(INIT_ENROLLMENTS),
+    draggingId: null,
+    dragOverId: null,
+    showEnroll: false,
+    tempEnrollIds: [],
+    pForm: { name:"", desc:"", weeks:"8" },
+    wForm: { title:"", desc:"", exercises:[] },
+    emptySim: false,
+  };
+
+  // nav
+  openProg = (id) => this.setState({ view:"detail", selectedProgId:id });
+  onBackToList = () => this.setState({ view:"list" });
+  onCancelProg = () => this.setState({ view: this.state.editingProgId ? "detail" : "list" });
+  onCancelWork = () => this.setState({ view:"detail" });
+
+  onNewProgram = () => this.setState({ view:"edit-prog", editingProgId:null, pForm:{name:"",desc:"",weeks:"8"} });
+  onEditCurProgram = () => {
+    const p = this.state.programs.find(x => x.id === this.state.selectedProgId);
+    if (p) this.setState({ view:"edit-prog", editingProgId:p.id, pForm:{name:p.name,desc:p.desc,weeks:p.weeks} });
+  };
+  openEditProg = (id) => {
+    const p = this.state.programs.find(x => x.id === id);
+    if (p) this.setState({ view:"edit-prog", editingProgId:p.id, pForm:{name:p.name,desc:p.desc,weeks:p.weeks} });
+  };
+
+  onNewWorkout = () => this.setState({ view:"edit-work", editingWorkId:null, wForm:{title:"",desc:"",exercises:[]} });
+  openEditWork = (id) => {
+    const p = this.state.programs.find(x => x.id === this.state.selectedProgId);
+    const w = p && p.workouts.find(x => x.id === id);
+    if (w) this.setState({ view:"edit-work", editingWorkId:w.id, wForm:{title:w.title,desc:w.desc,exercises:clone(w.exercises)} });
+  };
+
+  // pForm
+  onPName = (e) => this.setState(s => ({pForm:{...s.pForm,name:e.target.value}}));
+  onPDesc = (e) => this.setState(s => ({pForm:{...s.pForm,desc:e.target.value}}));
+  setPWeeks = (v) => this.setState(s => ({pForm:{...s.pForm,weeks:v}}));
+
+  onSaveProg = () => {
+    const {pForm, editingProgId, programs} = this.state;
+    const name = pForm.name.trim() || "Novo programa";
+    if (editingProgId) {
+      const ps = programs.map(p => p.id === editingProgId ? {...p,name,desc:pForm.desc,weeks:pForm.weeks} : p);
+      this.setState({ programs:ps, view:"detail", selectedProgId:editingProgId });
+    } else {
+      const np = {id:uid(),name,desc:pForm.desc,weeks:pForm.weeks,workouts:[]};
+      this.setState({ programs:[...programs,np], view:"detail", selectedProgId:np.id });
+    }
+  };
+
+  // wForm
+  onWTitle = (e) => this.setState(s => ({wForm:{...s.wForm,title:e.target.value}}));
+  onWDesc  = (e) => this.setState(s => ({wForm:{...s.wForm,desc:e.target.value}}));
+  onAddEx = () => {
+    this.setState(s => ({wForm:{...s.wForm,exercises:[...s.wForm.exercises,{id:uid(),name:"",sets:"3",reps:"12",rest:"60s"}]}}));
+  };
+  updateEx = (i, field, value) => {
+    const exs = [...this.state.wForm.exercises];
+    exs[i] = {...exs[i],[field]:value};
+    this.setState(s => ({wForm:{...s.wForm,exercises:exs}}));
+  };
+  deleteEx = (i) => {
+    const exs = this.state.wForm.exercises.filter((_,idx) => idx !== i);
+    this.setState(s => ({wForm:{...s.wForm,exercises:exs}}));
+  };
+  onSaveWork = () => {
+    const {wForm, editingWorkId, selectedProgId, programs} = this.state;
+    const title = wForm.title.trim() || "Novo treino";
+    const ps = programs.map(p => {
+      if (p.id !== selectedProgId) return p;
+      if (editingWorkId) {
+        return {...p, workouts:p.workouts.map(w => w.id===editingWorkId ? {...w,title,desc:wForm.desc,exercises:wForm.exercises} : w)};
+      } else {
+        const nw = {id:uid(),day:p.workouts.length+1,title,desc:wForm.desc,exercises:wForm.exercises};
+        return {...p,workouts:[...p.workouts,nw]};
+      }
+    });
+    this.setState({ programs:ps, view:"detail" });
+  };
+
+  // drag-and-drop
+  onDragStart = (id) => (e) => { e.dataTransfer.effectAllowed="move"; this.setState({draggingId:id}); };
+  onDragOver  = (id) => (e) => { e.preventDefault(); e.dataTransfer.dropEffect="move"; if(this.state.draggingId&&id!==this.state.draggingId) this.setState({dragOverId:id}); };
+  onDrop      = (id) => (e) => {
+    e.preventDefault();
+    const {draggingId,programs,selectedProgId} = this.state;
+    if (!draggingId||draggingId===id) { this.setState({draggingId:null,dragOverId:null}); return; }
+    const ps = programs.map(p => {
+      if (p.id!==selectedProgId) return p;
+      const ws = [...p.workouts];
+      const fi = ws.findIndex(w=>w.id===draggingId), ti = ws.findIndex(w=>w.id===id);
+      const [mv] = ws.splice(fi,1); ws.splice(ti,0,mv);
+      return {...p,workouts:ws.map((w,i)=>({...w,day:i+1}))};
+    });
+    this.setState({programs:ps,draggingId:null,dragOverId:null});
+  };
+  onDragEnd = () => this.setState({draggingId:null,dragOverId:null});
+
+  // enroll
+  onEnroll = () => {
+    const ids = this.state.enrollments[this.state.selectedProgId] || [];
+    this.setState({showEnroll:true,tempEnrollIds:[...ids]});
+  };
+  onCloseEnroll = () => this.setState({showEnroll:false});
+  toggleEnroll = (id) => {
+    const ids = this.state.tempEnrollIds;
+    this.setState({tempEnrollIds: ids.includes(id) ? ids.filter(x=>x!==id) : [...ids,id]});
+  };
+  onSaveEnroll = () => {
+    const {tempEnrollIds,selectedProgId,enrollments} = this.state;
+    this.setState({enrollments:{...enrollments,[selectedProgId]:[...tempEnrollIds]},showEnroll:false});
+  };
+
+  // sim
+  onSimFull  = () => this.setState({emptySim:false,view:"list"});
+  onSimEmpty = () => this.setState({emptySim:true,view:"list"});
+  noop = (e) => e && e.stopPropagation();
+
+  renderVals() {
+    const s = this.state;
+    const isList     = s.view==="list";
+    const isDetail   = s.view==="detail";
+    const isEditProg = s.view==="edit-prog";
+    const isEditWork = s.view==="edit-work";
+
+    const baseProgs = s.emptySim ? [] : s.programs;
+    const isEmpty   = baseProgs.length===0;
+    const hasPrograms = baseProgs.length>0;
+
+    // programs list
+    const programs = baseProgs.map((p,i) => {
+      const enrolled = (s.enrollments[p.id]||[]).length;
+      const weeksLabel = p.weeks==="0" ? "Contínuo" : p.weeks+" semanas";
+      return {
+        ...p,
+        weeksLabel,
+        workoutCount: String(p.workouts.length),
+        enrolledCount: String(enrolled),
+        accentBar: ACCENT_BARS[i % ACCENT_BARS.length],
+        onOpen: () => this.openProg(p.id),
+        onEdit: () => this.openEditProg(p.id),
+      };
+    });
+    const listSubtitle = isEmpty ? "Nenhum programa ainda — crie o primeiro" : `${baseProgs.length} programas · ${baseProgs.reduce((a,p)=>a+p.workouts.length,0)} treinos`;
+
+    // current program
+    const rawP = s.programs.find(x=>x.id===s.selectedProgId) || s.programs[0] || {id:"",name:"",desc:"",weeks:"8",workouts:[]};
+    const enrolled = (s.enrollments[rawP.id]||[]).length;
+    const curProgram = {
+      ...rawP,
+      weeksLabel: rawP.weeks==="0" ? "Contínuo" : rawP.weeks+" semanas",
+      workoutCount: String(rawP.workouts.length),
+      enrolledCount: String(enrolled),
+      hasWorkouts: rawP.workouts.length>0,
+      noWorkouts: rawP.workouts.length===0,
+      workouts: rawP.workouts.map(w => {
+        const isDrag = w.id===s.draggingId;
+        const isOver = w.id===s.dragOverId;
+        const rowStyle = "display:flex; align-items:center; gap:14px; padding:14px 20px; cursor:grab; border-bottom:1px solid hsl(215 14% 18%); transition:background .12s; "
+          + (isDrag ? "opacity:0.38; " : "")
+          + (isOver ? "border-top:2px solid hsl(165 76% 48%); padding-top:12px; " : "");
+        const preview = w.exercises.slice(0,2).map(e=>e.name).join(", ") + (w.exercises.length>2 ? " +" + (w.exercises.length-2) : "");
+        return {
+          ...w,
+          day: String(w.day),
+          exCount: String(w.exercises.length),
+          preview: preview || "Sem exercícios ainda.",
+          draggable: true,
+          rowStyle,
+          onEdit: () => this.openEditWork(w.id),
+          onDragStart: this.onDragStart(w.id),
+          onDragOver: this.onDragOver(w.id),
+          onDrop: this.onDrop(w.id),
+          onDragEnd: this.onDragEnd,
+        };
+      }),
+    };
+
+    // edit prog form
+    const tabBase = "cursor:pointer; height:38px; padding:0 16px; border-radius:10px; font-size:13.5px; font-weight:600; font-family:inherit; transition:all .14s; border:1px solid ";
+    const weekOptions = WEEK_OPTS.map(o => {
+      const on = o.v===s.pForm.weeks;
+      const style = tabBase + (on ? "hsl(165 76% 48% / 0.44); background:hsl(165 76% 48% / 0.12); color:hsl(165 55% 76%);" : "hsl(215 14% 28%); background:transparent; color:hsl(210 10% 68%);");
+      return { label:o.l, style, onClick:()=>this.setPWeeks(o.v) };
+    });
+    const editProgTitle = s.editingProgId ? "Editar programa" : "Novo programa";
+    const saveProgLabel = s.editingProgId ? "Salvar alterações" : "Criar programa";
+
+    // edit work form
+    const wExercises = s.wForm.exercises.map((ex, i) => ({
+      ...ex,
+      onName: (e) => this.updateEx(i,'name',e.target.value),
+      onSets: (e) => this.updateEx(i,'sets',e.target.value),
+      onReps: (e) => this.updateEx(i,'reps',e.target.value),
+      onRest: (e) => this.updateEx(i,'rest',e.target.value),
+      onDel:  () => this.deleteEx(i),
+    }));
+    const editWorkTitle = s.editingWorkId ? "Editar treino" : "Novo treino";
+    const saveWorkLabel = s.editingWorkId ? "Salvar alterações" : "Adicionar treino";
+    const hasExercises = wExercises.length>0;
+    const noExercises  = wExercises.length===0;
+    const exCount = String(wExercises.length) + (wExercises.length===1?" exercício":" exercícios");
+
+    // enroll
+    const enrollStudents = STUDENTS_LIST.map(st => {
+      const checked = s.tempEnrollIds.includes(st.id);
+      const style = "display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:11px; border:1px solid " +
+        (checked ? "hsl(165 76% 48% / 0.38); background:hsl(165 76% 48% / 0.09);" : "transparent; background:transparent;") +
+        " cursor:pointer; font-family:inherit; transition:all .13s; width:100%; text-align:left;";
+      const avatarStyle = "flex:none; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; " +
+        (checked ? "background:hsl(165 76% 48% / 0.2); border:1px solid hsl(165 76% 48% / 0.38); color:hsl(165 65% 70%);" : "background:hsl(215 16% 20%); border:1px solid hsl(215 14% 28%); color:hsl(210 17% 86%);");
+      const checkStyle = "flex:none; width:20px; height:20px; border-radius:6px; display:flex; align-items:center; justify-content:center; " +
+        (checked ? "background:hsl(165 76% 48%); color:hsl(165 80% 8%);" : "border:1.5px solid hsl(215 14% 32%); background:transparent;");
+      return { ...st, checked, style, avatarStyle, checkStyle, onToggle:()=>this.toggleEnroll(st.id) };
+    });
+    const tempEnrollCount = String(s.tempEnrollIds.length);
+
+    // sim tabs
+    const tbBase = "cursor:pointer;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;font-family:inherit;transition:all .14s;white-space:nowrap;";
+    const simFullStyle  = tbBase + (!s.emptySim ? "background:hsl(165 76% 48% / 0.15);color:hsl(165 60% 74%);" : "background:transparent;color:hsl(210 10% 58%);");
+    const simEmptyStyle = tbBase + (s.emptySim ? "background:hsl(165 76% 48% / 0.15);color:hsl(165 60% 74%);" : "background:transparent;color:hsl(210 10% 58%);");
+
+    return {
+      isList, isDetail, isEditProg, isEditWork,
+      screenLabel: "Programas & Treinos",
+      isEmpty, hasPrograms, programs, listSubtitle,
+      curProgram,
+      pForm: s.pForm,
+      wForm: s.wForm,
+      weekOptions, editProgTitle, saveProgLabel,
+      wExercises, editWorkTitle, saveWorkLabel, hasExercises, noExercises, exCount,
+      showEnroll: s.showEnroll,
+      enrollStudents, tempEnrollCount,
+      simFullStyle, simEmptyStyle,
+      onNewProgram: this.onNewProgram,
+      onBackToList: this.onBackToList,
+      onEditCurProgram: this.onEditCurProgram,
+      onNewWorkout: this.onNewWorkout,
+      onEnroll: this.onEnroll,
+      onCloseEnroll: this.onCloseEnroll,
+      onSaveEnroll: this.onSaveEnroll,
+      onCancelProg: this.onCancelProg,
+      onSaveProg: this.onSaveProg,
+      onCancelWork: this.onCancelWork,
+      onSaveWork: this.onSaveWork,
+      onPName: this.onPName, onPDesc: this.onPDesc,
+      onWTitle: this.onWTitle, onWDesc: this.onWDesc,
+      onAddEx: this.onAddEx,
+      onSimFull: this.onSimFull, onSimEmpty: this.onSimEmpty,
+      noop: this.noop,
+    };
+  }
+}
+</script>
+</body>
+</html>

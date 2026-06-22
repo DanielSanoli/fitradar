@@ -59,6 +59,13 @@
   --sidebar-border: 215 14% 22%;
   --sidebar-accent: 215 16% 18%;
   --sidebar-accent-foreground: 210 17% 93%;
+
+  /* Risk & glow tokens (FE-2) */
+  --risk-low: 165 76% 48%;
+  --risk-medium: 38 100% 56%;
+  --risk-high: 0 72% 67%;
+  --glow-accent: 165 76% 48%;
+  --glow-danger: 0 72% 67%;
 }
 
 @layer base {
@@ -70,5 +77,34 @@
     @apply bg-background text-foreground font-sans antialiased;
     background-image: radial-gradient(1200px 600px at 80% -10%, hsl(165 40% 12%) 0%, hsl(var(--background)) 55%);
     min-height: 100vh;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
+      opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  button:active:not(:disabled),
+  [role="button"]:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+@layer utilities {
+  .toast-enter {
+    animation: toast-in 0.25s ease-out;
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @keyframes al-in { from { opacity:0; transform:scale(0.97) translateY(7px); } to { opacity:1; transform:none; } }
+    @keyframes al-ov { from { opacity:0; } to { opacity:1; } }
+    *::-webkit-scrollbar { width:9px; }
+    *::-webkit-scrollbar-thumb { background:hsl(215 14% 26%); border-radius:999px; }
+    *::-webkit-scrollbar-track { background:transparent; }
+    .al-in::placeholder { color:hsl(210 10% 38%); }
+    .al-in:focus { outline:none; }
+    .al-ta::placeholder { color:hsl(210 10% 38%); }
+    .al-ta:focus { outline:none; }
+  </style>
+</helmet>
+
+<div data-screen-label="{{ screenLabel }}" style="min-height:100vh; display:flex; background:radial-gradient(1200px 620px at 78% -12%, hsl(165 40% 12%) 0%, hsl(215 28% 7%) 56%); color:hsl(210 17% 93%); font-family:'Segoe UI', system-ui, -apple-system, sans-serif;">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside style="flex:none; width:256px; display:flex; flex-direction:column; border-right:1px solid hsl(215 14% 22%); background:hsl(215 21% 11%);">
+    <div style="display:flex; align-items:center; gap:9px; height:64px; padding:0 20px; font-weight:800; letter-spacing:-0.01em; font-size:16px;">
+      <span style="width:13px; height:13px; border-radius:999px; background:hsl(165 76% 48%); box-shadow:0 0 16px hsl(165 76% 48%);"></span>
+      FitRadar
+    </div>
+    <div style="height:1px; background:hsl(215 14% 22%);"></div>
+    <nav style="flex:1; display:flex; flex-direction:column; gap:4px; padding:14px 12px;">
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+        Visão geral
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><line x1="12" y1="12" x2="19" y2="5"></line></svg>
+        Retenção
+      </div>
+      <div style="position:relative; display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; background:hsl(215 16% 18%); color:hsl(210 17% 95%); font-size:14px; font-weight:600;">
+        <span style="position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:999px; background:hsl(165 76% 48%); box-shadow:0 0 10px hsl(165 76% 48%);"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(165 76% 54%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 12 0v1"></path></svg>
+        Alunos
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v3a6 6 0 0 1-12 0z"></path><path d="M10 14h4v4h-4z"></path><path d="M8 20h8"></path></svg>
+        Ranking
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:10px; color:hsl(210 10% 64%); font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:hsl(215 16% 16%); color:hsl(210 17% 90%);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"></line><circle cx="9" cy="8" r="2.4" fill="hsl(215 21% 11%)"></circle><line x1="4" y1="16" x2="20" y2="16"></line><circle cx="15" cy="16" r="2.4" fill="hsl(215 21% 11%)"></circle></svg>
+        Configurações
+      </div>
+    </nav>
+    <div style="padding:14px 12px;">
+      <div style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; background:hsl(215 16% 15%); border:1px solid hsl(215 14% 22%);">
+        <div style="flex:none; width:34px; height:34px; border-radius:10px; background:hsl(165 76% 48% / 0.16); border:1px solid hsl(165 76% 48% / 0.3); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:hsl(165 70% 64%);">MD</div>
+        <div style="min-width:0; display:flex; flex-direction:column;">
+          <span style="font-size:13px; font-weight:600; color:hsl(210 17% 92%);">Marina Duarte</span>
+          <span style="font-size:11.5px; color:hsl(210 10% 58%);">Plano Pro</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ══ -->
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+
+    <!-- TOPBAR -->
+    <header style="position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px; height:64px; padding:0 32px; border-bottom:1px solid hsl(215 14% 22%); background:hsl(215 28% 7% / 0.82); backdrop-filter:blur(12px);">
+      <div style="display:flex; align-items:center; gap:8px; font-size:13.5px; color:hsl(210 10% 62%);">
+        <span style="color:hsl(210 17% 88%); font-weight:600;">Comunidade</span>
+        <span style="color:hsl(210 10% 38%);">/</span>
+        <sc-if value="{{ isListView }}" hint-placeholder-val="{{ true }}">
+          <span>Alunos</span>
+        </sc-if>
+        <sc-if value="{{ isDetailView }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onBack }}" style="background:none; border:none; cursor:pointer; font-family:inherit; font-size:13.5px; color:hsl(210 10% 62%); padding:0; transition:color .14s;" style-hover="color:hsl(210 17% 90%);">Alunos</button>
+          <span style="color:hsl(210 10% 38%);">/</span>
+          <span style="color:hsl(210 17% 88%); font-weight:600;">{{ student.name }}</span>
+        </sc-if>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:14px;">
+        <div style="position:relative; width:38px; height:38px; border-radius:10px; border:1px solid hsl(215 14% 24%); display:flex; align-items:center; justify-content:center; color:hsl(210 10% 66%); cursor:pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+          <span style="position:absolute; top:8px; right:9px; width:7px; height:7px; border-radius:999px; background:hsl(0 72% 67%); border:1.5px solid hsl(215 28% 7%);"></span>
+        </div>
+        <div style="width:1px; height:24px; background:hsl(215 14% 22%);"></div>
+        <span style="font-size:13.5px; color:hsl(210 10% 66%);">Marina Duarte</span>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TELA A — LISTA DE ALUNOS          -->
+    <!-- ══════════════════════════════════ -->
+    <sc-if value="{{ isListView }}" hint-placeholder-val="{{ true }}">
+      <main style="flex:1; overflow-y:auto; padding:28px 32px 52px; display:flex; flex-direction:column; gap:20px;">
+
+        <!-- Page header -->
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div>
+            <h1 style="margin:0; font-size:26px; font-weight:800; letter-spacing:-0.025em; color:hsl(210 20% 96%);">Alunos</h1>
+            <p style="margin:6px 0 0; font-size:14px; color:hsl(210 10% 64%);">{{ listSubtitle }}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+              <span style="font-size:10.5px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 42%);">Simular estado</span>
+              <div style="display:inline-flex; padding:2px; gap:2px; background:hsl(215 18% 13%); border:1px solid hsl(215 14% 22%); border-radius:9px;">
+                <button onClick="{{ onSimDefault }}" style="{{ simDefaultStyle }}">Com alunos</button>
+                <button onClick="{{ onSimEmpty }}" style="{{ simEmptyStyle }}">Lista vazia</button>
+              </div>
+            </div>
+            <button onClick="{{ onInvite }}" style="display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 20px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.28); transition:filter .14s;" style-hover="filter:brightness(1.07);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Convidar aluno
+            </button>
+          </div>
+        </div>
+
+        <!-- Search + filters -->
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <div style="position:relative; flex:1; min-width:220px; max-width:360px;">
+            <svg style="position:absolute; left:13px; top:50%; transform:translateY(-50%); pointer-events:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 48%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input class="al-in" type="text" value="{{ search }}" onChange="{{ onSearch }}" placeholder="Buscar aluno ou programa…" style="width:100%; height:42px; padding:0 14px 0 38px; border-radius:10px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 13%); color:hsl(210 17% 93%); font-size:14px; font-family:inherit; box-sizing:border-box; transition:border-color .14s;" style-focus="border-color:hsl(165 76% 48% / 0.6);">
+          </div>
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+
+        <!-- TABLE — has students -->
+        <sc-if value="{{ hasStudents }}" hint-placeholder-val="{{ true }}">
+          <div style="border-radius:14px; border:1px solid hsl(215 14% 22%); overflow:hidden; background:hsl(215 18% 14%); box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <!-- Header row -->
+            <div style="display:grid; grid-template-columns:minmax(160px,2.4fr) minmax(110px,1.5fr) 162px 122px 140px 40px; gap:0 8px; padding:0 20px; height:40px; align-items:center; border-bottom:1px solid hsl(215 14% 20%); background:hsl(215 20% 12%);">
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 50%);">Aluno</span>
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 50%);">Programa</span>
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 50%);">Aderência</span>
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 50%);">Risco</span>
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 50%);">Última atividade</span>
+              <span></span>
+            </div>
+
+            <!-- Student rows -->
+            <sc-for list="{{ students }}" as="s" hint-placeholder-count="6">
+              <div onClick="{{ s.onClick }}" style="display:grid; grid-template-columns:minmax(160px,2.4fr) minmax(110px,1.5fr) 162px 122px 140px 40px; gap:0 8px; padding:15px 20px; align-items:center; cursor:pointer; transition:background .12s; border-bottom:1px solid hsl(215 14% 18%);" style-hover="background:hsl(215 16% 15.5%);">
+
+                <!-- Name + avatar -->
+                <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                  <div style="flex:none; width:38px; height:38px; border-radius:11px; background:hsl(215 16% 20%); border:1px solid hsl(215 14% 26%); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; color:hsl(210 17% 88%);">{{ s.initials }}</div>
+                  <div style="min-width:0; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:14.5px; font-weight:600; color:hsl(210 17% 93%); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.name }}</span>
+                    <sc-if value="{{ s.isNew }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:11.5px; color:hsl(210 10% 56%);">Entrou há {{ s.joinedDays }} dias</span>
+                    </sc-if>
+                  </div>
+                </div>
+
+                <!-- Program -->
+                <span style="font-size:13.5px; color:hsl(210 12% 76%); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.program }}</span>
+
+                <!-- Adherence bar + % -->
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="flex:1; height:5px; border-radius:999px; background:hsl(215 14% 22%); overflow:hidden;">
+                    <div style="height:100%; border-radius:999px; width:{{ s.adherencePct }}; background:{{ s.adherenceColor }};"></div>
+                  </div>
+                  <span style="flex:none; font-size:13px; font-weight:700; min-width:30px; text-align:right; color:{{ s.adherenceColor }};">{{ s.adherenceStr }}</span>
+                </div>
+
+                <!-- Risk badge -->
+                <div style="display:flex; align-items:center;">
+                  <sc-if value="{{ s.hasRisk }}" hint-placeholder-val="{{ true }}">
+                    <dc-import name="RiskBadge" level="{{ s.riskLevel }}" hint-size="110px,26px"></dc-import>
+                  </sc-if>
+                  <sc-if value="{{ s.isNew }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px; font-size:12px; font-weight:600; background:hsl(215 16% 20%); color:hsl(210 10% 70%); border:1px solid hsl(215 14% 28%);">Novo</span>
+                  </sc-if>
+                </div>
+
+                <!-- Last activity -->
+                <span style="font-size:13.5px; color:{{ s.lastActivityColor }};">{{ s.lastActivity }}</span>
+
+                <!-- Chevron -->
+                <div style="display:flex; justify-content:flex-end;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 48%)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- No results -->
+        <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:64px 24px; text-align:center;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 46%)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <div style="font-size:17px; font-weight:700; color:hsl(210 17% 82%);">Nenhum aluno encontrado</div>
+            <p style="margin:0; font-size:14px; color:hsl(210 10% 60%); max-width:320px;">Tente outro nome ou limpe os filtros.</p>
+            <button onClick="{{ onClearSearch }}" style="margin-top:6px; height:40px; padding:0 18px; border-radius:10px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 80%); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Limpar busca</button>
+          </div>
+        </sc-if>
+
+        <!-- EMPTY STATE -->
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:72px 24px; text-align:center;">
+            <div style="position:relative; width:80px; height:80px; display:flex; align-items:center; justify-content:center;">
+              <span style="position:absolute; width:80px; height:80px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.28);"></span>
+              <span style="position:absolute; width:54px; height:54px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.4);"></span>
+              <span style="position:absolute; width:28px; height:28px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.55);"></span>
+              <span style="width:10px; height:10px; border-radius:50%; background:hsl(165 76% 52%); box-shadow:0 0 14px hsl(165 76% 50%);"></span>
+            </div>
+            <div>
+              <div style="font-size:22px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 95%);">Seu espaço está esperando</div>
+              <p style="margin:10px auto 0; max-width:400px; font-size:15px; line-height:1.55; color:hsl(210 10% 64%); text-wrap:pretty;">Convide seu primeiro aluno e o Radar começa a monitorar treinos, check-ins e sinais de risco na hora.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button onClick="{{ onInvite }}" style="height:46px; padding:0 24px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.3); transition:filter .14s;" style-hover="filter:brightness(1.07);">Convidar primeiro aluno</button>
+              <button style="height:46px; padding:0 20px; border-radius:11px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 82%); font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Copiar link</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:11px; background:hsl(215 18% 12%); border:1px dashed hsl(215 14% 28%); font-size:12.5px; color:hsl(210 10% 60%); font-family:ui-monospace,'SF Mono',Menlo,monospace;">
+              fitradar.app/c/marina-duarte
+              <span style="color:hsl(165 55% 70%); font-weight:600; cursor:pointer; font-family:'Segoe UI',system-ui,sans-serif;">copiar</span>
+            </div>
+          </div>
+        </sc-if>
+
+      </main>
+    </sc-if>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TELA B — DETALHE DO ALUNO         -->
+    <!-- ══════════════════════════════════ -->
+    <sc-if value="{{ isDetailView }}" hint-placeholder-val="{{ false }}">
+      <main style="flex:1; overflow-y:auto; padding:28px 32px 52px; display:flex; flex-direction:column; gap:20px; max-width:1200px; width:100%; margin:0 auto; box-sizing:border-box;">
+
+        <!-- Back button -->
+        <button onClick="{{ onBack }}" style="align-self:flex-start; display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 14px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 14% 78%); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 16%);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Voltar para alunos
+        </button>
+
+        <!-- Student header card -->
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:22px 24px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+          <div style="display:flex; align-items:center; gap:18px;">
+            <div style="flex:none; width:66px; height:66px; border-radius:18px; background:hsl(215 16% 21%); border:1px solid hsl(215 14% 28%); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:22px; color:hsl(210 17% 88%);">{{ student.initials }}</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 96%);">{{ student.name }}</h1>
+                <sc-if value="{{ student.hasRisk }}" hint-placeholder-val="{{ true }}">
+                  <dc-import name="RiskBadge" level="{{ student.riskLevel }}" hint-size="110px,26px"></dc-import>
+                </sc-if>
+                <sc-if value="{{ student.isNew }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px; font-size:12px; font-weight:600; background:hsl(215 16% 22%); color:hsl(210 10% 70%); border:1px solid hsl(215 14% 30%);">Novo</span>
+                </sc-if>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13.5px; color:hsl(210 10% 62%);">
+                <span>{{ student.program }}</span>
+                <span style="width:4px; height:4px; border-radius:50%; background:hsl(210 10% 42%);"></span>
+                <span>Entrou {{ student.joinedStr }}</span>
+                <span style="width:4px; height:4px; border-radius:50%; background:hsl(210 10% 42%);"></span>
+                <span>Última atividade: {{ student.lastActivity }}</span>
+              </div>
+            </div>
+          </div>
+          <button onClick="{{ onReminder }}" style="display:inline-flex; align-items:center; gap:9px; height:44px; padding:0 20px; border-radius:11px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 18px hsl(165 76% 48% / 0.28); transition:filter .14s; white-space:nowrap;" style-hover="filter:brightness(1.08);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+            Enviar lembrete
+          </button>
+        </div>
+
+        <!-- Stat cards row -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(175px,1fr)); gap:14px;">
+
+          <div style="padding:18px 20px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); display:flex; flex-direction:column; gap:10px;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 54%);">Aderência</span>
+            <div style="display:flex; align-items:baseline; gap:4px;">
+              <span style="font-size:34px; font-weight:800; letter-spacing:-0.03em; color:{{ student.adherenceColor }}; line-height:1;">{{ student.adherenceStr }}</span>
+            </div>
+            <div style="height:5px; border-radius:999px; background:hsl(215 14% 22%); overflow:hidden;">
+              <div style="height:100%; border-radius:999px; width:{{ student.adherencePct }}; background:{{ student.adherenceColor }};"></div>
+            </div>
+          </div>
+
+          <div style="padding:18px 20px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); display:flex; flex-direction:column; gap:10px;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 54%);">Sequência atual</span>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+              <span style="font-size:34px; font-weight:800; letter-spacing:-0.03em; color:hsl(210 20% 96%); line-height:1;">{{ student.streakStr }}</span>
+              <span style="font-size:15px; color:hsl(210 10% 60%);">dias</span>
+            </div>
+            <span style="font-size:12.5px; color:hsl(210 10% 58%);">{{ student.streakLabel }}</span>
+          </div>
+
+          <div style="padding:18px 20px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); display:flex; flex-direction:column; gap:10px;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 54%);">Check-ins totais</span>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+              <span style="font-size:34px; font-weight:800; letter-spacing:-0.03em; color:hsl(210 20% 96%); line-height:1;">{{ student.totalCheckinsStr }}</span>
+              <span style="font-size:15px; color:hsl(210 10% 60%);">registros</span>
+            </div>
+            <span style="font-size:12.5px; color:hsl(210 10% 58%);">{{ student.joinedStr }}</span>
+          </div>
+
+          <div style="padding:18px 20px; border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); display:flex; flex-direction:column; gap:10px;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 54%);">Última atividade</span>
+            <div style="display:flex; align-items:baseline; gap:4px;">
+              <span style="font-size:34px; font-weight:800; letter-spacing:-0.03em; color:{{ student.inactiveColor }}; line-height:1;">{{ student.daysInactiveStr }}</span>
+              <span style="font-size:15px; color:hsl(210 10% 60%);">{{ student.daysInactiveUnit }}</span>
+            </div>
+            <span style="font-size:12.5px; color:hsl(210 10% 58%);">{{ student.lastActivity }}</span>
+          </div>
+
+        </div>
+
+        <!-- Risk reasons -->
+        <sc-if value="{{ student.hasRisk }}" hint-placeholder-val="{{ true }}">
+          <div style="border-radius:14px; border:1px solid hsl(0 72% 67% / 0.28); background:hsl(0 72% 67% / 0.05); overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:14px; padding:16px 22px; border-bottom:1px solid hsl(0 72% 67% / 0.2);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="hsl(0 72% 72%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span style="font-size:15px; font-weight:700; color:hsl(210 17% 92%);">Motivos do alerta do Radar</span>
+              <dc-import name="RiskBadge" level="{{ student.riskLevel }}" hint-size="110px,26px"></dc-import>
+            </div>
+            <div style="padding:16px 22px; display:flex; flex-direction:column; gap:11px;">
+              <sc-for list="{{ student.riskReasons }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex; align-items:flex-start; gap:12px;">
+                  <span style="flex:none; margin-top:5px; width:6px; height:6px; border-radius:50%; background:hsl(0 72% 67%);"></span>
+                  <span style="font-size:14px; line-height:1.5; color:hsl(210 14% 84%); text-wrap:pretty;">{{ r }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Check-in heatmap -->
+        <div style="border-radius:14px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:17px 22px; border-bottom:1px solid hsl(215 14% 20%); flex-wrap:wrap;">
+            <div>
+              <span style="font-size:15px; font-weight:700; color:hsl(210 17% 93%);">Histórico de check-ins</span>
+              <span style="display:block; font-size:12.5px; color:hsl(210 10% 58%); margin-top:3px;">Últimas 12 semanas</span>
+            </div>
+            <span style="font-size:13px; color:hsl(210 10% 60%);">{{ student.totalCheckinsStr }} registros no total</span>
+          </div>
+
+          <sc-if value="{{ student.hasCheckins }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:20px 22px; overflow-x:auto;">
+              <div style="display:flex; gap:16px; align-items:flex-start;">
+                <div style="flex:none; display:flex; flex-direction:column; gap:3px; padding-top:2px;">
+                  <sc-for list="{{ dayLabels }}" as="dl" hint-placeholder-count="7">
+                    <span style="height:13px; font-size:10px; color:hsl(210 10% 48%); display:flex; align-items:center; white-space:nowrap;">{{ dl }}</span>
+                  </sc-for>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+                  <div style="display:flex; gap:3px;">
+                    <sc-for list="{{ monthLabels }}" as="ml" hint-placeholder-count="3">
+                      <div style="{{ ml.style }}">
+                        <span style="font-size:10px; color:hsl(210 10% 48%); white-space:nowrap;">{{ ml.label }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:grid; grid-template-rows:repeat(7,13px); grid-auto-flow:column; grid-auto-columns:13px; gap:3px;">
+                    <sc-for list="{{ heatmapCells }}" as="cell" hint-placeholder-count="84">
+                      <div style="width:13px; height:13px; border-radius:3px; background:{{ cell.bg }};"></div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:7px;">
+                    <span style="font-size:11px; color:hsl(210 10% 48%);">Menos</span>
+                    <div style="width:13px; height:13px; border-radius:3px; background:hsl(215 16% 18%);"></div>
+                    <div style="width:13px; height:13px; border-radius:3px; background:hsl(165 76% 48% / 0.3);"></div>
+                    <div style="width:13px; height:13px; border-radius:3px; background:hsl(165 76% 48% / 0.6);"></div>
+                    <div style="width:13px; height:13px; border-radius:3px; background:hsl(165 76% 48%);"></div>
+                    <span style="font-size:11px; color:hsl(210 10% 48%);">Mais</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ student.noCheckins }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:52px 24px; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;">
+              <div style="width:52px; height:52px; border-radius:14px; border:1px dashed hsl(215 14% 30%); display:flex; align-items:center; justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 48%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </div>
+              <div style="font-size:17px; font-weight:700; color:hsl(210 17% 82%);">Sem check-ins ainda</div>
+              <p style="margin:0; max-width:360px; font-size:14px; line-height:1.5; color:hsl(210 10% 60%); text-wrap:pretty;">{{ student.name.split(' ')[0] }} entrou recentemente. O histórico aparece assim que o primeiro treino for registrado.</p>
+              <button onClick="{{ onReminder }}" style="height:42px; padding:0 20px; border-radius:10px; border:1px solid hsl(165 76% 48% / 0.4); background:hsl(165 76% 48% / 0.1); color:hsl(165 55% 74%); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(165 76% 48% / 0.18);">Enviar lembrete de boas-vindas</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- Radar reminder preview card -->
+        <div style="border-radius:14px; border:1px solid hsl(165 76% 48% / 0.24); background:linear-gradient(145deg, hsl(165 40% 12% / 0.5), hsl(215 22% 13%)); overflow:hidden;">
+          <div style="display:flex; align-items:center; gap:12px; padding:17px 22px; border-bottom:1px solid hsl(165 76% 48% / 0.18);">
+            <div style="flex:none; width:32px; height:32px; border-radius:9px; background:hsl(165 76% 48% / 0.14); border:1px solid hsl(165 76% 48% / 0.3); display:flex; align-items:center; justify-content:center;">
+              <span style="width:10px; height:10px; background:hsl(165 76% 54%); transform:rotate(45deg); border-radius:2px; box-shadow:0 0 10px hsl(165 76% 52%);"></span>
+            </div>
+            <div>
+              <span style="font-size:15px; font-weight:700; color:hsl(210 17% 93%);">Lembrete sugerido pelo Radar</span>
+              <span style="display:block; font-size:12px; color:hsl(210 10% 58%); margin-top:2px;">Personalizado para {{ student.name }}</span>
+            </div>
+          </div>
+          <div style="padding:18px 22px; display:flex; flex-direction:column; gap:14px;">
+            <div style="padding:14px 16px; border-radius:12px; background:hsl(215 18% 12%); border:1px solid hsl(215 14% 22%); font-size:14px; line-height:1.6; color:hsl(210 14% 82%); text-wrap:pretty;">{{ student.reminderPreview }}</div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <button onClick="{{ onReminder }}" style="height:42px; padding:0 20px; border-radius:10px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 14px hsl(165 76% 48% / 0.25); transition:filter .14s;" style-hover="filter:brightness(1.08);">Revisar e enviar</button>
+              <span style="font-size:12px; color:hsl(210 10% 52%);">Você pode editar antes de enviar</span>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </sc-if>
+
+  </div>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- MODAL — CONVIDAR ALUNO            -->
+  <!-- ══════════════════════════════════ -->
+  <sc-if value="{{ showInvite }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseInvite }}" style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(6,10,18,0.78); backdrop-filter:blur(6px); animation:al-ov .2s ease;">
+      <div onClick="{{ noop }}" style="width:min(500px,92vw); border-radius:18px; border:1px solid hsl(215 14% 26%); background:hsl(215 20% 13%); box-shadow:0 32px 80px rgba(0,0,0,0.55); animation:al-in .22s ease; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid hsl(215 14% 22%);">
+          <div>
+            <div style="font-size:17px; font-weight:700; color:hsl(210 17% 95%);">Convidar aluno</div>
+            <div style="font-size:13px; color:hsl(210 10% 62%); margin-top:3px;">Compartilhe o link · válido por 7 dias</div>
+          </div>
+          <button onClick="{{ onCloseInvite }}" style="width:34px; height:34px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 10% 66%); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .14s; line-height:1;" style-hover="background:hsl(215 16% 18%); color:hsl(210 17% 90%);">×</button>
+        </div>
+        <div style="padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; gap:9px;">
+            <div style="flex:1; min-width:0; height:46px; display:flex; align-items:center; padding:0 14px; border-radius:11px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 11%); font-size:13.5px; color:hsl(210 14% 78%); font-family:ui-monospace,'SF Mono',Menlo,monospace; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ inviteLink }}</div>
+            <button onClick="{{ onCopyInvite }}" style="{{ copyInviteStyle }}">{{ copyLabel }}</button>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:11px; background:hsl(215 18% 11%); border:1px solid hsl(215 14% 22%);">
+            <svg style="flex:none; margin-top:1px;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 52%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span style="font-size:13px; line-height:1.5; color:hsl(210 10% 60%);">Quando o aluno acessar o link, ele entra direto no seu espaço no FitRadar. Gere um novo link se precisar revogar o acesso.</span>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; padding:14px 24px 20px; border-top:1px solid hsl(215 14% 22%);">
+          <button onClick="{{ onCloseInvite }}" style="height:40px; padding:0 18px; border-radius:10px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 80%); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- MODAL — ENVIAR LEMBRETE           -->
+  <!-- ══════════════════════════════════ -->
+  <sc-if value="{{ showReminder }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseReminder }}" style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(6,10,18,0.78); backdrop-filter:blur(6px); animation:al-ov .2s ease;">
+      <div onClick="{{ noop }}" style="width:min(540px,92vw); border-radius:18px; border:1px solid hsl(215 14% 26%); background:hsl(215 20% 13%); box-shadow:0 32px 80px rgba(0,0,0,0.55); animation:al-in .22s ease; overflow:hidden;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:20px 24px; border-bottom:1px solid hsl(215 14% 22%);">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:none; width:28px; height:28px; border-radius:8px; background:hsl(165 76% 48% / 0.14); border:1px solid hsl(165 76% 48% / 0.3); display:flex; align-items:center; justify-content:center;">
+                <span style="width:9px; height:9px; background:hsl(165 76% 54%); transform:rotate(45deg); border-radius:2px;"></span>
+              </div>
+              <div style="font-size:17px; font-weight:700; color:hsl(210 17% 95%);">Enviar lembrete</div>
+            </div>
+            <div style="font-size:13px; color:hsl(210 10% 62%); margin-top:5px;">Para {{ student.name }} · texto sugerido pelo Radar · edite à vontade</div>
+          </div>
+          <button onClick="{{ onCloseReminder }}" style="flex:none; width:34px; height:34px; border-radius:9px; border:1px solid hsl(215 14% 26%); background:transparent; color:hsl(210 10% 66%); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .14s; line-height:1;" style-hover="background:hsl(215 16% 18%); color:hsl(210 17% 90%);">×</button>
+        </div>
+        <div style="padding:20px 24px; display:flex; flex-direction:column; gap:13px;">
+          <textarea class="al-ta" onChange="{{ onReminderChange }}" style="width:100%; min-height:130px; resize:vertical; padding:13px 14px; border-radius:12px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 11%); color:hsl(210 17% 91%); font-size:14.5px; line-height:1.55; font-family:inherit; box-sizing:border-box; transition:border-color .14s;" value="{{ reminderText }}" style-focus="border-color:hsl(165 76% 48% / 0.55);"></textarea>
+          <div style="display:flex; align-items:flex-start; gap:9px; padding:11px 13px; border-radius:10px; background:hsl(215 18% 10%); border:1px solid hsl(215 14% 20%);">
+            <span style="flex:none; margin-top:1px; width:15px; height:15px; border-radius:50%; border:1px solid hsl(210 10% 44%); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-style:italic; color:hsl(210 10% 54%); font-weight:700;">i</span>
+            <span style="font-size:12px; line-height:1.45; color:hsl(210 10% 54%);">Sugestão do Radar com base nos dados de treino. Não substitui orientação médica ou psicológica.</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:14px 24px 20px; border-top:1px solid hsl(215 14% 22%);">
+          <button onClick="{{ onCloseReminder }}" style="height:42px; padding:0 18px; border-radius:10px; border:1px solid hsl(215 14% 28%); background:transparent; color:hsl(210 14% 80%); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s;" style-hover="background:hsl(215 16% 17%);">Cancelar</button>
+          <sc-if value="{{ reminderSent }}" hint-placeholder-val="{{ false }}">
+            <button style="height:42px; padding:0 20px; border-radius:10px; border:1px solid hsl(165 76% 48% / 0.38); background:hsl(165 76% 48% / 0.14); color:hsl(165 60% 72%); font-size:14px; font-weight:700; font-family:inherit; display:inline-flex; align-items:center; gap:8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Lembrete enviado
+            </button>
+          </sc-if>
+          <sc-if value="{{ notReminderSent }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ onSendReminder }}" style="height:42px; padding:0 22px; border-radius:10px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 14px hsl(165 76% 48% / 0.24); transition:filter .14s;" style-hover="filter:brightness(1.08);">Enviar lembrete</button>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1340,&quot;height&quot;:900}}">
+// ─── helpers ───────────────────────────────────────────────────────────────
+function det(seed, idx) {
+  const x = Math.sin(seed * 9301 + idx * 49297 + 233) * 15731;
+  return x - Math.floor(x);
+}
+function acColor(a) {
+  return a >= 75 ? "hsl(165 76% 48%)" : a >= 50 ? "hsl(38 96% 56%)" : a > 0 ? "hsl(0 72% 67%)" : "hsl(215 14% 44%)";
+}
+function heatBg(v) {
+  if (v <= 0) return "hsl(215 16% 18%)";
+  if (v < 0.4) return "hsl(165 76% 48% / 0.28)";
+  if (v < 0.72) return "hsl(165 76% 48% / 0.58)";
+  return "hsl(165 76% 48%)";
+}
+
+// ─── data ───────────────────────────────────────────────────────────────────
+const STUDENTS = [
+  { id:"s1", name:"Marcos Vieira", initials:"MV", program:"Base de Força",
+    adherence:38, riskLevel:"alto", lastActivity:"há 9 dias",
+    streak:0, totalCheckins:14, joinedDays:47, daysInactive:9,
+    riskReasons:["Inativo há 9 dias consecutivos","Aderência caiu 34 pontos em 2 semanas","Última sessão 40% mais curta que a média"],
+    seed:1, seedAdh:0.38, noCheckins:false },
+  { id:"s2", name:"Letícia Alves", initials:"LA", program:"Mobilidade Funcional",
+    adherence:52, riskLevel:"alto", lastActivity:"há 5 dias",
+    streak:1, totalCheckins:22, joinedDays:56, daysInactive:5,
+    riskReasons:["Só 2 check-ins nas últimas 3 semanas","Aderência abaixo de 60% por 4 semanas seguidas"],
+    seed:2, seedAdh:0.52, noCheckins:false },
+  { id:"s3", name:"Bruno Tavares", initials:"BT", program:"Base de Força",
+    adherence:61, riskLevel:"medio", lastActivity:"há 3 dias",
+    streak:3, totalCheckins:38, joinedDays:72, daysInactive:3,
+    riskReasons:["Frequência caiu de 5x para 1x por semana","2 sessões mais curtas que o habitual"],
+    seed:3, seedAdh:0.61, noCheckins:false },
+  { id:"s4", name:"Renata Pires", initials:"RP", program:"Treino Livre",
+    adherence:74, riskLevel:"medio", lastActivity:"há 5 dias",
+    streak:5, totalCheckins:61, joinedDays:94, daysInactive:5,
+    riskReasons:["Não abre o app há 5 dias","Queda de 18 pts na aderência na última semana"],
+    seed:4, seedAdh:0.74, noCheckins:false },
+  { id:"s5", name:"Carla Souza", initials:"CS", program:"Força & Resistência",
+    adherence:96, riskLevel:"baixo", lastActivity:"hoje",
+    streak:14, totalCheckins:88, joinedDays:92, daysInactive:0,
+    riskReasons:[], seed:5, seedAdh:0.96, noCheckins:false },
+  { id:"s6", name:"Diego Lima", initials:"DL", program:"Base de Força",
+    adherence:89, riskLevel:"baixo", lastActivity:"ontem",
+    streak:9, totalCheckins:67, joinedDays:88, daysInactive:1,
+    riskReasons:[], seed:6, seedAdh:0.89, noCheckins:false },
+  { id:"s7", name:"Ana Prado", initials:"AP", program:"Mobilidade Funcional",
+    adherence:85, riskLevel:"baixo", lastActivity:"ontem",
+    streak:7, totalCheckins:71, joinedDays:101, daysInactive:1,
+    riskReasons:[], seed:7, seedAdh:0.85, noCheckins:false },
+  { id:"s8", name:"Lucas Ferreira", initials:"LF", program:"Base de Força",
+    adherence:0, riskLevel:"", lastActivity:"nunca",
+    streak:0, totalCheckins:0, joinedDays:2, daysInactive:2,
+    riskReasons:[], seed:8, seedAdh:0, noCheckins:true },
+];
+
+function reminderFor(s) {
+  const n = s.name.split(" ")[0];
+  if (s.noCheckins) return `Oi, ${n}! Que bom ter você no espaço. Quando quiser começar, é só abrir o app e marcar seu primeiro check-in — leva só alguns segundos. Qualquer dúvida, pode falar comigo!`;
+  if (s.riskLevel === "alto") return `Oi, ${n}! Notei que você está ${s.lastActivity} sem treinar. Sei que a rotina às vezes atrapalha, mas retomar hoje pode fazer toda a diferença. Que tal uma sessão mais leve para quebrar o gelo? Estou aqui torcendo por você.`;
+  if (s.riskLevel === "medio") return `Oi, ${n}! Percebi que a frequência caiu um pouco nas últimas semanas. Um ajuste agora evita perder o ritmo que você já conquistou. Você consegue encaixar um treino essa semana?`;
+  return `Oi, ${n}! Passando para dar um parabéns — você está mandando muito bem. Continua assim, é inspirador!`;
+}
+
+const FILTERS = [
+  { key:"all", label:"Todos" },
+  { key:"risk", label:"Em risco" },
+  { key:"high", label:"Aderência alta" },
+  { key:"noCheckins", label:"Sem check-ins" },
+];
+
+const DAY_LABELS = ["Dom","Seg","","Qua","","Sex",""];
+const MONTHS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+// ─── component ──────────────────────────────────────────────────────────────
+class Component extends DCLogic {
+  state = {
+    view: "list",
+    selectedId: null,
+    search: "",
+    filter: "all",
+    showInvite: false,
+    showReminder: false,
+    reminderText: "",
+    reminderSent: false,
+    copied: false,
+    emptySim: false,
+  };
+
+  openDetail = (id) => this.setState({ view:"detail", selectedId:id, showReminder:false, reminderSent:false });
+  onBack = () => this.setState({ view:"list" });
+  onSearch = (e) => this.setState({ search: e.target.value });
+  onClearSearch = () => this.setState({ search:"", filter:"all" });
+  setFilter = (f) => this.setState({ filter:f });
+  onInvite = () => this.setState({ showInvite:true, copied:false });
+  onCloseInvite = () => this.setState({ showInvite:false });
+  onCopyInvite = () => {
+    this.setState({ copied:true });
+    clearTimeout(this._ct);
+    this._ct = setTimeout(() => this.setState({ copied:false }), 2200);
+  };
+  onReminder = () => {
+    const s = STUDENTS.find(x => x.id === this.state.selectedId) || STUDENTS[0];
+    this.setState({ showReminder:true, reminderText:reminderFor(s), reminderSent:false });
+  };
+  onCloseReminder = () => this.setState({ showReminder:false });
+  onReminderChange = (e) => this.setState({ reminderText:e.target.value });
+  onSendReminder = () => this.setState({ reminderSent:true });
+  onSimDefault = () => this.setState({ emptySim:false, view:"list" });
+  onSimEmpty = () => this.setState({ emptySim:true, view:"list" });
+  noop = (e) => { if (e) e.stopPropagation(); };
+
+  renderVals() {
+    const s = this.state;
+    const isListView = s.view === "list";
+    const isDetailView = s.view === "detail";
+
+    // ── list ────────────────────────────────────────────
+    const base = s.emptySim ? [] : STUDENTS;
+    let filtered = base;
+    if (s.filter === "risk") filtered = filtered.filter(x => x.riskLevel === "alto" || x.riskLevel === "medio");
+    if (s.filter === "high") filtered = filtered.filter(x => x.adherence >= 80);
+    if (s.filter === "noCheckins") filtered = filtered.filter(x => x.noCheckins);
+    if (s.search.trim()) {
+      const q = s.search.toLowerCase();
+      filtered = filtered.filter(x => x.name.toLowerCase().includes(q) || x.program.toLowerCase().includes(q));
+    }
+    const isEmpty = base.length === 0;
+    const noResults = !isEmpty && filtered.length === 0;
+    const hasStudents = filtered.length > 0;
+    const riskCount = base.filter(x => x.riskLevel === "alto" || x.riskLevel === "medio").length;
+    const listSubtitle = isEmpty ? "Nenhum aluno ainda — convide o primeiro" : `${base.length} alunos · ${riskCount} em risco`;
+
+    const filters = FILTERS.map(f => {
+      const active = f.key === s.filter;
+      const style = "cursor:pointer; height:36px; padding:0 14px; border-radius:999px; font-size:13px; font-weight:600; font-family:inherit; transition:all .14s; white-space:nowrap; border:1px solid " +
+        (active ? "hsl(165 76% 48% / 0.42); background:hsl(165 76% 48% / 0.12); color:hsl(165 55% 78%);" : "hsl(215 14% 26%); background:transparent; color:hsl(210 10% 66%);");
+      return { label:f.label, style, onClick:() => this.setFilter(f.key) };
+    });
+
+    const students = filtered.map(x => ({
+      ...x,
+      adherenceStr: x.adherence > 0 ? x.adherence + "%" : "—",
+      adherencePct: x.adherence + "%",
+      adherenceColor: acColor(x.adherence),
+      lastActivityColor: x.daysInactive === 0 ? "hsl(165 76% 54%)" : x.daysInactive <= 1 ? "hsl(210 14% 80%)" : x.daysInactive >= 7 ? "hsl(0 72% 70%)" : "hsl(38 90% 68%)",
+      hasRisk: x.riskLevel === "alto" || x.riskLevel === "medio" || x.riskLevel === "baixo",
+      isNew: x.noCheckins,
+      onClick: () => this.openDetail(x.id),
+    }));
+
+    // sim tabs
+    const tabBase = "cursor:pointer; border:none; border-radius:7px; padding:6px 12px; font-size:12px; font-weight:600; font-family:inherit; transition:all .14s; white-space:nowrap; ";
+    const simDefaultStyle = tabBase + (!s.emptySim ? "background:hsl(165 76% 48% / 0.15); color:hsl(165 60% 74%);" : "background:transparent; color:hsl(210 10% 58%);");
+    const simEmptyStyle = tabBase + (s.emptySim ? "background:hsl(165 76% 48% / 0.15); color:hsl(165 60% 74%);" : "background:transparent; color:hsl(210 10% 58%);");
+
+    // ── detail ──────────────────────────────────────────
+    const selRaw = STUDENTS.find(x => x.id === s.selectedId) || STUDENTS[0];
+
+    // heatmap
+    const heatmapCells = [];
+    for (let w = 0; w < 12; w++) {
+      for (let d = 0; d < 7; d++) {
+        const daysAgo = (11 - w) * 7 + (6 - d);
+        let val = 0;
+        if (!selRaw.noCheckins && daysAgo >= selRaw.daysInactive) {
+          const r = det(selRaw.seed, daysAgo);
+          val = r < selRaw.seedAdh ? r / selRaw.seedAdh : 0;
+        }
+        heatmapCells.push({ bg: heatBg(val) });
+      }
+    }
+
+    // month labels
+    const today = new Date();
+    const monthLabels = [];
+    let lastMonth = -1;
+    let colOffset = 0;
+    for (let w = 0; w < 12; w++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (11 - w) * 7);
+      const m = d.getMonth();
+      if (m !== lastMonth) {
+        if (lastMonth !== -1) monthLabels[monthLabels.length - 1].span = w - colOffset;
+        monthLabels.push({ label: MONTHS[m], startW: w, span: 1 });
+        colOffset = w;
+        lastMonth = m;
+      }
+    }
+    if (monthLabels.length) monthLabels[monthLabels.length - 1].span = 12 - colOffset;
+    const totalMonthCols = 12;
+    const mLabels = monthLabels.map(ml => ({
+      label: ml.label,
+      style: "flex:none; width:" + (ml.span * 13 + (ml.span - 1) * 3) + "px;"
+    }));
+
+    const inactiveVal = selRaw.daysInactive;
+    const inactiveColor = inactiveVal === 0 ? "hsl(165 76% 48%)" : inactiveVal <= 2 ? "hsl(210 17% 86%)" : inactiveVal >= 7 ? "hsl(0 72% 67%)" : "hsl(38 96% 56%)";
+    const inactiveUnit = inactiveVal === 0 ? "" : inactiveVal === 1 ? "dia" : "dias";
+    const inactiveStr = inactiveVal === 0 ? "hoje" : String(inactiveVal);
+
+    const student = {
+      ...selRaw,
+      hasRisk: !!selRaw.riskLevel && selRaw.riskLevel !== "",
+      isNew: selRaw.noCheckins,
+      hasCheckins: !selRaw.noCheckins,
+      adherenceStr: selRaw.adherence > 0 ? selRaw.adherence + "%" : "—",
+      adherencePct: selRaw.adherence + "%",
+      adherenceColor: acColor(selRaw.adherence),
+      streakStr: String(selRaw.streak),
+      streakLabel: selRaw.streak >= 7 ? "Sequência excelente" : selRaw.streak >= 3 ? "Mantendo o ritmo" : selRaw.streak === 0 ? "Sequência interrompida" : "Recomeçando",
+      totalCheckinsStr: String(selRaw.totalCheckins),
+      joinedStr: "há " + selRaw.joinedDays + " dias",
+      daysInactiveStr: inactiveStr,
+      daysInactiveUnit: inactiveUnit,
+      inactiveColor,
+      reminderPreview: reminderFor(selRaw),
+    };
+
+    return {
+      isListView, isDetailView,
+      screenLabel: isDetailView ? "Alunos — " + selRaw.name : "Alunos — Lista",
+      listSubtitle,
+      search: s.search,
+      filters,
+      students, isEmpty, noResults, hasStudents,
+      simDefaultStyle, simEmptyStyle,
+      student,
+      heatmapCells,
+      dayLabels: DAY_LABELS,
+      monthLabels: mLabels,
+      showInvite: s.showInvite,
+      showReminder: s.showReminder,
+      reminderText: s.reminderText,
+      reminderSent: s.reminderSent,
+      notReminderSent: !s.reminderSent,
+      inviteLink: "fitradar.app/convite/marina-duarte-" + String(Date.now()).slice(-5),
+      copyLabel: s.copied ? "✓ Copiado" : "Copiar",
+      copyInviteStyle: "flex:none; height:46px; padding:0 18px; border-radius:11px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .14s; border:1px solid " + (s.copied ? "hsl(165 76% 48% / 0.42); background:hsl(165 76% 48% / 0.14); color:hsl(165 55% 76%);" : "hsl(215 14% 28%); background:hsl(215 18% 17%); color:hsl(210 16% 86%);"),
+      onSearch: this.onSearch, onClearSearch: this.onClearSearch,
+      onInvite: this.onInvite, onCloseInvite: this.onCloseInvite, onCopyInvite: this.onCopyInvite,
+      onBack: this.onBack,
+      onReminder: this.onReminder, onCloseReminder: this.onCloseReminder,
+      onReminderChange: this.onReminderChange, onSendReminder: this.onSendReminder,
+      onSimDefault: this.onSimDefault, onSimEmpty: this.onSimEmpty,
+      noop: this.noop,
+    };
+  }
+}
+</script>
+</body>
+</html>

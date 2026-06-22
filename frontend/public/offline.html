@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>FitRadar — Offline</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #0d1117;
+        color: #e6edf3;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #1ed7a6;
+        box-shadow: 0 0 14px #1ed7a6;
+        display: inline-block;
+        margin-bottom: 1rem;
+      }
+      h1 { font-size: 1.35rem; margin: 0 0 0.5rem; }
+      p { color: #9aa6b2; max-width: 22rem; line-height: 1.5; }
+      button {
+        margin-top: 1.25rem;
+        padding: 0.65rem 1.25rem;
+        border: none;
+        border-radius: 10px;
+        background: #1ed7a6;
+        color: #042018;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <span class="dot" aria-hidden="true"></span>
+      <h1>Você está offline</h1>
+      <p>Sem conexão no momento. Seus treinos e check-ins voltam assim que a internet retornar.</p>
+      <button type="button" onclick="location.reload()">Tentar novamente</button>
+    </div>
+  </body>
+</html>

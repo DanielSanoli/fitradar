@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @keyframes ah-pop    { 0%{transform:scale(0) rotate(-8deg);} 60%{transform:scale(1.14);} 100%{transform:scale(1);} }
+    @keyframes ah-ring   { 0%{transform:scale(0.3);opacity:0.7;} 100%{transform:scale(2.8);opacity:0;} }
+    @keyframes ah-sheet  { from{transform:translateY(100%);} to{transform:translateY(0);} }
+    @keyframes ah-rise   { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+    @keyframes ah-streak { 0%{transform:scale(0.4);opacity:0;} 65%{transform:scale(1.18);} 100%{transform:scale(1);opacity:1;} }
+    .ah-ta::placeholder  { color:hsl(210 10% 36%); }
+    .ah-ta:focus         { outline:none; border-color:hsl(165 76% 48% / 0.55) !important; }
+    .ah-s::-webkit-scrollbar { width:0; }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; background:hsl(215 24% 8%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px 16px; box-sizing:border-box; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
+
+  <!-- State switcher -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+    <span style="font-size:10.5px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 44%);">Pré-visualizar estado</span>
+    <div style="display:inline-flex; padding:3px; gap:3px; background:hsl(215 18% 13%); border:1px solid hsl(215 14% 22%); border-radius:11px;">
+      <button onClick="{{ onModeWorkout }}" style="{{ tabWorkout }}">Treino</button>
+      <button onClick="{{ onModeRest }}"    style="{{ tabRest }}">Descanso</button>
+      <button onClick="{{ onModeNone }}"    style="{{ tabNone }}">Sem programa</button>
+    </div>
+  </div>
+
+  <!-- Phone frame -->
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="393px,852px">
+    <div class="ah-s" style="position:relative; height:100%; overflow:hidden; background:hsl(215 28% 7%); display:flex; flex-direction:column;">
+
+      <!-- ─── SCROLLABLE CONTENT ─── -->
+      <div class="ah-s" style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; padding-bottom:32px;">
+
+        <!-- App header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px 8px;">
+          <div style="display:flex; align-items:center; gap:7px; font-size:15px; font-weight:800; letter-spacing:-0.01em; color:hsl(210 17% 95%);">
+            <span style="width:9px; height:9px; border-radius:50%; background:hsl(165 76% 48%); box-shadow:0 0 10px hsl(165 76% 48%);"></span>
+            FitRadar
+          </div>
+          <div style="position:relative; width:36px; height:36px; border-radius:10px; border:1px solid hsl(215 14% 24%); display:flex; align-items:center; justify-content:center; color:hsl(210 10% 66%);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+            <span style="position:absolute; top:7px; right:8px; width:6px; height:6px; border-radius:50%; background:hsl(0 72% 67%); border:1.5px solid hsl(215 28% 7%);"></span>
+          </div>
+        </div>
+
+        <!-- Greeting -->
+        <div style="padding:2px 20px 14px;">
+          <div style="font-size:23px; font-weight:800; letter-spacing:-0.025em; color:hsl(210 20% 96%);">Bom dia, Lucas!</div>
+          <div style="font-size:13px; color:hsl(210 10% 58%); margin-top:2px;">Quinta, 19 de junho</div>
+        </div>
+
+        <!-- Streak card -->
+        <div style="margin:0 20px 16px; padding:14px 16px; border-radius:14px; border:1px solid hsl(165 76% 48% / 0.3); background:linear-gradient(130deg, hsl(165 40% 12% / 0.9), hsl(215 22% 13%)); display:flex; align-items:center; gap:14px;">
+          <div style="flex:none; width:46px; height:46px; border-radius:13px; background:hsl(165 76% 48% / 0.14); border:1px solid hsl(165 76% 48% / 0.32); display:flex; align-items:center; justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="hsl(165 72% 56%)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:baseline; gap:6px;">
+              <span style="font-size:26px; font-weight:800; letter-spacing:-0.03em; color:hsl(165 72% 60%); line-height:1;">{{ streak }}</span>
+              <span style="font-size:13.5px; font-weight:600; color:hsl(210 17% 88%);">dias seguidos</span>
+            </div>
+            <div style="font-size:12.5px; color:hsl(210 10% 62%); margin-top:2px;">{{ streakMsg }}</div>
+          </div>
+        </div>
+
+        <!-- ── TREINO ── -->
+        <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-direction:column; gap:14px; padding:0 20px;">
+
+            <!-- Workout card -->
+            <div style="border-radius:16px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+              <div style="height:3px; background:linear-gradient(90deg, hsl(165 76% 48%), hsl(165 65% 62%));"></div>
+              <div style="padding:16px 18px 18px; display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(165 70% 56%);">Hoje</span>
+                  <span style="width:3px; height:3px; border-radius:50%; background:hsl(210 10% 36%);"></span>
+                  <span style="font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:hsl(210 10% 56%);">Base de Força</span>
+                  <sc-if value="{{ todayDone }}" hint-placeholder-val="{{ false }}">
+                    <span style="margin-left:auto; display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:hsl(165 76% 48% / 0.14); color:hsl(165 65% 68%); border:1px solid hsl(165 76% 48% / 0.3);">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      Concluído
+                    </span>
+                  </sc-if>
+                </div>
+                <div>
+                  <div style="font-size:21px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 96%); line-height:1.1;">Lower Body A</div>
+                  <div style="font-size:13px; color:hsl(210 10% 64%); margin-top:4px;">Foco em quadríceps e glúteos</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ todayExercises }}" as="ex" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="flex:none; width:5px; height:5px; border-radius:50%; background:hsl(165 76% 48%);"></span>
+                      <span style="flex:1; font-size:14px; color:hsl(210 14% 84%);">{{ ex.name }}</span>
+                      <span style="flex:none; font-size:13px; font-weight:600; color:hsl(210 10% 56%);">{{ ex.sets }} × {{ ex.reps }}</span>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ moreExercises }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding-left:15px; font-size:13px; color:hsl(165 65% 62%); font-weight:600;">+ {{ moreCount }} exercícios</div>
+                  </sc-if>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding-top:10px; border-top:1px solid hsl(215 14% 20%);">
+                  <span style="font-size:12.5px; color:hsl(210 10% 56%);">5 exercícios</span>
+                  <span style="width:3px; height:3px; border-radius:50%; background:hsl(210 10% 32%);"></span>
+                  <span style="font-size:12.5px; color:hsl(210 10% 56%);">~50 min</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Check-in button -->
+            <button onClick="{{ onCheckin }}" style="{{ checkinBtnStyle }}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {{ checkinBtnLabel }}
+            </button>
+
+          </div>
+        </sc-if>
+
+        <!-- ── DESCANSO ── -->
+        <sc-if value="{{ isRest }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:14px; padding:0 20px;">
+            <div style="border-radius:16px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+              <div style="height:3px; background:linear-gradient(90deg, hsl(258 68% 64%), hsl(258 55% 74%));"></div>
+              <div style="padding:22px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px;">
+                <div style="width:58px; height:58px; border-radius:18px; background:hsl(258 50% 48% / 0.14); border:1px solid hsl(258 50% 48% / 0.28); display:flex; align-items:center; justify-content:center;">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="hsl(258 55% 72%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2z"></path><path d="M5 9H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-2"></path></svg>
+                </div>
+                <div>
+                  <div style="font-size:20px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 95%);">Dia de descanso</div>
+                  <p style="margin:8px 0 0; font-size:14px; line-height:1.55; color:hsl(210 10% 64%); text-wrap:pretty;">Você treinou ontem — hoje é hora de recuperar. Cuide do sono, hidratação e mobilidade leve.</p>
+                </div>
+                <div style="width:100%; padding:12px 14px; border-radius:12px; background:hsl(215 20% 11%); border:1px solid hsl(215 14% 20%); box-sizing:border-box; text-align:left;">
+                  <div style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:hsl(210 10% 48%); margin-bottom:5px;">Sugestão</div>
+                  <div style="font-size:13.5px; color:hsl(210 14% 80%);">10 min de alongamento ou caminhada leve</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── SEM PROGRAMA ── -->
+        <sc-if value="{{ isNoProgram }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:14px; padding:0 20px 32px;">
+            <div style="border-radius:16px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 14%); overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+              <div style="height:3px; background:linear-gradient(90deg, hsl(38 92% 58%), hsl(38 75% 68%));"></div>
+              <div style="padding:28px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;">
+                <div style="position:relative; width:68px; height:68px; display:flex; align-items:center; justify-content:center;">
+                  <span style="position:absolute; width:68px; height:68px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.26);"></span>
+                  <span style="position:absolute; width:44px; height:44px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.38);"></span>
+                  <span style="width:10px; height:10px; border-radius:50%; background:hsl(165 76% 52%); box-shadow:0 0 12px hsl(165 76% 50%);"></span>
+                </div>
+                <div>
+                  <div style="font-size:20px; font-weight:800; letter-spacing:-0.02em; color:hsl(210 20% 95%);">Nenhum programa ainda</div>
+                  <p style="margin:8px 0 0; font-size:14px; line-height:1.55; color:hsl(210 10% 64%); text-wrap:pretty;">Você ainda não está matriculado em um programa. Fale com seu coach para começar.</p>
+                </div>
+                <button style="width:100%; height:52px; border-radius:14px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 4px 16px hsl(165 76% 48% / 0.3); transition:filter .14s;" style-active="filter:brightness(0.9);">Mensagem para o coach</button>
+                <div style="padding:12px 14px; border-radius:11px; background:hsl(215 20% 11%); border:1px dashed hsl(215 14% 26%); width:100%; box-sizing:border-box; font-size:12.5px; color:hsl(210 10% 52%); text-align:left; line-height:1.5;">Quando seu coach criar um programa e te matricular, ele aparece aqui na hora.</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Próximos treinos (workout + rest) -->
+        <sc-if value="{{ showUpcoming }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:20px 20px 0; display:flex; flex-direction:column; gap:10px;">
+            <div style="font-size:13px; font-weight:700; color:hsl(210 14% 78%);">Próximos treinos</div>
+            <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:13px; border:1px solid hsl(215 14% 22%); background:hsl(215 18% 13%); transition:background .12s;" style-hover="background:hsl(215 16% 16%);">
+                <span style="flex:none; min-width:52px; height:26px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; font-size:11.5px; font-weight:700; background:hsl(215 16% 20%); color:hsl(210 10% 68%); border:1px solid hsl(215 14% 26%);">{{ u.dayLabel }}</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:14.5px; font-weight:600; color:hsl(210 17% 90%);">{{ u.title }}</span>
+                  <span style="font-size:12px; color:hsl(210 10% 56%);">{{ u.exCount }} exercícios · {{ u.duration }}</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(210 10% 44%)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div><!-- /scrollable -->
+
+      <!-- ─── CHECK-IN SHEET ─── -->
+      <sc-if value="{{ showCheckin }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:flex-end;">
+          <div onClick="{{ closeCheckin }}" style="position:absolute; inset:0; background:rgba(4,7,14,0.75); backdrop-filter:blur(3px);"></div>
+          <div style="position:relative; z-index:1; border-radius:26px 26px 0 0; background:hsl(215 20% 13%); border:1px solid hsl(215 14% 24%); border-bottom:none; padding:0 20px 40px; display:flex; flex-direction:column; gap:20px; animation:ah-sheet .28s ease;">
+            <div style="width:36px; height:4px; border-radius:999px; background:hsl(215 14% 30%); margin:14px auto 0;"></div>
+            <div style="text-align:center;">
+              <div style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:hsl(210 20% 96%);">Como foi o treino?</div>
+              <div style="font-size:13px; color:hsl(210 10% 58%); margin-top:3px;">Ajuda o Radar a entender sua resposta ao programa.</div>
+            </div>
+            <div style="display:flex; gap:6px; justify-content:space-between;">
+              <sc-for list="{{ ratings }}" as="r" hint-placeholder-count="5">
+                <button onClick="{{ r.onClick }}" style="{{ r.btnStyle }}">
+                  <div style="{{ r.circleStyle }}">{{ r.num }}</div>
+                  <span style="font-size:10.5px; font-weight:600; color:{{ r.labelColor }}; white-space:nowrap;">{{ r.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:7px;">
+              <label style="font-size:12.5px; font-weight:600; color:hsl(210 14% 72%);">Nota (opcional)</label>
+              <textarea class="ah-ta" value="{{ note }}" onChange="{{ onNote }}" placeholder="Como foi o treino hoje?" style="min-height:70px; resize:none; padding:11px 13px; border-radius:12px; border:1px solid hsl(215 14% 26%); background:hsl(215 18% 10%); color:hsl(210 17% 92%); font-size:14px; line-height:1.5; font-family:inherit; transition:border-color .14s;"></textarea>
+            </div>
+            <button onClick="{{ onConfirm }}" style="height:54px; border-radius:14px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:16px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 6px 20px hsl(165 76% 48% / 0.36); display:flex; align-items:center; justify-content:center; gap:10px; transition:filter .14s;" style-active="filter:brightness(0.9);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Confirmar check-in
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ─── CELEBRATION ─── -->
+      <sc-if value="{{ showCelebration }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; background:radial-gradient(circle at 50% 38%, hsl(165 40% 14%) 0%, hsl(215 28% 7%) 66%); padding:28px; box-sizing:border-box;">
+
+          <!-- Animated checkmark -->
+          <div style="position:relative; width:100px; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:26px;">
+            <div style="position:absolute; width:100px; height:100px; border-radius:50%; border:1.5px solid hsl(165 76% 48% / 0.5); animation:ah-ring .9s ease-out .1s both;"></div>
+            <div style="position:absolute; width:100px; height:100px; border-radius:50%; border:1px solid hsl(165 76% 48% / 0.28); animation:ah-ring 1.1s ease-out .22s both;"></div>
+            <div style="width:100px; height:100px; border-radius:50%; background:hsl(165 76% 48%); box-shadow:0 0 52px hsl(165 76% 48% / 0.52); display:flex; align-items:center; justify-content:center; animation:ah-pop .5s cubic-bezier(.34,1.56,.64,1) both;">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="hsl(165 80% 8%)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+          </div>
+
+          <div style="font-size:30px; font-weight:800; letter-spacing:-0.03em; color:hsl(210 20% 97%); text-align:center; animation:ah-rise .4s ease .3s both;">Treino feito!</div>
+          <div style="font-size:14.5px; color:hsl(210 10% 66%); margin-top:6px; margin-bottom:26px; animation:ah-rise .4s ease .4s both;">Sequência mantida · bom trabalho</div>
+
+          <!-- Streak display -->
+          <div style="width:100%; max-width:260px; padding:20px 24px; border-radius:20px; background:hsl(215 18% 14%); border:1px solid hsl(165 76% 48% / 0.28); display:flex; flex-direction:column; align-items:center; gap:5px; animation:ah-rise .4s ease .5s both;">
+            <span style="font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:hsl(210 10% 52%);">Sequência atual</span>
+            <div style="display:flex; align-items:baseline; gap:7px; animation:ah-streak .6s cubic-bezier(.34,1.56,.64,1) .55s both;">
+              <span style="font-size:52px; font-weight:800; letter-spacing:-0.04em; color:hsl(165 72% 58%); line-height:1;">{{ newStreak }}</span>
+              <span style="font-size:17px; font-weight:600; color:hsl(210 10% 66%);">dias</span>
+            </div>
+            <span style="font-size:13.5px; color:hsl(210 10% 60%); text-align:center; line-height:1.4;">{{ celebMsg }}</span>
+          </div>
+
+          <button onClick="{{ closeCelebration }}" style="margin-top:26px; width:100%; max-width:320px; height:56px; border-radius:16px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:17px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 6px 22px hsl(165 76% 48% / 0.34); transition:filter .14s; animation:ah-rise .4s ease .7s both;" style-active="filter:brightness(0.9);">Fechar</button>
+        </div>
+      </sc-if>
+
+    </div>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:560,&quot;height&quot;:920}}">
+const TODAY_EXERCISES = [
+  {name:"Agachamento livre", sets:"4", reps:"8–10"},
+  {name:"Leg press 45°",     sets:"3", reps:"12"},
+  {name:"Cadeira extensora", sets:"3", reps:"15"},
+  {name:"Afundo c/ halteres",sets:"3", reps:"10 cada"},
+  {name:"Panturrilha em pé", sets:"4", reps:"15"},
+];
+const UPCOMING = [
+  {dayLabel:"Amanhã", title:"Upper Body A", exCount:"4", duration:"~45 min"},
+  {dayLabel:"Qui",    title:"Lower Body B", exCount:"3", duration:"~50 min"},
+  {dayLabel:"Sex",    title:"Upper Body B", exCount:"3", duration:"~40 min"},
+];
+const RATING_COLORS = [
+  "hsl(0 72% 62%)",
+  "hsl(22 90% 60%)",
+  "hsl(45 78% 58%)",
+  "hsl(100 58% 54%)",
+  "hsl(165 76% 48%)",
+];
+const RATING_LABELS = ["Esgotante","Pesado","Normal","Bem","Ótimo!"];
+
+function streakMsg(n) {
+  if (n >= 21) return "Hábito formado. Continua assim.";
+  if (n >= 14) return "Duas semanas. Você é consistente.";
+  if (n >= 7)  return "Uma semana inteira. Não pare agora.";
+  if (n >= 3)  return "O hábito está se formando.";
+  return "Cada treino conta.";
+}
+function celebMsg(n) {
+  if (n >= 21) return "Você está imparável.";
+  if (n >= 14) return "Duas semanas — incrível.";
+  if (n >= 7)  return "Uma semana cheia. Siga assim.";
+  return "Bom trabalho. Cada treino conta.";
+}
+
+class Component extends DCLogic {
+  state = {
+    mode: "workout",  // "workout" | "rest" | "no-program"
+    phase: "idle",    // "idle" | "checkin" | "done"
+    rating: null,
+    note: "",
+    streak: 7,
+    todayDone: false,
+  };
+
+  setMode = (m) => this.setState({mode:m, phase:"idle", todayDone:false, rating:null, note:""});
+  onCheckin    = () => { if (!this.state.todayDone) this.setState({phase:"checkin"}); };
+  closeCheckin = () => this.setState({phase:"idle"});
+  selectRating = (r) => this.setState({rating: r});
+  onNote       = (e) => this.setState({note: e.target.value});
+  onConfirm    = () => this.setState(s => ({phase:"done", streak:s.streak+1, todayDone:true}));
+  closeCelebration = () => this.setState({phase:"idle"});
+
+  renderVals() {
+    const s = this.state;
+    const isWorkout   = s.mode === "workout";
+    const isRest      = s.mode === "rest";
+    const isNoProgram = s.mode === "no-program";
+    const showUpcoming    = isWorkout || isRest;
+    const showCheckin     = s.phase === "checkin";
+    const showCelebration = s.phase === "done";
+
+    // Today's exercises (first 3 + more indicator)
+    const todayExercises = TODAY_EXERCISES.slice(0, 3);
+    const moreExercises  = TODAY_EXERCISES.length > 3;
+    const moreCount      = String(TODAY_EXERCISES.length - 3);
+
+    // Check-in button
+    const checkinBtnStyle = s.todayDone
+      ? "width:100%; height:56px; border-radius:14px; border:1px solid hsl(165 76% 48% / 0.36); background:hsl(165 76% 48% / 0.1); color:hsl(165 60% 68%); font-size:16px; font-weight:700; font-family:inherit; cursor:default; display:flex; align-items:center; justify-content:center; gap:10px;"
+      : "width:100%; height:56px; border-radius:14px; border:none; background:hsl(165 76% 48%); color:hsl(165 80% 8%); font-size:16px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 6px 22px hsl(165 76% 48% / 0.38); display:flex; align-items:center; justify-content:center; gap:10px; transition:filter .14s;";
+    const checkinBtnLabel = s.todayDone ? "Treino concluído hoje" : "Treino feito!";
+
+    // Rating buttons
+    const ratings = RATING_COLORS.map((color, i) => {
+      const num      = i + 1;
+      const selected = s.rating === num;
+      const ca = color.replace(")", " / 0.18)").replace("hsl(", "hsl(");
+      const circleStyle = "width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; transition:all .14s; " +
+        (selected
+          ? `background:${color}; color:hsl(215 28% 7%); box-shadow:0 4px 14px ${color.replace("hsl(","rgba(").replace(")",",0.45)")};`
+          : `background:${color.replace(")","/ 0.14)")}; color:${color}; border:1.5px solid ${color.replace(")","/ 0.42)")};`);
+      const btnStyle = "display:flex; flex-direction:column; align-items:center; gap:6px; padding:4px 0; background:transparent; border:none; cursor:pointer; transition:transform .12s; " + (selected ? "transform:scale(1.07);" : "");
+      return {
+        num: String(num),
+        label: RATING_LABELS[i],
+        circleStyle,
+        btnStyle,
+        labelColor: selected ? color : "hsl(210 10% 54%)",
+        onClick: () => this.selectRating(num),
+      };
+    });
+
+    // Sim tab styles
+    const tb = (m) => "cursor:pointer; border:none; border-radius:8px; padding:7px 13px; font-size:12.5px; font-weight:600; font-family:inherit; transition:all .14s; white-space:nowrap; " +
+      (s.mode === m ? "background:hsl(165 76% 48% / 0.16); color:hsl(165 60% 76%);" : "background:transparent; color:hsl(210 10% 60%);");
+
+    return {
+      isWorkout, isRest, isNoProgram, showUpcoming,
+      showCheckin, showCelebration,
+      streak: String(s.streak),
+      newStreak: String(s.streak),
+      streakMsg: streakMsg(s.streak),
+      todayDone: s.todayDone,
+      todayExercises, moreExercises, moreCount,
+      checkinBtnStyle, checkinBtnLabel,
+      upcoming: UPCOMING,
+      ratings,
+      note: s.note,
+      celebMsg: celebMsg(s.streak),
+      tabWorkout: tb("workout"),
+      tabRest:    tb("rest"),
+      tabNone:    tb("no-program"),
+      onModeWorkout: () => this.setMode("workout"),
+      onModeRest:    () => this.setMode("rest"),
+      onModeNone:    () => this.setMode("no-program"),
+      onCheckin:        this.onCheckin,
+      closeCheckin:     this.closeCheckin,
+      onNote:           this.onNote,
+      onConfirm:        this.onConfirm,
+      closeCelebration: this.closeCelebration,
+    };
+  }
+}
+</script>
+</body>
+</html>

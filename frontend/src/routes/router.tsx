@@ -1,4 +1,6 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -9,6 +11,42 @@ import { HomePage } from "@/pages/HomePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { RootLayout } from "@/routes/RootLayout";
+
+const CreatorDashboardPage = lazy(() =>
+  import("@/features/creator/CreatorDashboardPage").then((m) => ({
+    default: m.CreatorDashboardPage,
+  })),
+);
+const StudentsPage = lazy(() =>
+  import("@/features/creator/StudentsPage").then((m) => ({ default: m.StudentsPage })),
+);
+const StudentDetailPage = lazy(() =>
+  import("@/features/creator/StudentDetailPage").then((m) => ({ default: m.StudentDetailPage })),
+);
+const ProgramsListPage = lazy(() =>
+  import("@/features/creator/ProgramsPage").then((m) => ({ default: m.ProgramsListPage })),
+);
+const ProgramDetailPage = lazy(() =>
+  import("@/features/creator/ProgramsPage").then((m) => ({ default: m.ProgramDetailPage })),
+);
+const ProgramFormPage = lazy(() =>
+  import("@/features/creator/ProgramsPage").then((m) => ({ default: m.ProgramFormPage })),
+);
+const SpaceBuilderPage = lazy(() =>
+  import("@/features/creator/SpaceBuilderPage").then((m) => ({ default: m.SpaceBuilderPage })),
+);
+const StudentHomePage = lazy(() =>
+  import("@/features/student/StudentHomePage").then((m) => ({ default: m.StudentHomePage })),
+);
+const StudentProgressPage = lazy(() =>
+  import("@/features/student/StudentProgressPage").then((m) => ({
+    default: m.StudentProgressPage,
+  })),
+);
+
+function Lazy({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 export const router = createBrowserRouter([
   {
@@ -41,10 +79,65 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: (
-                  <PlaceholderPage
-                    title="Visão geral"
-                    description="Dashboard do criador — métricas e alertas virão no FE-2."
-                  />
+                  <Lazy>
+                    <CreatorDashboardPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "students",
+                element: (
+                  <Lazy>
+                    <StudentsPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "students/:id",
+                element: (
+                  <Lazy>
+                    <StudentDetailPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs",
+                element: (
+                  <Lazy>
+                    <ProgramsListPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs/new",
+                element: (
+                  <Lazy>
+                    <ProgramFormPage mode="create" />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs/:id",
+                element: (
+                  <Lazy>
+                    <ProgramDetailPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs/:id/edit",
+                element: (
+                  <Lazy>
+                    <ProgramFormPage mode="edit" />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "space",
+                element: (
+                  <Lazy>
+                    <SpaceBuilderPage />
+                  </Lazy>
                 ),
               },
               {
@@ -52,26 +145,20 @@ export const router = createBrowserRouter([
                 element: (
                   <PlaceholderPage
                     title="Retenção"
-                    description="Radar de risco e copiloto — FE-2."
+                    description="Alertas detalhados e reavaliação — em breve."
                   />
-                ),
-              },
-              {
-                path: "students",
-                element: (
-                  <PlaceholderPage title="Alunos" description="Gestão de alunos — FE-2." />
                 ),
               },
               {
                 path: "ranking",
                 element: (
-                  <PlaceholderPage title="Ranking" description="Gamificação — FE-2." />
+                  <PlaceholderPage title="Ranking" description="Gamificação — em breve." />
                 ),
               },
               {
                 path: "settings",
                 element: (
-                  <PlaceholderPage title="Configurações" description="Espaço e billing — FE-2." />
+                  <PlaceholderPage title="Configurações" description="Billing — em breve." />
                 ),
               },
             ],
@@ -88,22 +175,17 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: (
-                  <PlaceholderPage
-                    title="Início"
-                    description="Home do aluno — programas e check-in no FE-2."
-                  />
+                  <Lazy>
+                    <StudentHomePage />
+                  </Lazy>
                 ),
               },
               {
                 path: "progress",
                 element: (
-                  <PlaceholderPage title="Progresso" description="Métricas do aluno — FE-2." />
-                ),
-              },
-              {
-                path: "workouts",
-                element: (
-                  <PlaceholderPage title="Treinos" description="Lista de treinos — FE-2." />
+                  <Lazy>
+                    <StudentProgressPage />
+                  </Lazy>
                 ),
               },
             ],
