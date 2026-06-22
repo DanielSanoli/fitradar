@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PushSettingsCard } from "@/components/pwa/PushPrompt";
 import { Card, CardContent } from "@/components/ui/card";
 import { PanelState } from "@/components/ui/PanelState";
@@ -8,7 +9,8 @@ import type { CheckInResponse, GamificationProfileResponse, StudentProgressResul
 import { ApiError } from "@/lib/api/types";
 
 function AdherenceRing({ value }: { value: string | null }) {
-  const pct = value != null && value !== "" ? Math.min(100, Math.max(0, parseFloat(value))) : 0;
+  const parsed = value != null && value !== "" ? parseFloat(value) : NaN;
+  const pct = Number.isFinite(parsed) ? Math.min(100, Math.max(0, parsed)) : 0;
   const r = 54;
   const c = 2 * Math.PI * r;
   const offset = c - (pct / 100) * c;
@@ -54,29 +56,44 @@ function weeklyBars(checkIns: CheckInResponse[]) {
   return days.map((label, i) => ({ label, count: counts[i], height: (counts[i] / max) * 100 }));
 }
 
+function blockErrorMessage(reason: unknown): string {
+  return reason instanceof ApiError ? reason.message : "Indisponível no momento.";
+}
+
 export function StudentProgressPage() {
   const [progress, setProgress] = useState<StudentProgressResult | null>(null);
   const [gamification, setGamification] = useState<GamificationProfileResponse | null>(null);
   const [checkIns, setCheckIns] = useState<CheckInResponse[]>([]);
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
+  const [gamificationWarning, setGamificationWarning] = useState<string>();
 
   const load = useCallback(async () => {
     setState("loading");
-    try {
-      const [p, g, ci] = await Promise.all([
-        memberApi.myProgress(),
-        memberApi.myGamification(),
-        memberApi.myCheckIns().then((r) => r.content),
-      ]);
-      setProgress(p);
-      setGamification(g);
-      setCheckIns(ci);
-      setState("content");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar progresso.");
+    setGamificationWarning(undefined);
+    const [pResult, gResult, ciResult] = await Promise.allSettled([
+      memberApi.myProgress(),
+      memberApi.myGamification(),
+      memberApi.myCheckIns().then((r) => r.content),
+    ]);
+
+    if (pResult.status === "rejected") {
+      setError(blockErrorMessage(pResult.reason));
       setState("error");
+      return;
     }
+
+    setProgress(pResult.value);
+    setCheckIns(ciResult.status === "fulfilled" ? ciResult.value : []);
+
+    if (gResult.status === "fulfilled") {
+      setGamification(gResult.value);
+    } else {
+      setGamification(null);
+      setGamificationWarning(blockErrorMessage(gResult.reason));
+    }
+
+    setState("content");
   }, []);
 
   useEffect(() => {
@@ -93,8 +110,16 @@ export function StudentProgressPage() {
       </div>
 
       <PanelState state={state} message={error} onRetry={load}>
-        {progress && gamification ? (
+        {progress ? (
           <>
+            {gamificationWarning ? (
+              <Alert>
+                <AlertDescription>
+                  Conquistas temporariamente indisponíveis: {gamificationWarning}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
             <Card>
               <CardContent className="flex flex-col items-center gap-4 pt-6">
                 <AdherenceRing value={progress.adherence} />
@@ -104,7 +129,7 @@ export function StudentProgressPage() {
                     <p className="text-xs text-muted-foreground">Streak</p>
                   </div>
                   <div>
-                    <p className="text-xl font-bold">{gamification.longestStreak}</p>
+                    <p className="text-xl font-bold">{gamification?.longestStreak ?? "—"}</p>
                     <p className="text-xs text-muted-foreground">Recorde</p>
                   </div>
                   <div>
@@ -136,26 +161,34 @@ export function StudentProgressPage() {
             <Card>
               <CardContent className="pt-4">
                 <h2 className="font-semibold">Conquistas</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Streak {gamification.currentStreak} · recorde {gamification.longestStreak} · rank #
-                  {gamification.rank || "—"}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {gamification.badges.length > 0 ? (
-                    gamification.badges.map((b) => (
-                      <span
-                        key={`${b.type}-${b.earnedAt}`}
-                        className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-                      >
-                        {b.label}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      Faça check-ins para desbloquear badges!
-                    </span>
-                  )}
-                </div>
+                {gamification ? (
+                  <>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Streak {gamification.currentStreak} · recorde {gamification.longestStreak} ·
+                      rank #{gamification.rank || "—"}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {gamification.badges.length > 0 ? (
+                        gamification.badges.map((b) => (
+                          <span
+                            key={`${b.type}-${b.earnedAt}`}
+                            className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
+                          >
+                            {b.label}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Faça check-ins para desbloquear badges!
+                        </span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Dados de gamificação indisponíveis.
+                  </p>
+                )}
               </CardContent>
             </Card>
 

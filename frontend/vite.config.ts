@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -64,15 +63,6 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api/],
         importScripts: ["push-sw.js"],
         runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 8,
-              expiration: { maxEntries: 32, maxAgeSeconds: 60 * 5 },
-            },
-          },
           {
             urlPattern: ({ request }) =>
               request.destination === "script" ||

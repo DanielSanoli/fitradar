@@ -4,7 +4,25 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
-function renderProtected(user: AuthContextValue["user"], isLoading = false) {
+const creatorBase = {
+  id: "1",
+  name: "Creator",
+  email: "c@test.com",
+  role: "CREATOR" as const,
+  creatorId: null,
+  plan: "FREE" as const,
+  subscriptionStatus: "TRIALING" as const,
+  trialEndsAt: null,
+  subscriptionEndsAt: null,
+  emailVerified: true,
+  trialDaysRemaining: 0,
+};
+
+function renderProtected(
+  user: AuthContextValue["user"],
+  initialPath = "/app",
+  isLoading = false,
+) {
   const value: AuthContextValue = {
     user,
     isLoading,
@@ -17,13 +35,14 @@ function renderProtected(user: AuthContextValue["user"], isLoading = false) {
 
   render(
     <AuthContext.Provider value={value}>
-      <MemoryRouter initialEntries={["/app"]}>
+      <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route element={<ProtectedRoute allowedRoles={["CREATOR"]} />}>
             <Route path="/app" element={<div>Protected area</div>} />
           </Route>
           <Route path="/login" element={<div>Login page</div>} />
           <Route path="/student" element={<div>Student home</div>} />
+          <Route path="/billing-required" element={<div>Billing required</div>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
@@ -38,39 +57,30 @@ describe("ProtectedRoute", () => {
 
   it("redirects students away from creator routes", () => {
     renderProtected({
-      id: "1",
-      name: "Aluno",
-      email: "s@test.com",
+      ...creatorBase,
       role: "STUDENT",
       creatorId: "c1",
-      plan: "FREE",
-      subscriptionStatus: "ACTIVE",
-      trialEndsAt: null,
-      subscriptionEndsAt: null,
-      emailVerified: true,
       accessAllowed: true,
       accessMessage: null,
-      trialDaysRemaining: 0,
     });
     expect(screen.getByText("Student home")).toBeInTheDocument();
   });
 
-  it("renders outlet for allowed role", () => {
+  it("renders outlet for allowed role with access", () => {
     renderProtected({
-      id: "1",
-      name: "Creator",
-      email: "c@test.com",
-      role: "CREATOR",
-      creatorId: null,
-      plan: "PRO",
-      subscriptionStatus: "ACTIVE",
-      trialEndsAt: null,
-      subscriptionEndsAt: null,
-      emailVerified: true,
+      ...creatorBase,
       accessAllowed: true,
       accessMessage: null,
-      trialDaysRemaining: 0,
     });
     expect(screen.getByText("Protected area")).toBeInTheDocument();
+  });
+
+  it("redirects creator without access to billing-required", () => {
+    renderProtected({
+      ...creatorBase,
+      accessAllowed: false,
+      accessMessage: "Trial expirado",
+    });
+    expect(screen.getByText("Billing required")).toBeInTheDocument();
   });
 });

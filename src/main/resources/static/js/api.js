@@ -4,11 +4,18 @@ const FR = (() => {
   const REFRESH = "fitradar_refresh";
   const USER = "fitradar_user";
 
+  let sessionRedirecting = false;
+
   function setAuth(auth) {
     if (!auth) return;
-    localStorage.setItem(TOKEN, auth.token);
-    localStorage.setItem(REFRESH, auth.refreshToken);
-    localStorage.setItem(USER, JSON.stringify(auth.user));
+    if (auth.token) localStorage.setItem(TOKEN, auth.token);
+    if (auth.refreshToken) localStorage.setItem(REFRESH, auth.refreshToken);
+    if (auth.user) localStorage.setItem(USER, JSON.stringify(auth.user));
+  }
+
+  function updateStoredUser(nextUser) {
+    if (!nextUser) return;
+    localStorage.setItem(USER, JSON.stringify(nextUser));
   }
 
   function clearAuth() {
@@ -24,9 +31,34 @@ const FR = (() => {
     return raw ? JSON.parse(raw) : null;
   }
 
+  function redirectToLogin(message) {
+    if (sessionRedirecting) return;
+    sessionRedirecting = true;
+    clearAuth();
+    toast(message || "Sessão expirada. Entre novamente.", true);
+    window.setTimeout(() => { location.href = "/"; }, 400);
+  }
+
+  function parseResponseBody(text) {
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  function apiErrorMessage(status, data) {
+    if (data && (data.message || data.error)) return data.message || data.error;
+    if (status === 401) return "Sessão expirada. Faça login novamente.";
+    if (status === 402) return "Assinatura necessária para acessar este recurso.";
+    return "Erro " + status;
+  }
+
   async function rawRequest(method, path, body, withAuth) {
-    const headers = { "Content-Type": "application/json" };
-    if (withAuth && token()) headers["Authorization"] = "Bearer " + token();
+    const headers = { Accept: "application/json" };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (withAuth && token()) headers.Authorization = "Bearer " + token();
     const res = await fetch(path, {
       method,
       headers,
@@ -40,7 +72,9 @@ const FR = (() => {
     if (!rt) return false;
     const res = await rawRequest("POST", "/api/v1/auth/refresh", { refreshToken: rt }, false);
     if (!res.ok) return false;
-    setAuth(await res.json());
+    const data = parseResponseBody(await res.text());
+    if (!data) return false;
+    setAuth(data);
     return true;
   }
 
@@ -49,16 +83,46 @@ const FR = (() => {
     if (res.status === 401 && (await tryRefresh())) {
       res = await rawRequest(method, path, body, true);
     }
+
     if (res.status === 204) return null;
+
     const text = await res.text();
-    const data = text ? JSON.parse(text) : null;
+    const data = parseResponseBody(text);
+
+    if (res.status === 401) {
+      redirectToLogin(apiErrorMessage(401, data));
+      const err = new Error("Sessão expirada. Faça login novamente.");
+      err.status = 401;
+      throw err;
+    }
+
     if (!res.ok) {
-      const message = (data && (data.message || data.error)) || ("Erro " + res.status);
+      const message = apiErrorMessage(res.status, data);
       const err = new Error(message);
       err.status = res.status;
       err.data = data;
       throw err;
     }
+
+    return data;
+  }
+
+  /** Valida JWT com o servidor e atualiza o usuário em cache. */
+  async function validateSession() {
+    const res = await rawRequest("GET", "/api/v1/auth/me", undefined, true);
+    if (res.status === 401) {
+      if (await tryRefresh()) return validateSession();
+      redirectToLogin("Sessão expirada. Entre novamente.");
+      return null;
+    }
+    const text = await res.text();
+    const data = parseResponseBody(text);
+    if (!res.ok) {
+      const err = new Error(apiErrorMessage(res.status, data));
+      err.status = res.status;
+      throw err;
+    }
+    updateStoredUser(data);
     return data;
   }
 
@@ -67,13 +131,14 @@ const FR = (() => {
   const put = (p, b) => request("PUT", p, b);
   const del = (p) => request("DELETE", p);
 
-  // Auth helpers (sem token)
-  const login = (email, password) => rawRequest("POST", "/api/v1/auth/login", { email, password }, false).then(handleAuth);
-  const register = (name, email, password) => rawRequest("POST", "/api/v1/auth/register", { name, email, password }, false).then(handleAuth);
+  const login = (email, password) =>
+    rawRequest("POST", "/api/v1/auth/login", { email, password }, false).then(handleAuth);
+  const register = (name, email, password) =>
+    rawRequest("POST", "/api/v1/auth/register", { name, email, password }, false).then(handleAuth);
 
   async function handleAuth(res) {
     const text = await res.text();
-    const data = text ? JSON.parse(text) : null;
+    const data = parseResponseBody(text);
     if (!res.ok) throw new Error((data && data.message) || "Falha na autenticação");
     setAuth(data);
     return data;
@@ -91,7 +156,6 @@ const FR = (() => {
     location.href = redirect || "/";
   }
 
-  // UI helpers
   function toast(message, isError) {
     let el = document.getElementById("toast");
     if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
@@ -146,9 +210,11 @@ const FR = (() => {
     return [];
   }
 
-  return { setAuth, clearAuth, token, user, request, get, post, put, del, pageContent,
-           login, register, requireRole, logout, toast, esc,
-           setPanelLoading, setPanelEmpty, setPanelError, showLoading };
+  return {
+    setAuth, clearAuth, updateStoredUser, token, user, request, get, post, put, del, pageContent,
+    login, register, requireRole, logout, validateSession, toast, esc,
+    setPanelLoading, setPanelEmpty, setPanelError, showLoading,
+  };
 })();
 
 if (typeof globalThis !== "undefined") {

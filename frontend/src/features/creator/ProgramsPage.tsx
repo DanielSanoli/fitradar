@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ function priceLabel(p: ProgramResponse): string {
 
 export function ProgramsListPage() {
   const { toast } = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [programs, setPrograms] = useState<ProgramResponse[]>([]);
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
@@ -38,7 +40,13 @@ export function ProgramsListPage() {
   }, [load]);
 
   const remove = async (id: string) => {
-    if (!confirm("Excluir este programa e todos os treinos?")) return;
+    const ok = await confirm({
+      title: "Excluir programa?",
+      description: "Este programa e todos os treinos serão removidos permanentemente.",
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await programsApi.remove(id);
       await load();
@@ -49,6 +57,7 @@ export function ProgramsListPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      {confirmDialog}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Programas</h1>
@@ -117,19 +126,26 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
   const [price, setPrice] = useState("");
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [loadState, setLoadState] = useState<"loading" | "content">(
+  const [loadState, setLoadState] = useState<"loading" | "error" | "content">(
     mode === "edit" ? "loading" : "content",
   );
+  const [loadError, setLoadError] = useState<string>();
 
   useEffect(() => {
     if (mode !== "edit" || !id) return;
-    void programsApi.get(id).then((p) => {
-      setTitle(p.title);
-      setDescription(p.description ?? "");
-      setPrice(p.price ?? "");
-      setActive(p.active);
-      setLoadState("content");
-    });
+    void programsApi
+      .get(id)
+      .then((p) => {
+        setTitle(p.title);
+        setDescription(p.description ?? "");
+        setPrice(p.price ?? "");
+        setActive(p.active);
+        setLoadState("content");
+      })
+      .catch((e) => {
+        setLoadError(e instanceof ApiError ? e.message : "Erro ao carregar programa.");
+        setLoadState("error");
+      });
   }, [mode, id]);
 
   const submit = async (e: React.FormEvent) => {
@@ -156,8 +172,32 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
     }
   };
 
-  if (loadState === "loading") {
-    return <PanelState state="loading" rows={3} />;
+  if (loadState !== "content") {
+    return (
+      <PanelState
+        state={loadState}
+        message={loadError}
+        onRetry={() => {
+          if (mode === "edit" && id) {
+            setLoadState("loading");
+            void programsApi
+              .get(id)
+              .then((p) => {
+                setTitle(p.title);
+                setDescription(p.description ?? "");
+                setPrice(p.price ?? "");
+                setActive(p.active);
+                setLoadState("content");
+              })
+              .catch((e) => {
+                setLoadError(e instanceof ApiError ? e.message : "Erro ao carregar programa.");
+                setLoadState("error");
+              });
+          }
+        }}
+        rows={3}
+      />
+    );
   }
 
   return (
@@ -195,8 +235,13 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
             onChange={(e) => setPrice(e.target.value)}
           />
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+        <label htmlFor="prog-active" className="flex items-center gap-2 text-sm">
+          <input
+            id="prog-active"
+            type="checkbox"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+          />
           Programa ativo
         </label>
         <Button type="submit" disabled={saving}>
@@ -209,6 +254,7 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
 
 export function ProgramDetailPage() {
   const { toast } = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { id = "" } = useParams();
   const [program, setProgram] = useState<ProgramResponse | null>(null);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
@@ -257,7 +303,14 @@ export function ProgramDetailPage() {
     }
   };
 
-  const removeWorkout = async (workoutId: string) => {
+  const removeWorkout = async (workoutId: string, title: string) => {
+    const ok = await confirm({
+      title: "Excluir treino?",
+      description: `"${title}" será removido deste programa.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await programsApi.removeWorkout(id, workoutId);
       await load();
@@ -268,6 +321,7 @@ export function ProgramDetailPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      {confirmDialog}
       <Button variant="ghost" size="sm" asChild>
         <Link to="/app/programs">← Programas</Link>
       </Button>
@@ -345,7 +399,12 @@ export function ProgramDetailPage() {
               ) : null}
 
               {workouts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum treino ainda.</p>
+                <PanelState
+                  state="empty"
+                  title="Nenhum treino"
+                  message="Adicione o primeiro treino deste programa."
+                  className="py-6"
+                />
               ) : (
                 <ul className="space-y-2">
                   {workouts.map((w) => (
@@ -362,7 +421,8 @@ export function ProgramDetailPage() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => void removeWorkout(w.id)}
+                        aria-label={`Excluir treino ${w.title}`}
+                        onClick={() => void removeWorkout(w.id, w.title)}
                       >
                         ×
                       </Button>

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { Home, LineChart } from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { SkipLink } from "@/components/layout/SkipLink";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +16,7 @@ export function StudentLayout() {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
+      <SkipLink />
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-14 items-center px-4">
           <BrandLogo />

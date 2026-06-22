@@ -110,7 +110,7 @@ describe("StudentHomePage", () => {
         programId: "p1",
         title: "Lower Body A",
         description: "Foco em pernas",
-        contentMarkdown: null,
+        contentMarkdown: "- Agachamento 4x10\n- Leg press 3x12",
         dayIndex: 1,
         createdAt: "2024-01-01T00:00:00Z",
       },
@@ -128,7 +128,53 @@ describe("StudentHomePage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Lower Body A")).toBeInTheDocument();
+      expect(screen.getByText("Agachamento 4x10")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /marcar treino feito/i })).toBeInTheDocument();
     });
+  });
+
+  it("opens accessible check-in dialog", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue({
+      studentId: "1",
+      studentName: "Lucas",
+      enrolled: true,
+      adherence: "82.00",
+      currentStreak: 5,
+      weeklyDone: 3,
+      nextWorkoutId: "w1",
+      nextWorkoutTitle: "Lower Body A",
+      message: "Bora treinar!",
+      assumptions: [],
+    });
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue([
+      {
+        id: "w1",
+        programId: "p1",
+        title: "Lower Body A",
+        description: null,
+        contentMarkdown: "- Supino",
+        dayIndex: 1,
+        createdAt: "2024-01-01T00:00:00Z",
+      },
+    ]);
+
+    const user = (await import("@testing-library/user-event")).default.setup();
+    render(
+      <ToastProvider>
+        <AuthContext.Provider value={authValue}>
+          <MemoryRouter>
+            <StudentHomePage />
+          </MemoryRouter>
+        </AuthContext.Provider>
+      </ToastProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /marcar treino feito/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /marcar treino feito/i }));
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByLabelText(/como você se sentiu/i)).toBeInTheDocument();
   });
 });

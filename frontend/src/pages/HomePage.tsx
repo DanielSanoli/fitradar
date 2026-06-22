@@ -25,15 +25,15 @@ export function HomePage() {
       </div>
       <Card className="text-left">
         <CardHeader>
-          <CardTitle>Fundação FE-1</CardTitle>
+          <CardTitle>Para criadores fitness</CardTitle>
           <CardDescription>
-            Autenticação, rotas protegidas e tema da marca prontos para as telas de produto (FE-2).
+            Convide alunos, publique programas, acompanhe aderência e receba alertas quando alguém
+            precisar de atenção.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          O frontend React consome a API Spring existente em{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-foreground">/api/v1/**</code> sem
-          alterar o backend.
+          Alunos acessam treinos e check-in pelo celular. Métricas vêm do motor de retenção — a IA
+          apenas interpreta os sinais já calculados.
         </CardContent>
       </Card>
     </div>

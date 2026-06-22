@@ -2,11 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Zap } from "lucide-react";
 import { PushOptInBanner } from "@/components/pwa/PushPrompt";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { PanelState } from "@/components/ui/PanelState";
 import { memberApi } from "@/lib/api/member-api";
+import { SafeMarkdown } from "@/lib/markdown/safe-markdown";
 import type {
   CheckInResponse,
   StudentProgressResult,
@@ -21,6 +29,31 @@ function deriveMode(progress: StudentProgressResult | null): HomeMode {
   if (!progress?.enrolled) return "none";
   if (progress.nextWorkoutTitle) return "workout";
   return "rest";
+}
+
+function WorkoutContentPanel({ workout }: { workout: WorkoutResponse }) {
+  const markdown = workout.contentMarkdown?.trim() ?? "";
+
+  if (markdown) {
+    return (
+      <div className="rounded-xl border border-border bg-muted/30 p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Exercícios
+        </p>
+        <SafeMarkdown content={markdown} />
+      </div>
+    );
+  }
+
+  if (workout.description?.trim()) {
+    return <p className="text-sm text-muted-foreground">{workout.description}</p>;
+  }
+
+  return (
+    <p className="text-sm italic text-muted-foreground">
+      Seu criador ainda não publicou o conteúdo deste treino. Confira com ele ou volte mais tarde.
+    </p>
+  );
 }
 
 export function StudentHomePage() {
@@ -176,8 +209,8 @@ export function StudentHomePage() {
                   </div>
                   <div>
                     <h2 className="text-xl font-extrabold">{nextWorkout.title}</h2>
-                    <p className="text-sm text-muted-foreground">{nextWorkout.description}</p>
                   </div>
+                  <WorkoutContentPanel workout={nextWorkout} />
                   {!doneToday.has(nextWorkout.id) ? (
                     <Button className="w-full" size="lg" onClick={() => openCheckIn(nextWorkout)}>
                       Marcar treino feito
@@ -200,7 +233,11 @@ export function StudentHomePage() {
                         <p className="font-medium">
                           #{w.dayIndex} {w.title}
                         </p>
-                        <p className="text-xs text-muted-foreground">{w.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {w.contentMarkdown?.trim()
+                            ? "Conteúdo disponível"
+                            : (w.description ?? "Sem descrição")}
+                        </p>
                       </div>
                       {doneToday.has(w.id) ? (
                         <span className="text-xs font-semibold text-primary">feito hoje</span>
@@ -220,68 +257,64 @@ export function StudentHomePage() {
         ) : null}
       </PanelState>
 
-      {sheetOpen && activeWorkout ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 md:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Check-in de treino"
-        >
-          <div className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-5 shadow-xl md:rounded-2xl">
-            <h2 className="text-lg font-bold">Check-in</h2>
-            <p className="text-sm text-muted-foreground">{activeWorkout.title}</p>
+      <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+        <DialogContent aria-describedby="check-in-desc">
+          <DialogHeader>
+            <DialogTitle>Check-in</DialogTitle>
+            <DialogDescription id="check-in-desc">{activeWorkout?.title}</DialogDescription>
+          </DialogHeader>
 
-            <div className="mt-4 space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="ci-feeling">Como você se sentiu? (1 a 5)</Label>
-                <select
-                  id="ci-feeling"
-                  value={feeling}
-                  onChange={(e) => setFeeling(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">—</option>
-                  <option value="1">1 · difícil</option>
-                  <option value="2">2</option>
-                  <option value="3">3 · ok</option>
-                  <option value="4">4</option>
-                  <option value="5">5 · ótimo</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="ci-notes">Notas (opcional)</Label>
-                <textarea
-                  id="ci-notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[72px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
-              <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5"
-                />
-                Ao informar sensação ou notas, autorizo compartilhar com meu criador.
-              </label>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="ci-feeling">Como você se sentiu? (1 a 5)</Label>
+              <select
+                id="ci-feeling"
+                value={feeling}
+                onChange={(e) => setFeeling(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">—</option>
+                <option value="1">1 · difícil</option>
+                <option value="2">2</option>
+                <option value="3">3 · ok</option>
+                <option value="4">4</option>
+                <option value="5">5 · ótimo</option>
+              </select>
             </div>
-
-            <div className="mt-4 flex flex-col gap-2">
-              <Button disabled={submitting} onClick={() => void submitCheckIn(false)}>
-                Concluí
-              </Button>
-              <Button variant="ghost" disabled={submitting} onClick={() => void submitCheckIn(true)}>
-                Pulei
-              </Button>
-              <Button variant="outline" onClick={() => setSheetOpen(false)}>
-                Cancelar
-              </Button>
+            <div className="space-y-1">
+              <Label htmlFor="ci-notes">Notas (opcional)</Label>
+              <textarea
+                id="ci-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[72px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
+              />
             </div>
+            <label htmlFor="ci-consent" className="flex items-start gap-2 text-xs text-muted-foreground">
+              <input
+                id="ci-consent"
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="mt-0.5"
+              />
+              Ao informar sensação ou notas, autorizo compartilhar com meu criador.
+            </label>
           </div>
-        </div>
-      ) : null}
+
+          <div className="flex flex-col gap-2">
+            <Button disabled={submitting} onClick={() => void submitCheckIn(false)}>
+              Concluí
+            </Button>
+            <Button variant="ghost" disabled={submitting} onClick={() => void submitCheckIn(true)}>
+              Pulei
+            </Button>
+            <Button variant="outline" onClick={() => setSheetOpen(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

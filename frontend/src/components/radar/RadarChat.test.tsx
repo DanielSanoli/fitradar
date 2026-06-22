@@ -40,6 +40,6 @@ describe("RadarChat", () => {
         ]}
       />,
     );
-    expect(screen.getByText("Sugestão, não orientação médica.")).toBeInTheDocument();
+    expect(screen.getByText("Sugestão, não orientação médica/profissional.")).toBeInTheDocument();
   });
 });

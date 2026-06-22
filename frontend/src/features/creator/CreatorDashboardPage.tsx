@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { InsightCard } from "@/components/radar/InsightCard";
 import { RadarChat, type RadarMessage } from "@/components/radar/RadarChat";
 import { RiskBadge } from "@/components/radar/RiskBadge";
@@ -35,6 +35,7 @@ function initials(name: string): string {
 }
 
 export function CreatorDashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [overview, setOverview] = useState<CreatorOverviewResult | null>(null);
   const [atRisk, setAtRisk] = useState<ChurnRiskResult[]>([]);
@@ -143,7 +144,7 @@ export function CreatorDashboardPage() {
           onRetry={loadOverview}
           rows={4}
         >
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <InsightCard
               label="Alunos ativos"
               value={overview?.activeStudents ?? "—"}
@@ -209,7 +210,7 @@ export function CreatorDashboardPage() {
               ) : null}
             </div>
           </CardHeader>
-          <CardContent className="flex-1 px-3 py-2">
+          <CardContent className="flex flex-1 flex-col justify-center px-3 py-2">
             {attention === "empty" ? (
               <PanelState
                 state="empty"
@@ -217,9 +218,7 @@ export function CreatorDashboardPage() {
                 title="Nenhum aluno ainda"
                 message="Convide seu primeiro aluno para acompanhar aderência e risco de churn."
                 actionLabel="Gerenciar alunos"
-                onAction={() => {
-                  window.location.href = "/app/students";
-                }}
+                onAction={() => navigate("/app/students")}
               />
             ) : null}
 
@@ -275,7 +274,7 @@ export function CreatorDashboardPage() {
           messages={chatMessages}
           onAsk={handleAsk}
           loading={chatLoading}
-          className="min-h-[480px]"
+          className="min-h-[min(480px,70vh)]"
         />
       </section>
     </div>

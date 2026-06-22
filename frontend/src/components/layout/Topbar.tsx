@@ -30,7 +30,7 @@ export function Topbar({ title, onMenuClick, showMenu = false }: TopbarProps) {
         </div>
       )}
       {title ? (
-        <h1 className="truncate text-base font-semibold tracking-tight md:text-lg">{title}</h1>
+        <p className="truncate text-base font-semibold tracking-tight md:text-lg">{title}</p>
       ) : (
         <span className="hidden md:inline-flex">
           <BrandLogo />

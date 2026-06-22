@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { SkipLink } from "@/components/layout/SkipLink";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Topbar } from "@/components/layout/Topbar";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ export function AppLayout({ variant }: AppLayoutProps) {
 
   return (
     <div className="flex min-h-screen">
+      <SkipLink />
       <Sidebar variant={variant} className="hidden md:flex" />
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">

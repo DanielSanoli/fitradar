@@ -1,6 +1,18 @@
 // Painel do criador.
-const me = FR.requireRole("CREATOR", "/");
-if (me) {
+let me = null;
+
+async function bootstrapCreator() {
+  me = FR.requireRole("CREATOR", "/");
+  if (!me) return;
+
+  try {
+    me = await FR.validateSession();
+    if (!me) return;
+  } catch (e) {
+    FR.toast(e.message || "Erro ao validar sessão.", true);
+    return;
+  }
+
   document.getElementById("who").textContent = me.name;
   document.getElementById("logout").onclick = () => FR.logout("/");
   initTabs();
@@ -14,6 +26,18 @@ if (me) {
   initAsk();
   initMarketplaceForm();
   initOnboarding();
+}
+
+bootstrapCreator();
+
+function panelLoadError(e, targetId, retryFn) {
+  if (e.status === 401) return;
+  if (e.status === 402) {
+    renderAccessBanner();
+    FR.setPanelError(targetId, e.message, retryFn);
+    return;
+  }
+  FR.setPanelError(targetId, e.message, retryFn);
 }
 
 async function initOnboarding() {
@@ -78,18 +102,31 @@ function initTabs() {
 }
 
 function renderAccessBanner() {
-  if (me.accessAllowed) return;
+  const u = FR.user();
+  if (!u || u.accessAllowed) return;
   const el = document.getElementById("access-banner");
   el.classList.remove("hidden");
-  el.innerHTML = `<strong>${FR.esc(me.accessMessage || "Sua assinatura precisa de atenção.")}</strong>
+  el.innerHTML = `<strong>${FR.esc(u.accessMessage || "Sua assinatura precisa de atenção.")}</strong>
     <div style="margin-top:.6rem"><button class="btn-sm" id="upgrade">Assinar o Pro</button></div>`;
   document.getElementById("upgrade").onclick = async () => {
     try {
       const r = await FR.post("/api/v1/billing/checkout/pro");
-      if (r && r.checkoutUrl) location.href = r.checkoutUrl;
-      else FR.toast("Checkout indisponível no momento", true);
+      if (r && r.checkoutUrl && isAllowedCheckoutUrl(r.checkoutUrl)) {
+        location.href = r.checkoutUrl;
+      } else FR.toast("Checkout indisponível ou URL inválida.", true);
     } catch (e) { FR.toast(e.message, true); }
   };
+}
+
+function isAllowedCheckoutUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    return host === "asaas.com" || host.endsWith(".asaas.com");
+  } catch {
+    return false;
+  }
 }
 
 /* ----------------------------- Retenção ----------------------------- */
@@ -106,7 +143,7 @@ async function loadRetention() {
       ${stat(ov.atRiskCount, "Em risco")}
       ${stat(ov.checkInsThisWeek, "Check-ins na semana")}
       ${stat(ov.newStudentsThisWeek, "Novos na semana")}`;
-  } catch (e) { FR.setPanelError("overview-stats", e.message, loadRetention); }
+  } catch (e) { panelLoadError(e, "overview-stats", loadRetention); }
 
   try {
     const risk = await FR.get("/api/v1/retention/students-at-risk?minLevel=MEDIUM");
@@ -125,7 +162,7 @@ async function loadRetention() {
         </div>
         <button class="btn-ghost btn-sm" onclick="genNudge('${r.studentId}')">Gerar nudge</button>
       </div>`).join(""));
-  } catch (e) { FR.setPanelError("at-risk", e.message, () => loadRetention()); }
+  } catch (e) { panelLoadError(e, "at-risk", () => loadRetention()); }
 
   loadAlerts();
 }
@@ -150,7 +187,7 @@ async function loadAlerts() {
         </div>
         ${a.read ? "" : `<button class="btn-ghost btn-sm" onclick="markRead('${a.id}')">Marcar lido</button>`}
       </div>`).join(""));
-  } catch (e) { FR.setPanelError("alerts", e.message, loadAlerts); }
+  } catch (e) { panelLoadError(e, "alerts", loadAlerts); }
 }
 
 async function markRead(id) {
@@ -207,6 +244,8 @@ async function ask(question) {
 function addMsg(chat, who, text) {
   const div = document.createElement("div");
   div.className = "msg " + who;
+  div.setAttribute("role", who === "user" ? "article" : "article");
+  div.setAttribute("aria-label", who === "user" ? "Sua mensagem" : "Resposta do Radar");
   div.textContent = text;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;

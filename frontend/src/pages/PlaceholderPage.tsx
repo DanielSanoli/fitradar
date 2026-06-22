@@ -17,8 +17,8 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
       </CardHeader>
       <CardContent className="space-y-2 text-sm text-muted-foreground">
         <p>
-          Olá, <strong className="text-foreground">{user?.name}</strong>. Esta rota está protegida e
-          autenticada — as telas de produto chegam na fase FE-2.
+          Olá, <strong className="text-foreground">{user?.name}</strong>. Esta seção será liberada em
+          uma próxima atualização.
         </p>
         {!user?.accessAllowed && user?.role === "CREATOR" ? (
           <p className="text-[hsl(38_100%_56%)]">

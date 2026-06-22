@@ -152,11 +152,6 @@ export async function apiRequestPublic<T>(
   return data as T;
 }
 
-/** Expõe refresh para testes unitários. */
-export async function refreshAccessTokenForTest(): Promise<boolean> {
-  return refreshOnce();
-}
-
 export function getApiBaseUrl(): string {
   return baseUrl();
 }

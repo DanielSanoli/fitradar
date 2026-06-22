@@ -1,3 +1,4 @@
+import { redirectToCheckout } from "@/lib/billing/checkout-url";
 import { useLocation, Link } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,10 @@ export function BillingRequiredPage() {
     try {
       const response = await api.post<{ checkoutUrl?: string }>(`${API_PREFIX}/billing/checkout/pro`);
       if (response.checkoutUrl) {
-        window.location.href = response.checkoutUrl;
+        if (!redirectToCheckout(response.checkoutUrl)) {
+          setError("URL de checkout inválida. Entre em contato com o suporte.");
+          return;
+        }
         return;
       }
       setError("Checkout indisponível no momento.");
@@ -58,9 +62,11 @@ export function BillingRequiredPage() {
             <Button onClick={startCheckout} disabled={loading}>
               {loading ? "Redirecionando…" : "Assinar o Pro"}
             </Button>
-            <Button asChild variant="outline">
-              <Link to="/app">Voltar ao painel</Link>
-            </Button>
+            {user?.accessAllowed ? (
+              <Button asChild variant="outline">
+                <Link to="/app">Voltar ao painel</Link>
+              </Button>
+            ) : null}
           </div>
         </CardContent>
       </Card>

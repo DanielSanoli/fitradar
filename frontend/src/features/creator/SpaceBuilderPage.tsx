@@ -183,6 +183,8 @@ export function SpaceBuilderPage() {
                     key={hex}
                     type="button"
                     title={hex}
+                    aria-label={`Cor ${hex}`}
+                    aria-pressed={primaryColor === hex}
                     onClick={() => setPrimaryColor(hex)}
                     className={cn(
                       "size-9 rounded-full border-2 transition-transform hover:scale-105",

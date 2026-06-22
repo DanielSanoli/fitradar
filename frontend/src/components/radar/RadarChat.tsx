@@ -38,7 +38,7 @@ function Disclaimer() {
       >
         i
       </span>
-      Sugestão, não orientação médica.
+      Sugestão, não orientação médica/profissional.
     </div>
   );
 }
@@ -140,8 +140,8 @@ export function RadarChat({
               </div>
             </div>
           ) : (
-            <div key={msg.id} className="mb-3.5 flex justify-end">
-              <div className="max-w-[82%] rounded-[14px_4px_14px_14px] border border-primary/30 bg-primary/15 px-3 py-2.5 text-[13.5px] leading-snug text-primary-foreground/90">
+            <div key={msg.id} className="mb-3.5 flex justify-end pl-8">
+              <div className="max-w-[82%] rounded-[14px_4px_14px_14px] border border-primary/35 bg-primary/12 px-3.5 py-2.5 text-[13.5px] leading-relaxed text-foreground">
                 {msg.text}
               </div>
             </div>
@@ -174,7 +174,7 @@ export function RadarChat({
           ))}
         </div>
         <form
-          className="flex gap-2"
+          className="flex items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             void submit(input);
@@ -186,9 +186,9 @@ export function RadarChat({
             placeholder="Digite sua pergunta…"
             disabled={loading}
             aria-label="Pergunta ao Radar"
-            className="flex-1"
+            className="mb-0 flex-1"
           />
-          <Button type="submit" disabled={loading || !input.trim()}>
+          <Button type="submit" disabled={loading || !input.trim()} className="shrink-0">
             Enviar
           </Button>
         </form>
@@ -199,7 +199,7 @@ export function RadarChat({
           >
             i
           </span>
-          As respostas do Radar são sugestões — não substituem orientação médica.
+          As respostas do Radar são sugestões — não substituem orientação médica/profissional.
         </div>
       </div>
     </div>
