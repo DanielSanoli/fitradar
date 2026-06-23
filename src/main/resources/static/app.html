@@ -42,19 +42,13 @@
           <div class="list retention-card-body" id="at-risk" aria-live="polite"></div>
         </div>
 
-        <div class="card retention-card retention-card-chat">
+        <div class="card retention-card retention-card-radar-cta">
           <h2>Pergunte ao Radar</h2>
-          <p class="muted retention-card-desc">Copiloto de retenção · lê os sinais da sua comunidade.</p>
-          <div class="chat" id="chat" role="log" aria-live="polite" aria-relevant="additions"></div>
-          <div class="chips" role="group" aria-label="Perguntas sugeridas">
-            <button type="button" class="chip" data-q="Quais alunos estão em risco?">Alunos em risco</button>
-            <button type="button" class="chip" data-q="Como está minha comunidade?">Visão geral</button>
+          <p class="muted retention-card-desc">Copiloto de retenção — disponível em qualquer tela pelo botão flutuante.</p>
+          <div class="retention-card-body">
+            <p class="muted">Pergunte sobre alunos em risco, visão geral da comunidade ou próximas ações.</p>
+            <button type="button" id="open-radar-widget">Abrir chat do Radar</button>
           </div>
-          <form id="ask-form">
-            <label class="hidden" for="ask-input">Sua pergunta ao copiloto</label>
-            <input id="ask-input" placeholder="Ex.: Quais alunos estão em risco?" autocomplete="off" />
-            <button type="submit">Enviar</button>
-          </form>
         </div>
       </div>
 
@@ -141,6 +135,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/ui.js"></script>
+  <script src="/js/radar-widget.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>

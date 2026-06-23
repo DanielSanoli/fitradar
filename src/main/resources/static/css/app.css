@@ -144,19 +144,42 @@ textarea { min-height: 90px; resize: vertical; }
   align-items: stretch;
   margin-top: 1.2rem;
 }
+.retention-grid > .retention-card {
+  height: 100%;
+  min-height: 0;
+}
 .retention-card {
   display: flex;
   flex-direction: column;
-  min-height: 480px;
 }
-.retention-card-desc { margin: -.25rem 0 .85rem; font-size: .88rem; }
+.retention-card-desc {
+  margin: -0.25rem 0 0.85rem;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
 .retention-card-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 14rem;
+}
+.retention-card-body .panel-state {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
-.retention-card-chat .chat { flex: 1; min-height: 220px; max-height: none; margin-bottom: .5rem; }
+.retention-card-radar-cta .retention-card-body {
+  gap: 0.75rem;
+}
+.retention-card-radar-cta .retention-card-body p {
+  margin: 0;
+}
+.retention-card-radar-cta #open-radar-widget {
+  align-self: flex-start;
+  margin-top: auto;
+}
 
 /* Lists */
 .list { display: flex; flex-direction: column; gap: .6rem; }
@@ -183,9 +206,23 @@ textarea { min-height: 90px; resize: vertical; }
 .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
 .auth-card { width: 100%; max-width: 410px; animation: fadeIn .3s ease; }
 
-/* Modal overlay */
-#modal.auth-wrap { position: fixed; inset: 0; z-index: 150; min-height: auto; padding: 1rem; }
-#modal .auth-card { max-height: 90vh; overflow-y: auto; animation: slideUp .22s ease; }
+/* Auth / modal overlays (fixed, não empurram a página) */
+.auth-overlay,
+#auth.auth-wrap,
+#modal.auth-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  min-height: auto;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+}
+#modal.auth-wrap { background: rgba(0, 0, 0, 0.55); }
+#auth.auth-wrap:not(.hidden),
+.auth-overlay:not(.hidden) { display: grid; }
+
+#modal .auth-card { max-height: 90vh; overflow-y: auto; animation: modalSlideUp .22s ease; }
 
 /* Toast */
 #toast {
@@ -316,15 +353,136 @@ textarea { min-height: 90px; resize: vertical; }
 .student-section { margin-top: 1.5rem; }
 .student-section:first-of-type { margin-top: 0; }
 
+/* Radar floating widget */
+.radar-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 140;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(30, 215, 166, 0.4);
+  background: var(--accent);
+  color: #042018;
+  box-shadow: 0 8px 28px var(--accent-glow);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.radar-fab:hover { transform: scale(1.04); }
+.radar-fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.radar-fab-dot {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 3px;
+  background: #042018;
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px rgba(4, 32, 24, 0.35);
+}
+.radar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 145;
+  background: rgba(0, 0, 0, 0.6);
+}
+.radar-panel {
+  position: fixed;
+  z-index: 146;
+  right: 1rem;
+  bottom: 5.5rem;
+  width: min(100vw - 2rem, 420px);
+  max-height: min(70vh, 640px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #20262f, #161b22);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: modalSlideUp .22s ease;
+}
+.radar-panel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(90deg, rgba(30, 215, 166, 0.07), transparent);
+}
+.radar-panel-brand {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  border: 1px solid rgba(30, 215, 166, 0.3);
+  background: rgba(30, 215, 166, 0.15);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.radar-panel-title { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.radar-panel-subtitle { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--text-dim); }
+.radar-panel-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.35rem;
+  line-height: 1;
+  min-height: auto;
+  padding: 0.15rem 0.35rem;
+  box-shadow: none;
+}
+.radar-panel-close:hover { filter: none; color: var(--text); background: transparent; }
+.radar-panel-chat {
+  flex: 1;
+  min-height: 180px;
+  max-height: none;
+  margin: 0;
+  padding: 1rem 1.1rem 0.5rem;
+}
+.radar-panel .chips { padding: 0 1.1rem; }
+.radar-ask-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 1.1rem 0;
+}
+.radar-ask-form input { margin-bottom: 0; flex: 1; min-width: 0; }
+.radar-ask-form button { margin-bottom: 0; flex-shrink: 0; }
+.radar-disclaimer {
+  margin: 0.5rem 1.1rem 0.85rem;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  display: flex;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+.radar-disclaimer span {
+  display: inline-flex;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--text-dim);
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  font-style: italic;
+  flex-shrink: 0;
+}
+
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes modalSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
 @media (max-width: 900px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .retention-grid { grid-template-columns: 1fr; }
-  .retention-card { min-height: auto; }
+  .retention-card-body { min-height: 10rem; }
 }
 
 @media (max-width: 720px) {
@@ -336,6 +494,14 @@ textarea { min-height: 90px; resize: vertical; }
   .item .btn-sm, .item .btn-ghost { width: 100%; margin-top: .35rem; }
   #ask-form { flex-direction: column; align-items: stretch; }
   #ask-form button { width: 100%; }
+  .radar-panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: auto;
+    max-height: min(92vh, 720px);
+    border-radius: 16px 16px 0 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

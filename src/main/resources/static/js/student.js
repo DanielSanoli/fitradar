@@ -2,11 +2,22 @@
 const authEl = document.getElementById("auth");
 const appEl = document.getElementById("app");
 
-if (FR.token() && FR.user() && FR.user().role === "STUDENT") {
-  start();
-} else if (FR.token() && FR.user() && FR.user().role === "CREATOR") {
-  location.href = "/app.html";
+async function bootstrapStudent() {
+  if (!FR.token()) return;
+  try {
+    const me = await FR.validateSession();
+    if (!me) return;
+    if (me.role === "CREATOR" || me.role === "ADMIN") {
+      location.href = "/app.html";
+      return;
+    }
+    if (me.role === "STUDENT") start();
+  } catch (_) {
+    FR.clearAuth();
+  }
 }
+
+void bootstrapStudent();
 
 document.getElementById("login-form").onsubmit = async (e) => {
   e.preventDefault();
@@ -14,7 +25,17 @@ document.getElementById("login-form").onsubmit = async (e) => {
   FRUI.buttonLoading(btn, true, "Entrando…");
   try {
     const r = await FR.login(document.getElementById("email").value, document.getElementById("password").value);
-    if (r.user.role === "CREATOR") { location.href = "/app.html"; return; }
+    const role = r.user.role;
+    if (role === "CREATOR" || role === "ADMIN") {
+      FR.toast("Esta conta é de criador. Redirecionando…");
+      location.href = "/app.html";
+      return;
+    }
+    if (role !== "STUDENT") {
+      FR.clearAuth();
+      FR.toast("Tipo de conta não suportado nesta área.", true);
+      return;
+    }
     start();
   } catch (err) { FR.toast(err.message, true); }
   finally { FRUI.buttonLoading(btn, false); }
@@ -25,6 +46,7 @@ function start() {
   appEl.classList.remove("hidden");
   document.getElementById("who").textContent = FR.user().name;
   document.getElementById("logout").onclick = () => FR.logout("/student.html");
+  FRRadar.init("STUDENT");
   loadSpace();
   loadProgress();
   loadGamification();

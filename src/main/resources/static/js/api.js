@@ -36,7 +36,19 @@ const FR = (() => {
     sessionRedirecting = true;
     clearAuth();
     toast(message || "Sessão expirada. Entre novamente.", true);
-    window.setTimeout(() => { location.href = "/"; }, 400);
+    window.setTimeout(() => { location.href = loginPageForPath(); }, 400);
+  }
+
+  function loginPageForPath(path) {
+    const p = path || location.pathname;
+    if (p.includes("student")) return "/student.html";
+    if (p.includes("app.html")) return "/";
+    return "/";
+  }
+
+  function homeForRole(userRole) {
+    if (userRole === "STUDENT") return "/student.html";
+    return "/app.html";
   }
 
   function parseResponseBody(text) {
@@ -146,8 +158,12 @@ const FR = (() => {
 
   function requireRole(role, loginPage) {
     const u = user();
-    if (!u || !token()) { location.href = loginPage; return null; }
-    if (role && u.role !== role) { location.href = loginPage; return null; }
+    const fallback = loginPage || loginPageForPath();
+    if (!u || !token()) { location.href = fallback; return null; }
+    if (role && u.role !== role) {
+      location.href = homeForRole(u.role);
+      return null;
+    }
     return u;
   }
 
@@ -212,7 +228,7 @@ const FR = (() => {
 
   return {
     setAuth, clearAuth, updateStoredUser, token, user, request, get, post, put, del, pageContent,
-    login, register, requireRole, logout, validateSession, toast, esc,
+    login, register, requireRole, logout, validateSession, loginPageForPath, homeForRole, toast, esc,
     setPanelLoading, setPanelEmpty, setPanelError, showLoading,
   };
 })();

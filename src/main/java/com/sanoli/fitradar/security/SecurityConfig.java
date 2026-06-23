@@ -44,7 +44,7 @@ public class SecurityConfig {
                         (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
                 ))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/app.html", "/student.html", "/offline.html",
+                        .requestMatchers("/", "/index.html", "/register.html", "/app.html", "/student.html", "/offline.html",
                                 "/privacy.html", "/manifest.webmanifest", "/sw.js",
                                 "/css/**", "/js/**", "/icons/**", "/favicon.ico", "/assets/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()

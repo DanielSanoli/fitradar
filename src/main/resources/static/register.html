@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1117" />
+  <title>FitRadar — Criar conta de criador</title>
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
+
+  <div class="auth-wrap" id="main-content">
+    <div class="card auth-card" role="dialog" aria-modal="true" aria-labelledby="register-title">
+      <div class="brand" style="margin-bottom:1rem" aria-hidden="true"><span class="dot"></span> FitRadar</div>
+      <h1 id="register-title" style="font-size:1.35rem">Criar conta de criador</h1>
+      <p class="muted" style="margin-top:-.5rem">Monte seu espaço e comece a acompanhar a retenção da sua comunidade.</p>
+      <form id="register-form">
+        <label for="reg-name">Nome</label>
+        <input type="text" id="reg-name" name="name" required autocomplete="name" />
+        <label for="reg-email">E-mail</label>
+        <input type="email" id="reg-email" name="email" required autocomplete="email" inputmode="email" />
+        <label for="reg-password">Senha (mín. 8 caracteres)</label>
+        <input type="password" id="reg-password" name="password" required minlength="8" autocomplete="new-password" />
+        <p class="muted" style="font-size:.82rem;margin-top:-.5rem">Ao criar conta, você concorda com a <a href="/privacy.html" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
+        <button type="submit" style="width:100%">Criar e começar</button>
+      </form>
+      <p class="center" style="margin-top:1rem">Já tem conta? <a href="/">Entrar</a></p>
+      <p class="center"><a href="/student.html">Sou aluno</a></p>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    if (FR.token() && FR.user()) {
+      location.href = FR.user().role === "STUDENT" ? "/student.html" : "/app.html";
+    }
+
+    document.getElementById("register-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      FRUI.buttonLoading(btn, true, "Criando…");
+      try {
+        await FR.register(
+          document.getElementById("reg-name").value,
+          document.getElementById("reg-email").value,
+          document.getElementById("reg-password").value,
+        );
+        location.href = "/app.html";
+      } catch (err) {
+        FR.toast(err.message, true);
+      } finally {
+        FRUI.buttonLoading(btn, false);
+      }
+    };
+  </script>
+</body>
+</html>

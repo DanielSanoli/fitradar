@@ -23,9 +23,11 @@ async function bootstrapCreator() {
   loadLeaderboard();
   loadMarketplace();
   loadSpace();
-  initAsk();
   initMarketplaceForm();
   initOnboarding();
+  FRRadar.init("CREATOR");
+  const openRadar = document.getElementById("open-radar-widget");
+  if (openRadar) openRadar.onclick = () => FRRadar.open();
 }
 
 bootstrapCreator();
@@ -216,39 +218,6 @@ async function genNudge(studentId) {
 
 function stat(value, label) {
   return `<div class="stat"><div class="value">${FR.esc(value)}</div><div class="label">${FR.esc(label)}</div></div>`;
-}
-
-/* ----------------------------- Pergunte ao Radar ----------------------------- */
-function initAsk() {
-  const chat = document.getElementById("chat");
-  addMsg(chat, "bot", "Oi! Pergunte sobre os alunos em risco ou a visão geral da sua comunidade.");
-  document.getElementById("ask-form").onsubmit = (e) => { e.preventDefault(); ask(document.getElementById("ask-input").value); };
-  document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => ask(c.dataset.q)));
-}
-
-async function ask(question) {
-  question = (question || "").trim();
-  if (!question) return;
-  const chat = document.getElementById("chat");
-  const submitBtn = document.querySelector("#ask-form button[type=submit]");
-  addMsg(chat, "user", question);
-  document.getElementById("ask-input").value = "";
-  FRUI.buttonLoading(submitBtn, true, "Enviando…");
-  try {
-    const r = await FR.post("/api/v1/copilot/ask", { question });
-    addMsg(chat, "bot", r.answer);
-  } catch (e) { addMsg(chat, "bot", "Não consegui responder agora. Tente de novo em instantes.\n\n" + e.message); }
-  finally { FRUI.buttonLoading(submitBtn, false); }
-}
-
-function addMsg(chat, who, text) {
-  const div = document.createElement("div");
-  div.className = "msg " + who;
-  div.setAttribute("role", who === "user" ? "article" : "article");
-  div.setAttribute("aria-label", who === "user" ? "Sua mensagem" : "Resposta do Radar");
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
 }
 
 /* ----------------------------- Alunos ----------------------------- */
