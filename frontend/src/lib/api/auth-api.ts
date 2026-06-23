@@ -18,6 +18,12 @@ export async function fetchCurrentUser(): Promise<User> {
   return api.get<User>(`${API_PREFIX}/auth/me`);
 }
 
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return apiRequestPublic<{ message: string }>("POST", `${API_PREFIX}/auth/forgot-password`, {
+    email,
+  });
+}
+
 export async function refreshSession(): Promise<AuthResponse | null> {
   const refreshToken = readStoredRefreshToken();
   if (!refreshToken) return null;

@@ -4,13 +4,15 @@ type FilterPillProps = {
   label: string;
   active?: boolean;
   onClick: () => void;
+  "aria-current"?: boolean | "true" | "false";
 };
 
-export function FilterPill({ label, active, onClick }: FilterPillProps) {
+export function FilterPill({ label, active, onClick, "aria-current": ariaCurrent }: FilterPillProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-current={active ? ariaCurrent ?? true : undefined}
       className={cn(
         "h-9 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-semibold transition-colors",
         active

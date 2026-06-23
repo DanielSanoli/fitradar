@@ -2,6 +2,7 @@ package com.sanoli.fitradar.retention.digest;
 
 import com.sanoli.fitradar.config.RetentionProperties;
 import com.sanoli.fitradar.domain.AppUser;
+import com.sanoli.fitradar.domain.DigestFrequency;
 import com.sanoli.fitradar.domain.RiskLevel;
 import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.repository.UserRepository;
@@ -13,6 +14,7 @@ import com.sanoli.fitradar.retention.engine.CreatorOverviewResult;
 import com.sanoli.fitradar.retention.engine.RetentionEngineService;
 import com.sanoli.fitradar.service.EmailService;
 import com.sanoli.fitradar.service.PushNotificationService;
+import com.sanoli.fitradar.service.UserSettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -21,10 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
- * Proatividade (retention.digest): resumo semanal ao criador e nudge ao aluno inativo.
+ * Proatividade (retention.digest): resumo ao criador e nudge ao aluno inativo.
  * Todo número vem do motor (Regra de Ouro); aqui só compomos texto e enviamos e-mail.
  */
 @Service
@@ -41,6 +42,7 @@ public class RetentionDigestService {
     private final EmailService emailService;
     private final RetentionProperties retentionProperties;
     private final PushNotificationService pushNotificationService;
+    private final UserSettingsService userSettingsService;
 
     public RetentionDigestService(
             RetentionEngineService engine,
@@ -48,7 +50,8 @@ public class RetentionDigestService {
             UserRepository userRepository,
             EmailService emailService,
             RetentionProperties retentionProperties,
-            PushNotificationService pushNotificationService
+            PushNotificationService pushNotificationService,
+            UserSettingsService userSettingsService
     ) {
         this.engine = engine;
         this.nudgeService = nudgeService;
@@ -56,10 +59,11 @@ public class RetentionDigestService {
         this.emailService = emailService;
         this.retentionProperties = retentionProperties;
         this.pushNotificationService = pushNotificationService;
+        this.userSettingsService = userSettingsService;
     }
 
     @Transactional(readOnly = true)
-    public int sendWeeklyDigests() {
+    public int sendDigestsForFrequency(DigestFrequency targetFrequency) {
         int sent = 0;
         int page = 0;
         Page<AppUser> creators;
@@ -67,25 +71,37 @@ public class RetentionDigestService {
             creators = userRepository.findByRole(UserRole.CREATOR, PageRequest.of(page++, CREATOR_PAGE_SIZE));
             for (AppUser creator : creators) {
                 try {
-                    if (sendWeeklyDigest(creator)) {
+                    DigestFrequency pref = userSettingsService.digestFrequencyFor(creator.getId());
+                    if (pref == DigestFrequency.NONE || pref != targetFrequency) {
+                        continue;
+                    }
+                    if (sendWeeklyDigest(creator, targetFrequency)) {
                         sent++;
                     }
                 } catch (RuntimeException exception) {
-                    log.warn("Falha ao enviar resumo semanal ao criador {}", creator.getId(), exception);
+                    log.warn("Falha ao enviar resumo ao criador {}", creator.getId(), exception);
                 }
             }
         } while (creators.hasNext());
         return sent;
     }
 
-    public boolean sendWeeklyDigest(AppUser creator) {
+    @Transactional(readOnly = true)
+    public int sendWeeklyDigests() {
+        return sendDigestsForFrequency(DigestFrequency.WEEKLY);
+    }
+
+    public boolean sendWeeklyDigest(AppUser creator, DigestFrequency frequency) {
         if (creator.getEmail() == null || creator.getEmail().isBlank()) {
             return false;
         }
         CreatorOverviewResult overview = engine.creatorOverview(creator.getId());
         List<ChurnRiskResult> atRisk = engine.studentsAtRisk(creator.getId(), RiskLevel.MEDIUM);
-        String body = buildWeeklyBody(creator, overview, atRisk);
-        emailService.sendWeeklyDigest(creator.getEmail(), "Seu resumo semanal do FitRadar", body);
+        String body = buildCreatorDigestBody(creator, overview, atRisk);
+        String subject = frequency == DigestFrequency.DAILY
+                ? "Seu resumo diário do FitRadar"
+                : "Seu resumo semanal do FitRadar";
+        emailService.sendWeeklyDigest(creator.getEmail(), subject, body);
         return true;
     }
 
@@ -133,7 +149,7 @@ public class RetentionDigestService {
         return sent;
     }
 
-    private String buildWeeklyBody(AppUser creator, CreatorOverviewResult overview, List<ChurnRiskResult> atRisk) {
+    private String buildCreatorDigestBody(AppUser creator, CreatorOverviewResult overview, List<ChurnRiskResult> atRisk) {
         StringBuilder body = new StringBuilder();
         body.append("Olá, ").append(creator.getName()).append("!\n\n");
         body.append("Resumo da sua comunidade no FitRadar:\n");

@@ -46,6 +46,11 @@ const SpaceBuilderPage = lazy(() =>
 const StudentHomePage = lazy(() =>
   import("@/features/student/StudentHomePage").then((m) => ({ default: m.StudentHomePage })),
 );
+const CreatorSettingsPage = lazy(() =>
+  import("@/features/creator/CreatorSettingsPage").then((m) => ({
+    default: m.CreatorSettingsPage,
+  })),
+);
 const StudentProgressPage = lazy(() =>
   import("@/features/student/StudentProgressPage").then((m) => ({
     default: m.StudentProgressPage,
@@ -174,7 +179,9 @@ export const router = createBrowserRouter([
               {
                 path: "settings",
                 element: (
-                  <PlaceholderPage title="Configurações" description="Billing — em breve." />
+                  <Lazy>
+                    <CreatorSettingsPage />
+                  </Lazy>
                 ),
               },
             ],

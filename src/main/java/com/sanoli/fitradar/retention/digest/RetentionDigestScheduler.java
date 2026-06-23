@@ -1,5 +1,6 @@
 package com.sanoli.fitradar.retention.digest;
 
+import com.sanoli.fitradar.domain.DigestFrequency;
 import com.sanoli.fitradar.config.DigestProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +28,19 @@ public class RetentionDigestScheduler {
         if (!digestProperties.isEnabled()) {
             return;
         }
-        int sent = digestService.sendWeeklyDigests();
+        int sent = digestService.sendDigestsForFrequency(DigestFrequency.WEEKLY);
         log.info("Resumo semanal FitRadar enviado a {} criador(es)", sent);
+    }
+
+    @Scheduled(cron = "${app.digest.daily-cron:0 0 8 * * *}", zone = "${app.retention.timezone:America/Sao_Paulo}")
+    public void dailyDigest() {
+        if (!digestProperties.isEnabled()) {
+            return;
+        }
+        int sent = digestService.sendDigestsForFrequency(DigestFrequency.DAILY);
+        if (sent > 0) {
+            log.info("Resumo diário FitRadar enviado a {} criador(es)", sent);
+        }
     }
 
     @Scheduled(cron = "${app.digest.nudge-cron:0 0 9 * * *}", zone = "${app.retention.timezone:America/Sao_Paulo}")
