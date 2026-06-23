@@ -1,33 +1,65 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ClipboardList, Clock, Dumbbell, Plus, Users } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { CreatorEmptyRings } from "@/components/creator/CreatorEmptyRings";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PanelState } from "@/components/ui/PanelState";
-import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 import { programsApi } from "@/lib/api/programs-api";
-import type { ProgramRequest, ProgramResponse, WorkoutResponse } from "@/lib/api/domain-types";
+import { studentsApi } from "@/lib/api/students-api";
+import type { ProgramResponse } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
+import { PROGRAM_ACCENT_BARS } from "@/lib/creator/display-utils";
 
-function priceLabel(p: ProgramResponse): string {
-  return p.paid && p.price != null ? `R$ ${p.price}` : "gratuito";
+type ProgramWithMeta = ProgramResponse & { enrolledCount: number };
+
+async function loadProgramsWithEnrollment(): Promise<{
+  programs: ProgramWithMeta[];
+  enrollWarning?: string;
+}> {
+  const programs = await programsApi.list();
+  const studentsPage = await studentsApi.list(0, 200);
+  const enrollmentResults = await Promise.allSettled(
+    studentsPage.content.map((s) => studentsApi.enrollments(s.id)),
+  );
+
+  const counts = new Map<string, number>();
+  let failures = 0;
+  enrollmentResults.forEach((result) => {
+    if (result.status === "rejected") {
+      failures += 1;
+      return;
+    }
+    for (const en of result.value) {
+      if (en.active) {
+        counts.set(en.programId, (counts.get(en.programId) ?? 0) + 1);
+      }
+    }
+  });
+
+  return {
+    programs: programs.map((p) => ({ ...p, enrolledCount: counts.get(p.id) ?? 0 })),
+    enrollWarning:
+      failures > 0
+        ? `Contagem de matrículas parcial — ${failures} aluno(s) não puderam ser consultados.`
+        : undefined,
+  };
 }
 
 export function ProgramsListPage() {
-  const { toast } = useToast();
-  const { confirm, dialog: confirmDialog } = useConfirmDialog();
-  const [programs, setPrograms] = useState<ProgramResponse[]>([]);
+  const navigate = useNavigate();
+  const [programs, setPrograms] = useState<ProgramWithMeta[]>([]);
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
-  const navigate = useNavigate();
+  const [enrollWarning, setEnrollWarning] = useState<string>();
 
   const load = useCallback(async () => {
     setState("loading");
+    setEnrollWarning(undefined);
     try {
-      const data = await programsApi.list();
-      setPrograms(data);
+      const { programs: list, enrollWarning: warning } = await loadProgramsWithEnrollment();
+      setPrograms(list);
+      if (warning) setEnrollWarning(warning);
       setState("content");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao carregar programas.");
@@ -39,401 +71,114 @@ export function ProgramsListPage() {
     void load();
   }, [load]);
 
-  const remove = async (id: string) => {
-    const ok = await confirm({
-      title: "Excluir programa?",
-      description: "Este programa e todos os treinos serão removidos permanentemente.",
-      confirmLabel: "Excluir",
-      destructive: true,
-    });
-    if (!ok) return;
-    try {
-      await programsApi.remove(id);
-      await load();
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Erro ao excluir.", "error");
-    }
-  };
+  const totalWorkouts = programs.reduce((a, p) => a + p.workoutCount, 0);
+  const subtitle =
+    programs.length === 0
+      ? "Nenhum programa ainda — crie o primeiro"
+      : `${programs.length} programas · ${totalWorkouts} treinos`;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      {confirmDialog}
+    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-5 animate-in fade-in duration-300">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Programas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Crie programas de treino e matricule alunos.
-          </p>
+          <h1 className="text-[26px] font-extrabold tracking-tight">Programas & Treinos</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <Button onClick={() => navigate("/app/programs/new")}>+ Novo programa</Button>
+        <Button
+          onClick={() => navigate("/app/programs/new")}
+          className="h-11 gap-2 rounded-[11px] px-5 shadow-[0_4px_18px_hsl(var(--primary)/0.28)]"
+        >
+          <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+          Criar programa
+        </Button>
       </div>
 
+      {enrollWarning ? (
+        <Alert>
+          <AlertDescription>{enrollWarning}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <PanelState
-        state={
-          state === "content" && programs.length === 0 ? "empty" : state === "content" ? "content" : state
-        }
+        state={state === "content" && programs.length === 0 ? "empty" : state}
         message={error}
         onRetry={load}
-        icon="📋"
-        title="Nenhum programa"
-        actionLabel="+ Novo programa"
-        onAction={() => navigate("/app/programs/new")}
         rows={3}
       >
-        <ul className="flex flex-col gap-3">
-          {programs.map((p) => (
-            <li key={p.id}>
-              <Card>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-4">
-                  <div>
-                    <Link
-                      to={`/app/programs/${p.id}`}
-                      className="font-semibold hover:text-primary"
-                    >
-                      {p.title}
-                      {!p.active ? (
-                        <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>
-                      ) : null}
-                    </Link>
-                    <p className="text-sm text-muted-foreground">
-                      {p.description ?? ""} · {p.workoutCount} treino(s) · {priceLabel(p)}
-                    </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {programs.map((p, i) => (
+            <article
+              key={p.id}
+              className="flex flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_6px_24px_rgba(0,0,0,0.28)] transition-shadow hover:shadow-[0_10px_32px_rgba(0,0,0,0.38)]"
+            >
+              <div
+                className="h-1"
+                style={{ background: PROGRAM_ACCENT_BARS[i % PROGRAM_ACCENT_BARS.length] }}
+                aria-hidden
+              />
+              <div className="flex flex-1 flex-col gap-2.5 p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-[11px] border border-primary/25 bg-primary/10">
+                      <Dumbbell className="size-5 text-primary" strokeWidth={2} aria-hidden />
+                    </div>
+                    <h2 className="text-[17px] font-bold tracking-tight">{p.title}</h2>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/app/programs/${p.id}`}>Treinos</Link>
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => void remove(p.id)}>
-                      Excluir
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      </PanelState>
-    </div>
-  );
-}
-
-export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
-  const { toast } = useToast();
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [active, setActive] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [loadState, setLoadState] = useState<"loading" | "error" | "content">(
-    mode === "edit" ? "loading" : "content",
-  );
-  const [loadError, setLoadError] = useState<string>();
-
-  useEffect(() => {
-    if (mode !== "edit" || !id) return;
-    void programsApi
-      .get(id)
-      .then((p) => {
-        setTitle(p.title);
-        setDescription(p.description ?? "");
-        setPrice(p.price ?? "");
-        setActive(p.active);
-        setLoadState("content");
-      })
-      .catch((e) => {
-        setLoadError(e instanceof ApiError ? e.message : "Erro ao carregar programa.");
-        setLoadState("error");
-      });
-  }, [mode, id]);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    const body: ProgramRequest = {
-      title,
-      description: description || null,
-      active,
-      price: price ? price : null,
-    };
-    try {
-      if (mode === "create") {
-        const created = await programsApi.create(body);
-        navigate(`/app/programs/${created.id}`);
-      } else if (id) {
-        await programsApi.update(id, body);
-        navigate(`/app/programs/${id}`);
-      }
-    } catch (err) {
-      toast(err instanceof ApiError ? err.message : "Erro ao salvar.", "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loadState !== "content") {
-    return (
-      <PanelState
-        state={loadState}
-        message={loadError}
-        onRetry={() => {
-          if (mode === "edit" && id) {
-            setLoadState("loading");
-            void programsApi
-              .get(id)
-              .then((p) => {
-                setTitle(p.title);
-                setDescription(p.description ?? "");
-                setPrice(p.price ?? "");
-                setActive(p.active);
-                setLoadState("content");
-              })
-              .catch((e) => {
-                setLoadError(e instanceof ApiError ? e.message : "Erro ao carregar programa.");
-                setLoadState("error");
-              });
-          }
-        }}
-        rows={3}
-      />
-    );
-  }
-
-  return (
-    <div className="mx-auto w-full max-w-lg">
-      <Button variant="ghost" size="sm" asChild className="mb-4">
-        <Link to={mode === "edit" && id ? `/app/programs/${id}` : "/app/programs"}>
-          ← Voltar
-        </Link>
-      </Button>
-      <h1 className="mb-4 text-xl font-bold">
-        {mode === "create" ? "Novo programa" : "Editar programa"}
-      </h1>
-      <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="prog-title">Título</Label>
-          <Input id="prog-title" required value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="prog-desc">Descrição</Label>
-          <textarea
-            id="prog-desc"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="prog-price">Preço (R$ — vazio = gratuito)</Label>
-          <Input
-            id="prog-price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-        </div>
-        <label htmlFor="prog-active" className="flex items-center gap-2 text-sm">
-          <input
-            id="prog-active"
-            type="checkbox"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-          />
-          Programa ativo
-        </label>
-        <Button type="submit" disabled={saving}>
-          {saving ? "Salvando…" : "Salvar"}
-        </Button>
-      </form>
-    </div>
-  );
-}
-
-export function ProgramDetailPage() {
-  const { toast } = useToast();
-  const { confirm, dialog: confirmDialog } = useConfirmDialog();
-  const { id = "" } = useParams();
-  const [program, setProgram] = useState<ProgramResponse | null>(null);
-  const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
-  const [state, setState] = useState<"loading" | "error" | "content">("loading");
-  const [error, setError] = useState<string>();
-  const [showAddWorkout, setShowAddWorkout] = useState(false);
-  const [wkTitle, setWkTitle] = useState("");
-  const [wkDay, setWkDay] = useState("0");
-  const [wkDesc, setWkDesc] = useState("");
-  const [wkContent, setWkContent] = useState("");
-
-  const load = useCallback(async () => {
-    setState("loading");
-    try {
-      const [p, w] = await Promise.all([programsApi.get(id), programsApi.workouts(id)]);
-      setProgram(p);
-      setWorkouts(w);
-      setState("content");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar programa.");
-      setState("error");
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const addWorkout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await programsApi.createWorkout(id, {
-        title: wkTitle,
-        dayIndex: parseInt(wkDay || "0", 10),
-        description: wkDesc || null,
-        contentMarkdown: wkContent || null,
-      });
-      setShowAddWorkout(false);
-      setWkTitle("");
-      setWkDay("0");
-      setWkDesc("");
-      setWkContent("");
-      await load();
-    } catch (err) {
-      toast(err instanceof ApiError ? err.message : "Erro ao adicionar treino.", "error");
-    }
-  };
-
-  const removeWorkout = async (workoutId: string, title: string) => {
-    const ok = await confirm({
-      title: "Excluir treino?",
-      description: `"${title}" será removido deste programa.`,
-      confirmLabel: "Excluir",
-      destructive: true,
-    });
-    if (!ok) return;
-    try {
-      await programsApi.removeWorkout(id, workoutId);
-      await load();
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Erro ao excluir treino.", "error");
-    }
-  };
-
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      {confirmDialog}
-      <Button variant="ghost" size="sm" asChild>
-        <Link to="/app/programs">← Programas</Link>
-      </Button>
-
-      <PanelState state={state} message={error} onRetry={load}>
-        {program ? (
-          <>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-extrabold">{program.title}</h1>
-                <p className="text-sm text-muted-foreground">{program.description}</p>
+                  <Button variant="outline" size="sm" className="h-[30px] shrink-0 rounded-lg px-3 text-xs" asChild>
+                    <Link to={`/app/programs/${p.id}/edit`}>Editar</Link>
+                  </Button>
+                </div>
+                <p className="text-[13.5px] leading-relaxed text-muted-foreground">
+                  {p.description ?? "Sem descrição."}
+                </p>
               </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/app/programs/${id}/edit`}>Editar</Link>
-              </Button>
-            </div>
-
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-semibold">Treinos</h2>
-                <Button size="sm" onClick={() => setShowAddWorkout(true)}>
-                  + Treino
+              <div className="flex items-center justify-between gap-2 border-t border-border bg-secondary/30 px-5 py-3">
+                <div className="flex flex-wrap gap-3.5 text-[12.5px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock className="size-3.5" aria-hidden />
+                    Contínuo
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ClipboardList className="size-3.5" aria-hidden />
+                    {p.workoutCount} treinos
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Users className="size-3.5" aria-hidden />
+                    {p.enrolledCount} alunos
+                  </span>
+                </div>
+                <Button size="sm" className="h-[34px] rounded-[9px] px-3.5" asChild>
+                  <Link to={`/app/programs/${p.id}`}>Abrir</Link>
                 </Button>
               </div>
-
-              {showAddWorkout ? (
-                <Card className="mb-4">
-                  <CardContent className="pt-4">
-                    <form onSubmit={(e) => void addWorkout(e)} className="flex flex-col gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="wk-title">Título</Label>
-                        <Input
-                          id="wk-title"
-                          required
-                          value={wkTitle}
-                          onChange={(e) => setWkTitle(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="wk-day">Ordem (dia)</Label>
-                        <Input
-                          id="wk-day"
-                          type="number"
-                          min="0"
-                          value={wkDay}
-                          onChange={(e) => setWkDay(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="wk-desc">Descrição</Label>
-                        <Input
-                          id="wk-desc"
-                          value={wkDesc}
-                          onChange={(e) => setWkDesc(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="wk-content">Conteúdo (markdown)</Label>
-                        <textarea
-                          id="wk-content"
-                          value={wkContent}
-                          onChange={(e) => setWkContent(e.target.value)}
-                          className="min-h-[100px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button type="submit">Adicionar</Button>
-                        <Button type="button" variant="ghost" onClick={() => setShowAddWorkout(false)}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </form>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              {workouts.length === 0 ? (
-                <PanelState
-                  state="empty"
-                  title="Nenhum treino"
-                  message="Adicione o primeiro treino deste programa."
-                  className="py-6"
-                />
-              ) : (
-                <ul className="space-y-2">
-                  {workouts.map((w) => (
-                    <li
-                      key={w.id}
-                      className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
-                    >
-                      <div>
-                        <p className="font-medium">
-                          #{w.dayIndex} {w.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{w.description}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        aria-label={`Excluir treino ${w.title}`}
-                        onClick={() => void removeWorkout(w.id, w.title)}
-                      >
-                        ×
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
-        ) : null}
+            </article>
+          ))}
+        </div>
       </PanelState>
+
+      {state === "content" && programs.length === 0 ? (
+        <div className="flex flex-col items-center gap-5 py-20 text-center">
+          <CreatorEmptyRings size="lg" />
+          <div>
+            <p className="text-[22px] font-extrabold tracking-tight">Crie seu primeiro programa</p>
+            <p className="mx-auto mt-2.5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+              Estruture seus treinos, organize o conteúdo por dia e acompanhe a progressão dos alunos.
+            </p>
+          </div>
+          <Button
+            size="lg"
+            className="h-[46px] gap-2 rounded-[11px] px-7 shadow-[0_4px_18px_hsl(var(--primary)/0.3)]"
+            onClick={() => navigate("/app/programs/new")}
+          >
+            <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+            Criar primeiro programa
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
+
+export { ProgramDetailPage } from "@/features/creator/ProgramDetailPage";
+export { ProgramFormPage } from "@/features/creator/ProgramFormPage";
+export { WorkoutFormPage } from "@/features/creator/WorkoutFormPage";

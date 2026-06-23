@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -44,9 +45,31 @@ public class SecurityConfig {
                         (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
                 ))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/register.html", "/app.html", "/student.html", "/offline.html",
-                                "/privacy.html", "/manifest.webmanifest", "/sw.js",
-                                "/css/**", "/js/**", "/icons/**", "/favicon.ico", "/assets/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/login",
+                                "/login/**",
+                                "/register",
+                                "/register/**",
+                                "/billing-required",
+                                "/404",
+                                "/app",
+                                "/app/**",
+                                "/student",
+                                "/student/**",
+                                "/offline.html",
+                                "/privacy.html",
+                                "/manifest.webmanifest",
+                                "/sw.js",
+                                "/registerSW.js",
+                                "/push-sw.js",
+                                "/assets/**",
+                                "/icons/**",
+                                "/favicon.svg",
+                                "/favicon.ico"
+                        ).permitAll()
+                        .requestMatchers(new RegexRequestMatcher("/workbox-.*\\.js", null)).permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/register",

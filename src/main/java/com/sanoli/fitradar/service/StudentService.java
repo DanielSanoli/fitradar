@@ -83,7 +83,7 @@ public class StudentService {
         AppUser saved = userRepository.save(student);
 
         try {
-            emailService.sendStudentInvite(email, creator.getName(), publicBaseUrl + "/student.html", tempPassword);
+            emailService.sendStudentInvite(email, creator.getName(), publicBaseUrl + "/login", tempPassword);
         } catch (RuntimeException exception) {
             log.warn("Falha ao enviar convite para conta terminando em {}", maskEmail(email));
         }

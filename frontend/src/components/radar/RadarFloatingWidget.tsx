@@ -56,7 +56,7 @@ export function RadarFloatingWidget({ visible = true }: RadarFloatingWidgetProps
           id="radar-chat-panel"
           aria-describedby={undefined}
           className={cn(
-            "gap-0 overflow-hidden p-0",
+            "flex flex-col gap-0 overflow-hidden p-0",
             "fixed inset-x-2 top-auto w-auto max-w-none translate-x-0 translate-y-0 rounded-t-2xl border-border",
             "sm:inset-x-auto sm:right-6 sm:w-[min(100vw-2rem,420px)]",
             isStudentLayout

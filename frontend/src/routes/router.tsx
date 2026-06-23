@@ -27,10 +27,18 @@ const ProgramsListPage = lazy(() =>
   import("@/features/creator/ProgramsPage").then((m) => ({ default: m.ProgramsListPage })),
 );
 const ProgramDetailPage = lazy(() =>
-  import("@/features/creator/ProgramsPage").then((m) => ({ default: m.ProgramDetailPage })),
+  import("@/features/creator/ProgramDetailPage").then((m) => ({ default: m.ProgramDetailPage })),
 );
 const ProgramFormPage = lazy(() =>
-  import("@/features/creator/ProgramsPage").then((m) => ({ default: m.ProgramFormPage })),
+  import("@/features/creator/ProgramFormPage").then((m) => ({ default: m.ProgramFormPage })),
+);
+const WorkoutFormPage = lazy(() =>
+  import("@/features/creator/WorkoutFormPage").then((m) => ({ default: m.WorkoutFormPage })),
+);
+const SpaceBuilderLayout = lazy(() =>
+  import("@/components/layout/SpaceBuilderLayout").then((m) => ({
+    default: m.SpaceBuilderLayout,
+  })),
 );
 const SpaceBuilderPage = lazy(() =>
   import("@/features/creator/SpaceBuilderPage").then((m) => ({ default: m.SpaceBuilderPage })),
@@ -133,10 +141,18 @@ export const router = createBrowserRouter([
                 ),
               },
               {
-                path: "space",
+                path: "programs/:id/workouts/new",
                 element: (
                   <Lazy>
-                    <SpaceBuilderPage />
+                    <WorkoutFormPage mode="create" />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs/:id/workouts/:workoutId/edit",
+                element: (
+                  <Lazy>
+                    <WorkoutFormPage mode="edit" />
                   </Lazy>
                 ),
               },
@@ -159,6 +175,24 @@ export const router = createBrowserRouter([
                 path: "settings",
                 element: (
                   <PlaceholderPage title="Configurações" description="Billing — em breve." />
+                ),
+              },
+            ],
+          },
+          {
+            path: "space",
+            element: (
+              <Lazy>
+                <SpaceBuilderLayout />
+              </Lazy>
+            ),
+            children: [
+              {
+                index: true,
+                element: (
+                  <Lazy>
+                    <SpaceBuilderPage />
+                  </Lazy>
                 ),
               },
             ],

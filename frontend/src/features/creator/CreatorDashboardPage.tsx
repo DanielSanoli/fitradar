@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { MessageSquare } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  CalendarCheck,
+  HeartPulse,
+  Users,
+} from "lucide-react";
 import { InsightCard } from "@/components/radar/InsightCard";
-import { RiskBadge } from "@/components/radar/RiskBadge";
+import { RadarChat } from "@/components/radar/RadarChat";
+import { AttentionTodayPanel } from "@/components/creator/AttentionTodayPanel";
 import { PanelState } from "@/components/ui/PanelState";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import { useRadarCopilot } from "@/features/radar/RadarCopilotProvider";
 import {
   formatAdherence,
@@ -14,30 +18,32 @@ import {
   type CreatorOverviewResult,
 } from "@/lib/api/domain-types";
 import { retentionApi } from "@/lib/api/retention-api";
+import { spaceApi } from "@/lib/api/space-api";
+import {
+  dashboardGreeting,
+  dashboardSuggestions,
+  formatDashboardDate,
+  type DashboardAttentionState,
+} from "@/lib/creator/dashboard-copy";
 import { ApiError } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
 
-type AttentionState = "empty" | "positive" | "alerts";
-
-function deriveAttentionState(overview: CreatorOverviewResult | null): AttentionState {
+function deriveAttentionState(overview: CreatorOverviewResult | null): DashboardAttentionState {
   if (!overview || overview.activeStudents === 0) return "empty";
   if (overview.atRiskCount === 0) return "positive";
   return "alerts";
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
+function firstName(full: string): string {
+  return full.split(/\s+/)[0] ?? full;
 }
 
 export function CreatorDashboardPage() {
-  const navigate = useNavigate();
-  const { openWidget, setHighlight } = useRadarCopilot();
+  const { user } = useAuth();
+  const { openWidget, setHighlight, ask, messages, loading, title, subtitle } = useRadarCopilot();
+
   const [overview, setOverview] = useState<CreatorOverviewResult | null>(null);
   const [atRisk, setAtRisk] = useState<ChurnRiskResult[]>([]);
+  const [spaceLink, setSpaceLink] = useState<string | null>(null);
   const [overviewState, setOverviewState] = useState<"loading" | "error" | "content">("loading");
   const [riskState, setRiskState] = useState<"loading" | "error" | "content">("loading");
   const [overviewError, setOverviewError] = useState<string>();
@@ -67,35 +73,80 @@ export function CreatorDashboardPage() {
     }
   }, []);
 
+  const loadSpace = useCallback(async () => {
+    try {
+      const space = await spaceApi.get();
+      if (space.slug) {
+        setSpaceLink(`${window.location.host}/c/${space.slug}`);
+      }
+    } catch {
+      setSpaceLink(null);
+    }
+  }, []);
+
   useEffect(() => {
     void loadOverview();
     void loadAtRisk();
-  }, [loadOverview, loadAtRisk]);
-
-  useEffect(() => {
-    setHighlight((overview?.atRiskCount ?? 0) > 0);
-  }, [overview?.atRiskCount, setHighlight]);
+    void loadSpace();
+  }, [loadOverview, loadAtRisk, loadSpace]);
 
   const attention = deriveAttentionState(overview);
+
+  useEffect(() => {
+    setHighlight(attention === "alerts");
+  }, [attention, setHighlight]);
+
+  const name = user?.name ?? "Criador";
+  const chatGreeting = dashboardGreeting(firstName(name), attention);
+  const chatSuggestions = useMemo(() => dashboardSuggestions(attention), [attention]);
+
   const adhDisplay = formatAdherence(overview?.avgAdherence);
+  const adhValue = adhDisplay === "—" ? "—" : adhDisplay.replace("%", "");
+
+  const atRiskGlow =
+    overview && overview.atRiskCount > 0
+      ? "hsl(var(--glow-danger))"
+      : overview && overview.activeStudents > 0
+        ? "hsl(var(--glow-accent))"
+        : "hsl(215 20% 40%)";
+
+  const celebrate = () => {
+    void ask("Quem merece um parabéns?");
+    openWidget();
+  };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight md:text-[27px]">Painel do criador</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Panorama da saúde da sua comunidade e o que fazer hoje.
-        </p>
+    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-6 md:gap-[26px]">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
+            Painel do criador
+          </h1>
+          <p className="mt-1.5 text-sm text-pretty text-muted-foreground md:text-[14.5px]">
+            {formatDashboardDate()} — um panorama da saúde da sua comunidade e o que fazer hoje.
+          </p>
+        </div>
       </div>
 
-      <section>
-        <div className="mb-3.5 flex items-center gap-2.5">
+      <section aria-labelledby="insights-heading">
+        <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
           <span
             className="size-2.5 rotate-45 rounded-sm bg-primary shadow-[0_0_12px_hsl(var(--primary))]"
             aria-hidden
           />
-          <span className="text-sm font-bold text-foreground">Insights do Radar</span>
+          <h2 id="insights-heading" className="text-sm font-bold text-foreground">
+            Insights do Radar
+          </h2>
           <span className="text-xs text-muted-foreground">leitura inteligente dos seus sinais</span>
+          {overviewState === "content" ? (
+            <div className="ml-auto flex items-center gap-2 text-[11.5px] text-muted-foreground">
+              <span className="relative flex size-[7px]" aria-hidden>
+                <span className="absolute inset-0 animate-pulse rounded-full bg-primary" />
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary opacity-40" />
+              </span>
+              Atualizado agora
+            </div>
+          ) : null}
         </div>
 
         <PanelState
@@ -104,154 +155,86 @@ export function CreatorDashboardPage() {
           onRetry={loadOverview}
           rows={4}
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <InsightCard
               label="Alunos ativos"
               value={overview?.activeStudents ?? "—"}
+              icon={Users}
               glowColor="hsl(var(--glow-accent))"
             />
             <InsightCard
               label="Aderência média"
-              value={adhDisplay.replace("%", "")}
+              value={adhValue}
               unit={adhDisplay !== "—" ? "%" : ""}
+              icon={HeartPulse}
               glowColor="hsl(var(--glow-accent))"
             />
             <InsightCard
-              label="Em risco"
+              label="Alunos em risco"
               value={overview?.atRiskCount ?? "—"}
-              riskLevel={overview && overview.atRiskCount > 0 ? "alto" : undefined}
-              glowColor={
-                overview && overview.atRiskCount > 0
-                  ? "hsl(var(--glow-danger))"
-                  : "hsl(var(--glow-accent))"
+              icon={Activity}
+              riskLevel={
+                overview && overview.activeStudents > 0
+                  ? overview.atRiskCount > 0
+                    ? riskLevelToUi("HIGH")
+                    : riskLevelToUi("LOW")
+                  : undefined
               }
+              riskLabel={
+                overview && overview.activeStudents > 0 && overview.atRiskCount === 0
+                  ? "Tudo em dia"
+                  : undefined
+              }
+              glowColor={atRiskGlow}
             />
             <InsightCard
               label="Check-ins na semana"
               value={overview?.checkInsThisWeek ?? "—"}
-              glowColor="hsl(var(--glow-accent))"
-            />
-            <InsightCard
-              label="Novos na semana"
-              value={overview?.newStudentsThisWeek ?? "—"}
+              icon={CalendarCheck}
               glowColor="hsl(var(--glow-accent))"
             />
           </div>
         </PanelState>
       </section>
 
-      <section className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
-        <Card className="flex flex-col overflow-hidden border-border bg-card shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
-          <CardHeader className="border-b border-border pb-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2.5 text-base">
-                  Atenção hoje
-                  {attention === "alerts" && overview ? (
-                    <span className="inline-flex min-h-[22px] min-w-[22px] items-center justify-center rounded-full border border-[hsl(var(--risk-high)/0.34)] bg-[hsl(var(--risk-high)/0.16)] px-1.5 text-xs font-bold text-[hsl(0_82%_80%)]">
-                      {overview.atRiskCount}
-                    </span>
-                  ) : null}
-                </CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {attention === "empty" &&
-                    "Convide seu primeiro aluno para começar a monitorar a comunidade."}
-                  {attention === "positive" && "Comunidade saudável — nenhum aluno em risco médio ou alto."}
-                  {attention === "alerts" && "Alunos que precisam de atenção imediata."}
-                </p>
-              </div>
-              {attention === "alerts" ? (
-                <Link
-                  to="/app/students"
-                  className="shrink-0 text-sm font-semibold text-primary hover:underline"
-                >
-                  Ver todos →
-                </Link>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col justify-center px-3 py-2">
-            {attention === "empty" ? (
-              <PanelState
-                state="empty"
-                icon="👥"
-                title="Nenhum aluno ainda"
-                message="Convide seu primeiro aluno para acompanhar aderência e risco de churn."
-                actionLabel="Gerenciar alunos"
-                onAction={() => navigate("/app/students")}
-              />
-            ) : null}
+      <section
+        className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2 lg:gap-[18px]"
+        aria-label="Atenção e copiloto"
+      >
+        <AttentionTodayPanel
+          state={attention}
+          atRisk={atRisk}
+          riskCount={overview?.atRiskCount ?? 0}
+          spaceLink={spaceLink}
+          loadState={riskState}
+          errorMessage={riskError}
+          onRetry={loadAtRisk}
+          onCelebrate={celebrate}
+        />
 
-            {attention === "positive" ? (
-              <PanelState
-                state="empty"
-                icon="🎉"
-                title="Comunidade saudável"
-                message="Nenhum aluno em risco médio ou alto no momento."
-              />
-            ) : null}
-
-            {attention === "alerts" ? (
-              <PanelState
-                state={riskState === "content" ? "content" : riskState}
-                message={riskError}
-                onRetry={loadAtRisk}
-                rows={3}
-              >
-                <ul className="flex flex-col gap-0.5">
-                  {atRisk.slice(0, 5).map((s) => (
-                    <li
-                      key={s.studentId}
-                      className={cn(
-                        "flex items-center gap-3.5 rounded-xl px-3 py-3 transition-colors hover:bg-secondary/80",
-                      )}
-                    >
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-sm font-bold">
-                        {initials(s.studentName)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold">{s.studentName}</span>
-                          <RiskBadge level={riskLevelToUi(s.level)} />
-                        </div>
-                        <p className="mt-1 truncate text-sm text-muted-foreground">
-                          {(s.assumptions ?? []).join(" · ")}
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="shrink-0" asChild>
-                        <Link to={`/app/students/${s.studentId}`}>Ver</Link>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </PanelState>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card className="flex flex-col justify-between border-primary/25 bg-gradient-to-br from-primary/8 to-card shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
-          <CardContent className="flex flex-col gap-4 pt-6">
-            <div className="flex items-start gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/15">
-                <MessageSquare className="size-5 text-primary" aria-hidden />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold">Pergunte ao Radar</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Copiloto de retenção — disponível em qualquer tela pelo botão flutuante.
-                </p>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Pergunte sobre alunos em risco, visão geral da comunidade ou próximas ações. O mesmo
-              chat abre no canto inferior direito.
-            </p>
-            <Button className="w-full sm:w-auto" onClick={openWidget}>
-              Abrir chat do Radar
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="min-h-[480px] lg:min-h-[520px]">
+          <RadarChat
+            embedded
+            className="h-full min-h-[480px] lg:min-h-[520px]"
+            title={title}
+            subtitle={subtitle}
+            greeting={chatGreeting}
+            suggestions={chatSuggestions}
+            messages={
+              messages.length > 0 && messages[0]?.id === "greeting"
+                ? [{ ...messages[0], text: chatGreeting }, ...messages.slice(1)]
+                : messages
+            }
+            onAsk={ask}
+            loading={loading}
+          />
+        </div>
       </section>
+
+      <p className="sr-only">
+        Métricas exibidas vêm do motor de retenção via API. Sugestões do Radar não substituem
+        orientação médica ou profissional.
+      </p>
     </div>
   );
 }

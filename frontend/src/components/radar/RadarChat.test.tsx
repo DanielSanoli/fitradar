@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RadarChat } from "@/components/radar/RadarChat";
+import { RADAR_DISCLAIMER } from "@/lib/radar/radar-disclaimer";
 
 describe("RadarChat", () => {
-  it("shows greeting and disclaimer", () => {
+  it("shows greeting and a single footer disclaimer", () => {
     render(<RadarChat greeting="Oi, teste!" suggestions={[]} />);
     expect(screen.getByText("Oi, teste!")).toBeInTheDocument();
-    expect(
-      screen.getByText(/As respostas do Radar são sugestões/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(RADAR_DISCLAIMER)).toBeInTheDocument();
+    expect(screen.getAllByText(RADAR_DISCLAIMER)).toHaveLength(1);
   });
 
   it("renders suggestion chips and calls onAsk", async () => {
@@ -26,7 +26,7 @@ describe("RadarChat", () => {
     expect(onAsk).toHaveBeenCalledWith("Como está a aderência?");
   });
 
-  it("shows disclaimer on bot messages with showDisclaimer", () => {
+  it("strips duplicate disclaimer from bot message body", () => {
     render(
       <RadarChat
         suggestions={[]}
@@ -34,12 +34,12 @@ describe("RadarChat", () => {
           {
             id: "1",
             role: "radar",
-            text: "Resposta",
-            showDisclaimer: true,
+            text: `Resposta do motor.\n\n${RADAR_DISCLAIMER}`,
           },
         ]}
       />,
     );
-    expect(screen.getByText("Sugestão, não orientação médica/profissional.")).toBeInTheDocument();
+    expect(screen.getByText(/Resposta do motor/i)).toBeInTheDocument();
+    expect(screen.getAllByText(RADAR_DISCLAIMER)).toHaveLength(1);
   });
 });

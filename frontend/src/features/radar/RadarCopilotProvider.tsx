@@ -80,7 +80,6 @@ export function RadarCopilotProvider({ children }: { children: ReactNode }) {
           id: `r-${Date.now()}`,
           role: "radar",
           text: res.answer,
-          showDisclaimer: true,
         },
       ]);
     } catch (e) {
@@ -91,7 +90,6 @@ export function RadarCopilotProvider({ children }: { children: ReactNode }) {
           id: `e-${Date.now()}`,
           role: "radar",
           text: `Não consegui responder agora. Tente de novo em instantes.\n\n${msg}`,
-          showDisclaimer: true,
         },
       ]);
     } finally {

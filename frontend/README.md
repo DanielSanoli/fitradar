@@ -1,14 +1,21 @@
 # FitRadar — Frontend React
 
-App React (Vite + React 19) consumindo a API Spring em `/api/v1/**`.
+Único frontend do FitRadar. Em produção é servido pelo Spring Boot na porta **8080**; em desenvolvimento usa Vite na **5173** com proxy para a API.
+
+## Rotas
+
+| Papel | Caminho |
+|-------|---------|
+| Landing / login / registro | `/`, `/login`, `/register` |
+| **Criador** | `/app`, `/app/students`, `/app/programs`, `/app/space`, … |
+| **Aluno** (PWA) | `/student`, `/student/progress` |
 
 ## Pré-requisitos
 
 - Node 20+
-- API Spring rodando (ex.: `http://localhost:8080`)
-- CORS com `http://localhost:5173` (já configurado no backend)
+- API Spring em `http://localhost:8080`
 
-## Setup
+## Desenvolvimento
 
 ```bash
 cd frontend
@@ -17,71 +24,59 @@ npm install
 npm run dev
 ```
 
-Abra [http://localhost:5173](http://localhost:5173).
+Abra [http://localhost:5173](http://localhost:5173). Requisições `/api/**` são proxy para `:8080`.
 
 ## Variáveis
 
 | Variável | Descrição |
 |----------|-----------|
-| `VITE_API_URL` | Base da API (sem barra final), ex. `http://localhost:8080` |
+| `VITE_API_URL` | Base da API (sem barra final). Dev: `http://localhost:8080`. **Build de produção:** deixe vazio para mesma origem (`/api/v1/**`). |
 
-Push exige VAPID no **backend** (não no Vite):
+Push (backend):
 
 ```env
 PUSH_ENABLED=true
 VAPID_PUBLIC_KEY=<base64url>
 VAPID_PRIVATE_KEY=<base64url>
 VAPID_SUBJECT=mailto:support@fitradar.app
-PUSH_FRONTEND_BASE_URL=http://localhost:5173
+PUSH_FRONTEND_BASE_URL=http://localhost:8080
 ```
 
-Gere chaves com [web-push](https://www.npmjs.com/package/web-push): `npx web-push generate-vapid-keys`.
+## Build e deploy
+
+O Docker (`docker compose up --build`) roda `npm run build` e embute `dist/` no JAR.
+
+Build local:
+
+```bash
+# Mesma origem — API no mesmo host que o SPA
+VITE_API_URL= npm run build
+```
+
+Ou via Maven na raiz do repo:
+
+```bash
+mvn package -Dskip.frontend.build=false -DskipTests
+```
 
 ## PWA & push
 
-- **Manifest + service worker** via `vite-plugin-pwa` (Workbox).
-- **Offline:** app shell em cache; API em network-first.
-- **Instalação:** banner `beforeinstallprompt` após interação.
-- **Push:** opt-in após check-in (`PushOptInBanner`); ativar/desativar/testar em `/student/progress`.
-- **SW push:** handlers em `public/push-sw.js` (importado pelo Workbox).
-
-Fluxo manual de teste:
-
-1. Login como aluno → marcar treino → aceitar notificações.
-2. Em Meu progresso → **Testar** (chama `POST /api/v1/push/test`).
-3. **Desativar** remove subscription local e no backend.
+- Manifest + service worker via `vite-plugin-pwa` (Workbox).
+- `start_url`: `/student` — instalável na área do aluno.
+- Push: `public/push-sw.js` importado pelo Workbox; opt-in após check-in.
 
 ## Scripts
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run dev` | Dev server Vite (PWA habilitado em dev) |
+| `npm run dev` | Dev server (:5173) |
 | `npm run build` | Build de produção + SW |
-| `npm run test` | Vitest + Testing Library |
-| `npm run preview` | Preview do build (HTTPS recomendado para push real) |
-
-## Estrutura
-
-```
-src/
-  components/pwa/   # InstallBanner, PushOptInBanner, PushSettingsCard
-  components/ui/    # shadcn + ToastProvider
-  features/         # auth, creator, student
-  lib/api/          # cliente HTTP + push-api
-  lib/pwa/          # push-utils, storage keys
-  routes/           # React Router (lazy routes)
-public/
-  push-sw.js        # push + notificationclick
-  offline.html
-  icons/
-```
+| `npm run lint` | ESLint |
+| `npm run test` | Vitest |
+| `npm run preview` | Preview do build local |
 
 ## Auth
 
-- JWT em `localStorage` (mesmas chaves do frontend legado)
+- JWT em `localStorage`
 - Refresh automático em 401; 402 → `/billing-required`
-- Rotas: `/app/*` (CREATOR), `/student/*` (STUDENT)
-
-## Lighthouse
-
-Após `npm run build && npm run preview`, audite `/student` e `/student/progress` (PWA, a11y, performance).
+- CORS só necessário em dev (5173 → 8080); produção é mesma origem

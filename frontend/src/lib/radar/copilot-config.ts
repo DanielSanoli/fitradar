@@ -17,11 +17,11 @@ export const CREATOR_RADAR_CONFIG: RadarCopilotConfig = {
   title: "Pergunte ao Radar",
   subtitle: "Copiloto de retenção · lê os sinais da sua comunidade",
   greeting: (name) =>
-    `Oi, ${firstName(name)}! Pergunte sobre os alunos em risco ou a visão geral da sua comunidade.`,
+    `Oi, ${firstName(name)}! Eu cruzo os sinais da sua comunidade e aponto onde agir primeiro. Toque numa sugestão para começar.`,
   suggestions: [
-    "Quais alunos estão em risco?",
-    "Como está minha comunidade?",
+    "Quem vai desistir essa semana?",
     "Quem merece um parabéns?",
+    "Como está a aderência geral?",
   ],
 };
 

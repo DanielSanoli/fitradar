@@ -30,6 +30,7 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-accent: hsl(var(--sidebar-accent));
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-flame: hsl(var(--flame));
   --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
@@ -66,6 +67,7 @@
   --risk-high: 0 72% 67%;
   --glow-accent: 165 76% 48%;
   --glow-danger: 0 72% 67%;
+  --flame: 24 95% 58%;
 }
 
 @layer base {
@@ -106,5 +108,85 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .streak-flame-pulse {
+    animation: flame-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes flame-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.06);
+    }
+  }
+
+  .celebration-pop {
+    animation: celebration-pop 2s ease-out forwards;
+  }
+
+  .celebration-ring {
+    animation: celebration-ring 0.9s ease-out 0.1s both;
+  }
+
+  @keyframes celebration-ring {
+    0% {
+      transform: scale(0.3);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(2.8);
+      opacity: 0;
+    }
+  }
+
+  @keyframes celebration-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(-0.75rem) scale(0.92);
+    }
+    12% {
+      opacity: 1;
+      transform: translateY(0) scale(1.02);
+    }
+    80% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-0.5rem) scale(0.98);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .streak-flame-pulse,
+    .celebration-pop,
+    .celebration-ring {
+      animation: none;
+    }
+  }
+
+  .radar-chat-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(215 14% 28%) transparent;
+  }
+
+  .radar-chat-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .radar-chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .radar-chat-scroll::-webkit-scrollbar-thumb {
+    background: hsl(215 14% 28%);
+    border-radius: 999px;
   }
 }

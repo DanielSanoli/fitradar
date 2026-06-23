@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "@/components/ui/toast";
 import { StudentHomePage } from "@/features/student/StudentHomePage";
@@ -12,6 +13,8 @@ vi.mock("@/lib/api/member-api", () => ({
     myWorkouts: vi.fn(),
     myCheckIns: vi.fn(),
     mySpace: vi.fn(),
+    myPrograms: vi.fn(),
+    createCheckIn: vi.fn(),
   },
 }));
 
@@ -39,6 +42,52 @@ const authValue: AuthContextValue = {
   refreshUser: vi.fn(),
 };
 
+const workoutProgress = {
+  studentId: "1",
+  studentName: "Lucas",
+  enrolled: true,
+  adherence: "82.00",
+  currentStreak: 5,
+  weeklyDone: 3,
+  nextWorkoutId: "w1",
+  nextWorkoutTitle: "Lower Body A",
+  message: "Bora treinar!",
+  assumptions: [],
+};
+
+const workoutList = [
+  {
+    id: "w1",
+    programId: "p1",
+    title: "Lower Body A",
+    description: "Foco em pernas",
+    contentMarkdown: "- Agachamento 4x10\n- Leg press 3x12",
+    dayIndex: 1,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "w2",
+    programId: "p1",
+    title: "Upper Body",
+    description: null,
+    contentMarkdown: "- Supino 3x8",
+    dayIndex: 2,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+];
+
+function renderHome() {
+  return render(
+    <ToastProvider>
+      <AuthContext.Provider value={authValue}>
+        <MemoryRouter>
+          <StudentHomePage />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </ToastProvider>,
+  );
+}
+
 describe("StudentHomePage", () => {
   beforeEach(() => {
     vi.mocked(memberApi.myCheckIns).mockResolvedValue({
@@ -58,123 +107,112 @@ describe("StudentHomePage", () => {
       bio: null,
       createdAt: "2024-01-01T00:00:00Z",
     });
+    vi.mocked(memberApi.myPrograms).mockResolvedValue([]);
+    vi.mocked(memberApi.createCheckIn).mockResolvedValue({
+      id: "ci1",
+      studentId: "1",
+      workoutId: "w1",
+      date: "2026-06-19",
+      status: "DONE",
+      feeling: null,
+      notes: null,
+    });
   });
 
   it("shows no-program state when not enrolled", async () => {
     vi.mocked(memberApi.myProgress).mockResolvedValue({
-      studentId: "1",
-      studentName: "Lucas",
+      ...workoutProgress,
       enrolled: false,
-      adherence: null,
-      currentStreak: 0,
-      weeklyDone: 0,
       nextWorkoutId: null,
       nextWorkoutTitle: null,
       message: "Peça matrícula ao treinador.",
-      assumptions: [],
     });
     vi.mocked(memberApi.myWorkouts).mockResolvedValue([]);
 
-    render(
-      <ToastProvider>
-        <AuthContext.Provider value={authValue}>
-          <MemoryRouter>
-            <StudentHomePage />
-          </MemoryRouter>
-        </AuthContext.Provider>
-      </ToastProvider>,
-    );
+    renderHome();
 
     await waitFor(() => {
-      expect(screen.getByText("Comece um programa")).toBeInTheDocument();
-      expect(screen.getAllByText("Peça matrícula ao treinador.").length).toBeGreaterThan(0);
+      expect(screen.getByText("Nenhum programa ainda")).toBeInTheDocument();
     });
   });
 
-  it("shows workout state when enrolled with next workout", async () => {
-    vi.mocked(memberApi.myProgress).mockResolvedValue({
-      studentId: "1",
-      studentName: "Lucas",
-      enrolled: true,
-      adherence: "82.00",
-      currentStreak: 5,
-      weeklyDone: 3,
-      nextWorkoutId: "w1",
-      nextWorkoutTitle: "Lower Body A",
-      message: "Bora treinar!",
-      assumptions: [],
-    });
-    vi.mocked(memberApi.myWorkouts).mockResolvedValue([
+  it("shows full exercise list for today's workout", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
+    vi.mocked(memberApi.myPrograms).mockResolvedValue([
       {
-        id: "w1",
-        programId: "p1",
-        title: "Lower Body A",
-        description: "Foco em pernas",
-        contentMarkdown: "- Agachamento 4x10\n- Leg press 3x12",
-        dayIndex: 1,
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ]);
-
-    render(
-      <ToastProvider>
-        <AuthContext.Provider value={authValue}>
-          <MemoryRouter>
-            <StudentHomePage />
-          </MemoryRouter>
-        </AuthContext.Provider>
-      </ToastProvider>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText("Lower Body A")).toBeInTheDocument();
-      expect(screen.getByText("Agachamento 4x10")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /marcar treino feito/i })).toBeInTheDocument();
-    });
-  });
-
-  it("opens accessible check-in dialog", async () => {
-    vi.mocked(memberApi.myProgress).mockResolvedValue({
-      studentId: "1",
-      studentName: "Lucas",
-      enrolled: true,
-      adherence: "82.00",
-      currentStreak: 5,
-      weeklyDone: 3,
-      nextWorkoutId: "w1",
-      nextWorkoutTitle: "Lower Body A",
-      message: "Bora treinar!",
-      assumptions: [],
-    });
-    vi.mocked(memberApi.myWorkouts).mockResolvedValue([
-      {
-        id: "w1",
-        programId: "p1",
-        title: "Lower Body A",
+        id: "p1",
+        title: "Base de Força",
         description: null,
-        contentMarkdown: "- Supino",
-        dayIndex: 1,
-        createdAt: "2024-01-01T00:00:00Z",
+        price: null,
+        paid: false,
+        enrolled: true,
+        purchasePending: false,
       },
     ]);
 
-    const user = (await import("@testing-library/user-event")).default.setup();
-    render(
-      <ToastProvider>
-        <AuthContext.Provider value={authValue}>
-          <MemoryRouter>
-            <StudentHomePage />
-          </MemoryRouter>
-        </AuthContext.Provider>
-      </ToastProvider>,
-    );
+    renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /marcar treino feito/i })).toBeInTheDocument();
+      expect(screen.getByText("Agachamento")).toBeInTheDocument();
+      expect(screen.getByText("Leg press")).toBeInTheDocument();
+      expect(screen.getByText("4 × 10")).toBeInTheDocument();
     });
-    await user.click(screen.getByRole("button", { name: /marcar treino feito/i }));
+  });
+
+  it("quick check-in in one tap", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /treino feito!/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /treino feito!/i }));
+
+    await waitFor(() => {
+      expect(memberApi.createCheckIn).toHaveBeenCalledWith({
+        workoutId: "w1",
+        skipped: false,
+        feeling: null,
+        notes: null,
+      });
+    });
+  });
+
+  it("opens optional check-in sheet with feeling", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /como me senti/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /como me senti/i }));
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByLabelText(/como você se sentiu/i)).toBeInTheDocument();
+    expect(screen.getByText("Como foi o treino?")).toBeInTheDocument();
+  });
+
+  it("shows rest day state", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue({
+      ...workoutProgress,
+      nextWorkoutId: null,
+      nextWorkoutTitle: null,
+      message: "Descanse hoje.",
+    });
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("Dia de descanso")).toBeInTheDocument();
+    });
   });
 });

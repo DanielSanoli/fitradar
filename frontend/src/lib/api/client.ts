@@ -62,11 +62,19 @@ async function rawRequest(
   if (withAuth && token) {
     headers.Authorization = `Bearer ${token}`;
   }
-  return fetch(`${baseUrl()}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const url = `${baseUrl()}${path}`;
+  try {
+    return await fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    const hint = baseUrl()
+      ? `Verifique se a API está rodando em ${baseUrl()}.`
+      : "Verifique se a API está rodando em http://localhost:8080 (docker compose up).";
+    throw new ApiError(0, `Não foi possível conectar à API. ${hint}`);
+  }
 }
 
 async function tryRefresh(): Promise<boolean> {

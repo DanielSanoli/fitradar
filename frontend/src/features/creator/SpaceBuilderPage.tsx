@@ -1,77 +1,111 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { SpaceBuilderStepper } from "@/components/creator/space/SpaceBuilderStepper";
+import { SpaceFieldLabel } from "@/components/creator/space/SpaceFieldLabel";
+import { SpaceLivePreview } from "@/components/creator/space/SpaceLivePreview";
+import { FitnessEmptyIcon } from "@/components/fitness/FitnessEmptyIcon";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PanelState } from "@/components/ui/PanelState";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/hooks/useAuth";
+import { programsApi } from "@/lib/api/programs-api";
 import { spaceApi } from "@/lib/api/space-api";
+import { studentsApi } from "@/lib/api/students-api";
 import type { CreatorSpaceRequest } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
+import {
+  foregroundOnAccent,
+  normalizeAccentColor,
+  PROGRAM_DURATIONS,
+  rgbaHex,
+  slugifySpaceName,
+  SPACE_SWATCHES,
+  spaceInitials,
+} from "@/lib/creator/space-theme";
 import { cn } from "@/lib/utils";
 
-const SWATCHES = [
-  "hsl(165 76% 48%)",
-  "hsl(210 80% 58%)",
-  "hsl(280 65% 58%)",
-  "hsl(38 100% 56%)",
-  "hsl(0 72% 67%)",
-  "hsl(200 70% 50%)",
-];
+const inputClass =
+  "h-[46px] w-full rounded-[11px] border border-border bg-secondary/40 px-3.5 text-[15px] transition-[border-color,box-shadow] focus:outline-none focus:ring-[3px]";
 
-const STEPS = [
-  { n: 1, label: "Identidade", sub: "Nome e visual" },
-  { n: 2, label: "Endereço", sub: "Slug e link" },
-  { n: 3, label: "Publicar", sub: "Revisar e salvar" },
-];
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60);
+function persistableLogoUrl(logoUrl: string, logoPreview: string | null): string | null {
+  const url = logoUrl.trim();
+  if (url.startsWith("http") && url.length <= 500) return url;
+  if (url.startsWith("data:") && url.length <= 500) return url;
+  if (logoPreview?.startsWith("http") && logoPreview.length <= 500) return logoPreview;
+  return null;
 }
 
 export function SpaceBuilderPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const [step, setStep] = useState(1);
   const [loadState, setLoadState] = useState<"loading" | "error" | "content">("loading");
   const [loadError, setLoadError] = useState<string>();
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [primaryColor, setPrimaryColor] = useState(SWATCHES[0]);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFileName, setLogoFileName] = useState<string | null>(null);
+  const [accent, setAccent] = useState<string>(SPACE_SWATCHES[0]);
   const [bio, setBio] = useState("");
 
-  const initials = useMemo(() => {
-    return name
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase() ?? "")
-      .join("") || "FR";
-  }, [name]);
+  const [programName, setProgramName] = useState("");
+  const [programWeeks, setProgramWeeks] = useState<(typeof PROGRAM_DURATIONS)[number]["weeks"]>("8");
+  const [programDesc, setProgramDesc] = useState("");
+  const [programId, setProgramId] = useState<string | null>(null);
+
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [memberCount, setMemberCount] = useState(0);
+
+  const accentFg = foregroundOnAccent(accent);
+  const accentSoft = rgbaHex(accent, 0.16);
+  const focusStyle = {
+    borderColor: accent,
+    boxShadow: `0 0 0 3px ${accentSoft}`,
+  } as const;
+
+  const slugComputed = slug.trim() || slugifySpaceName(name) || "seu-espaco";
+  const fullLink = `${window.location.host}/c/${slugComputed}`;
 
   const load = useCallback(async () => {
     setLoadState("loading");
     try {
-      const s = await spaceApi.get();
-      setName(s.name ?? "");
-      setSlug(s.slug ?? "");
-      setLogoUrl(s.logoUrl ?? "");
-      setPrimaryColor(s.primaryColor ?? SWATCHES[0]);
-      setBio(s.bio ?? "");
+      const [space, programs, students] = await Promise.all([
+        spaceApi.get().catch((e: unknown) => {
+          if (e instanceof ApiError && e.status === 404) return null;
+          throw e;
+        }),
+        programsApi.list().catch(() => []),
+        studentsApi.list(0, 1).catch(() => ({ content: [], totalElements: 0 })),
+      ]);
+
+      if (space) {
+        setName(space.name ?? "");
+        setSlug(space.slug ?? "");
+        setLogoUrl(space.logoUrl ?? "");
+        setLogoPreview(space.logoUrl ?? null);
+        setAccent(normalizeAccentColor(space.primaryColor));
+        setBio(space.bio ?? "");
+        if (space.slug && space.name) setPublished(true);
+      }
+
+      const first = programs[0];
+      if (first) {
+        setProgramId(first.id);
+        setProgramName(first.title);
+        setProgramDesc(first.description ?? "");
+      }
+
+      setMemberCount(students.totalElements ?? students.content.length);
       setLoadState("content");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 404) {
-        setLoadState("content");
-        return;
-      }
       setLoadError(e instanceof ApiError ? e.message : "Erro ao carregar espaço.");
       setLoadState("error");
     }
@@ -81,25 +115,170 @@ export function SpaceBuilderPage() {
     void load();
   }, [load]);
 
-  const save = async () => {
+  useEffect(() => {
+    if (!slug && name.trim()) {
+      setSlug(slugifySpaceName(name));
+    }
+  }, [name, slug]);
+
+  const spaceBody = useMemo((): CreatorSpaceRequest => {
+    return {
+      name: name.trim(),
+      slug: slugComputed || null,
+      logoUrl: persistableLogoUrl(logoUrl, logoPreview),
+      primaryColor: accent,
+      bio: bio.trim() || null,
+    };
+  }, [name, slugComputed, logoUrl, logoPreview, accent, bio]);
+
+  const saveDraft = async () => {
+    if (!name.trim()) {
+      toast("Informe o nome do espaço antes de salvar.", "error");
+      return;
+    }
     setSaving(true);
-    setSaved(false);
     try {
-      const body: CreatorSpaceRequest = {
-        name: name.trim(),
-        slug: slug.trim() || null,
-        logoUrl: logoUrl.trim() || null,
-        primaryColor: primaryColor || null,
-        bio: bio.trim() || null,
-      };
-      await spaceApi.update(body);
-      setSaved(true);
+      await spaceApi.update(spaceBody);
+      toast("Rascunho salvo.");
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Erro ao salvar.", "error");
+      toast(e instanceof ApiError ? e.message : "Erro ao salvar rascunho.", "error");
     } finally {
       setSaving(false);
     }
   };
+
+  const ensureProgram = async () => {
+    if (programId) {
+      if (programName.trim()) {
+        await programsApi.update(programId, {
+          title: programName.trim(),
+          description: programDesc.trim() || null,
+        });
+      }
+      return programId;
+    }
+    if (!programName.trim()) return null;
+    const created = await programsApi.create({
+      title: programName.trim(),
+      description: programDesc.trim() || null,
+      active: true,
+    });
+    setProgramId(created.id);
+    return created.id;
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${fullLink}`);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast("Não foi possível copiar o link.", "error");
+    }
+  };
+
+  const onLogoPick = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast("Logo deve ter até 2 MB.", "error");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setLogoPreview(url);
+    setLogoFileName(file.name);
+    setPublished(false);
+
+    if (file.type === "image/svg+xml" || file.name.endsWith(".svg")) {
+      void file.text().then((text) => {
+        const encoded = `data:image/svg+xml,${encodeURIComponent(text)}`;
+        if (encoded.length <= 500) {
+          setLogoUrl(encoded);
+          setLogoPreview(encoded);
+        }
+      });
+    }
+  };
+
+  const onLogoUrlChange = (value: string) => {
+    setLogoUrl(value);
+    setPublished(false);
+    const trimmed = value.trim();
+    if (trimmed.startsWith("http") || trimmed.startsWith("data:")) {
+      setLogoPreview(trimmed);
+    }
+  };
+
+  const goNext = async () => {
+    if (step === 1) {
+      if (!name.trim()) {
+        toast("Informe o nome do espaço.", "error");
+        return;
+      }
+      setSaving(true);
+      try {
+        await spaceApi.update(spaceBody);
+        setStep(2);
+      } catch (e) {
+        toast(e instanceof ApiError ? e.message : "Erro ao salvar.", "error");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    if (step === 2) {
+      setSaving(true);
+      try {
+        await spaceApi.update(spaceBody);
+        await ensureProgram();
+        setStep(3);
+      } catch (e) {
+        toast(e instanceof ApiError ? e.message : "Erro ao salvar programa.", "error");
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+  const publish = async () => {
+    setSaving(true);
+    try {
+      await spaceApi.update(spaceBody);
+      await ensureProgram();
+      setPublished(true);
+      await copyLink();
+      toast("Espaço publicado e no ar.");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Erro ao publicar.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sendInvite = async () => {
+    if (!inviteEmail.trim()) {
+      toast("Informe o e-mail do aluno.", "error");
+      return;
+    }
+    setInviting(true);
+    try {
+      const local = inviteEmail.split("@")[0]?.replace(/\W+/g, " ") || "Aluno";
+      const nameGuess = local.charAt(0).toUpperCase() + local.slice(1);
+      await studentsApi.invite({ name: nameGuess, email: inviteEmail.trim() });
+      setInviteEmail("");
+      toast("Convite enviado.");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Erro ao convidar.", "error");
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const greeting = user?.name?.split(" ")[0] ?? "criador";
+  const displayName = name.trim() || "Seu espaço aqui";
+  const displayBio =
+    bio.trim() || "Sua bio aparece aqui — conte o que torna seu espaço especial.";
+  const showProgram = programName.trim().length > 0 || step >= 2;
 
   if (loadState !== "content") {
     return (
@@ -107,220 +286,396 @@ export function SpaceBuilderPage() {
         state={loadState}
         message={loadError}
         onRetry={load}
-        className="min-h-[40vh]"
+        className="mx-auto min-h-[50vh] max-w-lg p-8"
       />
     );
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-2">
-      <div className="flex flex-col gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">Passo {step} de 3</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Construtor do Espaço</h1>
+    <>
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/85 px-4 backdrop-blur-md md:px-7">
+        <Link to="/app" className="flex items-center gap-2 text-base font-extrabold tracking-tight">
+          <span className="size-3 rounded-full bg-primary shadow-[0_0_16px_hsl(var(--primary))]" />
+          FitRadar
+        </Link>
+        <span className="hidden h-[22px] w-px bg-border sm:block" />
+        <span className="hidden text-[13.5px] text-muted-foreground sm:inline">
+          Bem-vindo(a), {greeting} — vamos montar seu espaço
+        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[13px] text-muted-foreground">Passo {step} de 3</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-[38px] rounded-[9px]"
+            disabled={saving}
+            onClick={() => void saveDraft()}
+          >
+            Salvar rascunho
+          </Button>
         </div>
+      </header>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {STEPS.map((st) => (
-            <button
-              key={st.n}
-              type="button"
-              onClick={() => setStep(st.n)}
-              className={cn(
-                "flex flex-1 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
-                step === st.n
-                  ? "border-primary/40 bg-primary/10"
-                  : "border-border bg-card hover:bg-secondary/50",
-              )}
-            >
-              <span
-                className={cn(
-                  "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                  step > st.n ? "bg-primary text-primary-foreground" : "border border-border",
-                )}
-              >
-                {step > st.n ? "✓" : st.n}
-              </span>
-              <span>
-                <span className="block text-sm font-semibold">{st.label}</span>
-                <span className="text-xs text-muted-foreground">{st.sub}</span>
-              </span>
-            </button>
-          ))}
-        </div>
+      <div className="grid flex-1 grid-cols-1 items-start lg:grid-cols-2">
+        <main
+          id="main-content"
+          className="mx-auto flex w-full max-w-[620px] flex-col gap-6 px-5 py-8 md:px-10 md:py-9"
+        >
+          <SpaceBuilderStepper step={step} accent={accent} onStep={setStep} />
 
-        {step === 1 ? (
-          <div className="flex flex-col gap-5">
-            <div>
-              <h2 className="text-xl font-bold">A identidade do seu espaço</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Dê um nome, uma cara e uma voz para sua comunidade.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="space-name">Nome do espaço</Label>
-              <Input
-                id="space-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex.: Studio Corpo & Movimento"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="space-logo">URL do logo (opcional)</Label>
-              <Input
-                id="space-logo"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://…"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Cor de destaque</Label>
-              <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-3">
-                {SWATCHES.map((hex) => (
-                  <button
-                    key={hex}
-                    type="button"
-                    title={hex}
-                    aria-label={`Cor ${hex}`}
-                    aria-pressed={primaryColor === hex}
-                    onClick={() => setPrimaryColor(hex)}
-                    className={cn(
-                      "size-9 rounded-full border-2 transition-transform hover:scale-105",
-                      primaryColor === hex ? "border-white" : "border-transparent",
-                    )}
-                    style={{ background: hex }}
-                  />
-                ))}
+          {step === 1 ? (
+            <div className="flex animate-in fade-in slide-in-from-bottom-2 flex-col gap-6 duration-300">
+              <div className="flex items-start gap-3">
+                <FitnessEmptyIcon context="space" variant="creator" className="size-12 shrink-0 rounded-xl" />
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">
+                    A identidade do seu espaço
+                  </h1>
+                  <p className="mt-1.5 text-[14.5px] text-muted-foreground">
+                    Dê um nome, uma cara e uma voz. Tudo o que você mudar aqui aparece na hora na
+                    pré-visualização ao lado.
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="space-bio">Bio do espaço</Label>
-                <span className="text-xs text-muted-foreground">{bio.length}/140</span>
-              </div>
-              <textarea
-                id="space-bio"
-                maxLength={140}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Conte em uma frase o que torna seu espaço especial."
-                className="min-h-[84px] w-full resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm"
-              />
-            </div>
-            <Button onClick={() => setStep(2)} disabled={!name.trim()}>
-              Continuar
-            </Button>
-          </div>
-        ) : null}
 
-        {step === 2 ? (
-          <div className="flex flex-col gap-5">
-            <div>
-              <h2 className="text-xl font-bold">Endereço do espaço</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Escolha um slug único para compartilhar com seus alunos.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="space-slug">Slug</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="space-slug"
-                  value={slug}
-                  onChange={(e) => setSlug(slugify(e.target.value))}
-                  placeholder="studio-corpo-movimento"
+              <div className="space-y-2">
+                <SpaceFieldLabel htmlFor="space-name" icon="space">
+                  Nome do espaço
+                </SpaceFieldLabel>
+                <input
+                  id="space-name"
+                  className={inputClass}
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setPublished(false);
+                  }}
+                  placeholder="Ex.: Studio Corpo & Movimento"
+                  onFocus={(e) => Object.assign(e.target.style, focusStyle)}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "";
+                    e.target.style.boxShadow = "";
+                  }}
                 />
-                <Button type="button" variant="outline" onClick={() => setSlug(slugify(name))}>
-                  Gerar
-                </Button>
+                <p className="font-mono text-[11.5px] text-muted-foreground">
+                  Link: {fullLink}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                fitradar.app/{slug || "seu-slug"}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Voltar
-              </Button>
-              <Button onClick={() => setStep(3)}>Continuar</Button>
-            </div>
-          </div>
-        ) : null}
 
-        {step === 3 ? (
-          <div className="flex flex-col gap-5">
-            <div>
-              <h2 className="text-xl font-bold">Revisar e publicar</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Confira os dados antes de salvar seu espaço.
-              </p>
-            </div>
-            <Card>
-              <CardContent className="space-y-2 pt-4 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Nome:</span> {name || "—"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Slug:</span> {slug || "—"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Cor:</span>{" "}
-                  <span
-                    className="inline-block size-4 rounded-full align-middle"
-                    style={{ background: primaryColor }}
+              <div className="flex flex-wrap gap-4">
+                <div className="min-w-[200px] flex-1 space-y-2">
+                  <SpaceFieldLabel icon="overview">Logo</SpaceFieldLabel>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={(e) => onLogoPick(e.target.files?.[0] ?? null)}
                   />
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Bio:</span> {bio || "—"}
-                </p>
-              </CardContent>
-            </Card>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(2)}>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex h-[72px] w-full items-center gap-3 rounded-[13px] border border-dashed border-border bg-card/80 px-4 text-left transition-colors hover:border-[var(--logo-hover)] hover:bg-card"
+                    style={{ "--logo-hover": accent } as React.CSSProperties}
+                  >
+                    <span
+                      className="flex size-11 shrink-0 items-center justify-center rounded-xl text-base font-extrabold"
+                      style={{
+                        background: `linear-gradient(140deg, ${accent}, ${rgbaHex(accent, 0.7)})`,
+                        color: accentFg,
+                      }}
+                    >
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="" className="size-full rounded-xl object-cover" />
+                      ) : (
+                        spaceInitials(name)
+                      )}
+                    </span>
+                    <span>
+                      <span className="block text-[13px] font-semibold">
+                        {logoFileName ?? "Arraste ou clique para enviar"}
+                      </span>
+                      <span className="block text-[11.5px] text-muted-foreground">
+                        PNG ou SVG · até 2 MB
+                      </span>
+                    </span>
+                  </button>
+                  <input
+                    id="space-logo-url"
+                    type="url"
+                    value={logoUrl.startsWith("blob:") ? "" : logoUrl}
+                    onChange={(e) => onLogoUrlChange(e.target.value)}
+                    placeholder="https://… (URL pública, opcional)"
+                    className={cn(inputClass, "mt-2 h-10 text-sm")}
+                    aria-describedby="logo-url-hint"
+                  />
+                  <p id="logo-url-hint" className="text-[11px] text-muted-foreground">
+                    Upload gera preview local; use URL https para persistir no espaço.
+                  </p>
+                </div>
+
+                <div className="min-w-[200px] flex-1 space-y-2">
+                  <SpaceFieldLabel icon="adherence">Cor de destaque</SpaceFieldLabel>
+                  <div className="flex h-[72px] items-center gap-2.5 rounded-[13px] border border-border bg-card/80 px-3.5">
+                    {SPACE_SWATCHES.map((hex) => {
+                      const on = hex === accent;
+                      return (
+                        <button
+                          key={hex}
+                          type="button"
+                          title={hex}
+                          aria-label={`Cor ${hex}`}
+                          aria-pressed={on}
+                          onClick={() => {
+                            setAccent(hex);
+                            setPublished(false);
+                          }}
+                          className="size-[30px] rounded-[9px] border transition-transform"
+                          style={{
+                            background: hex,
+                            borderColor: rgbaHex(hex, 0.6),
+                            transform: on ? "scale(1.12)" : "scale(1)",
+                            boxShadow: on
+                              ? `0 0 0 2px hsl(215 18% 12%), 0 0 0 4px ${hex}`
+                              : "none",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel
+                  htmlFor="space-bio"
+                  icon="healthy"
+                  trailing={
+                    <span className="text-[11.5px] text-muted-foreground">{bio.length}/140</span>
+                  }
+                >
+                  Bio do espaço
+                </SpaceFieldLabel>
+                <textarea
+                  id="space-bio"
+                  maxLength={140}
+                  value={bio}
+                  onChange={(e) => {
+                    setBio(e.target.value);
+                    setPublished(false);
+                  }}
+                  placeholder="Conte em uma frase o que torna seu espaço especial."
+                  className="min-h-[84px] w-full resize-none rounded-[11px] border border-border bg-secondary/40 px-3.5 py-3 text-[14.5px] leading-relaxed focus:outline-none focus:ring-[3px]"
+                  onFocus={(e) => Object.assign(e.target.style, focusStyle)}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "";
+                    e.target.style.boxShadow = "";
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {step === 2 ? (
+            <div className="flex animate-in fade-in slide-in-from-bottom-2 flex-col gap-6 duration-300">
+              <div className="flex items-start gap-3">
+                <FitnessEmptyIcon context="programs" variant="creator" className="size-12 shrink-0 rounded-xl" />
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">Seu primeiro programa</h1>
+                  <p className="mt-1.5 text-[14.5px] text-muted-foreground">
+                    Um espaço vivo começa com um programa. Crie um agora — você refina os treinos depois.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel htmlFor="prog-name" icon="programs">
+                  Nome do programa
+                </SpaceFieldLabel>
+                <input
+                  id="prog-name"
+                  className={inputClass}
+                  value={programName}
+                  onChange={(e) => setProgramName(e.target.value)}
+                  placeholder="Ex.: Base de Força"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel icon="checkIn">Duração</SpaceFieldLabel>
+                <div className="flex flex-wrap gap-2">
+                  {PROGRAM_DURATIONS.map((d) => {
+                    const on = d.weeks === programWeeks;
+                    return (
+                      <button
+                        key={d.weeks}
+                        type="button"
+                        onClick={() => setProgramWeeks(d.weeks)}
+                        className={cn(
+                          "h-10 rounded-[10px] border px-4 text-[13.5px] font-semibold transition-colors",
+                          on
+                            ? "border-[var(--dur-border)] bg-[var(--dur-bg)] text-foreground"
+                            : "border-border bg-transparent text-muted-foreground",
+                        )}
+                        style={
+                          on
+                            ? ({
+                                "--dur-border": rgbaHex(accent, 0.4),
+                                "--dur-bg": rgbaHex(accent, 0.16),
+                              } as React.CSSProperties)
+                            : undefined
+                        }
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel htmlFor="prog-desc" icon="goal">
+                  Descrição curta
+                </SpaceFieldLabel>
+                <textarea
+                  id="prog-desc"
+                  maxLength={160}
+                  value={programDesc}
+                  onChange={(e) => setProgramDesc(e.target.value)}
+                  placeholder="Para quem é e o que promete."
+                  className="min-h-[84px] w-full resize-none rounded-[11px] border border-border bg-secondary/40 px-3.5 py-3 text-[14.5px] leading-relaxed"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {step === 3 ? (
+            <div className="flex animate-in fade-in slide-in-from-bottom-2 flex-col gap-6 duration-300">
+              <div className="flex items-start gap-3">
+                <FitnessEmptyIcon context="invite" variant="creator" className="size-12 shrink-0 rounded-xl" />
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">Convide seu primeiro aluno</h1>
+                  <p className="mt-1.5 text-[14.5px] text-muted-foreground">
+                    Seu espaço está pronto para receber gente. Compartilhe o link ou mande um convite
+                    direto.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel icon="space">Link do espaço</SpaceFieldLabel>
+                <div className="flex gap-2.5">
+                  <div className="flex h-[46px] min-w-0 flex-1 items-center overflow-hidden rounded-[11px] border border-border bg-secondary/40 px-3.5 font-mono text-sm text-foreground/85">
+                    <span className="truncate">{fullLink}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "h-[46px] shrink-0 rounded-[11px] px-4",
+                      copied && "border-primary/40 bg-primary/10 text-primary",
+                    )}
+                    onClick={() => void copyLink()}
+                  >
+                    {copied ? "✓ Copiado" : "Copiar link"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel htmlFor="invite-email" icon="students">
+                  Ou convide por e-mail
+                </SpaceFieldLabel>
+                <div className="flex gap-2.5">
+                  <input
+                    id="invite-email"
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="aluno@email.com"
+                    className={cn(inputClass, "min-w-0 flex-1")}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="h-[46px] shrink-0 rounded-[11px] px-4"
+                    disabled={inviting}
+                    onClick={() => void sendInvite()}
+                  >
+                    {inviting ? "Enviando…" : "Enviar convite"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-1 flex items-center gap-3">
+            {step > 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-[46px] rounded-[11px] px-5"
+                onClick={() => setStep((s) => s - 1)}
+              >
                 Voltar
               </Button>
-              <Button onClick={() => void save()} disabled={saving || !name.trim()}>
-                {saving ? "Salvando…" : "Publicar espaço"}
-              </Button>
-            </div>
-            {saved ? (
-              <p className="text-sm font-medium text-primary">Espaço salvo com sucesso!</p>
             ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      <Card className="sticky top-20 h-fit overflow-hidden border-border">
-        <div className="h-1" style={{ background: primaryColor }} />
-        <CardContent className="space-y-4 pt-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Pré-visualização
-          </p>
-          <div className="flex items-center gap-3">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="size-12 rounded-xl object-cover" />
-            ) : (
-              <div
-                className="flex size-12 items-center justify-center rounded-xl text-sm font-bold"
-                style={{
-                  background: `${primaryColor}22`,
-                  border: `1px solid ${primaryColor}55`,
-                  color: primaryColor,
-                }}
+            {step < 3 ? (
+              <Button
+                type="button"
+                disabled={saving}
+                className="h-[46px] rounded-[11px] px-6 font-bold shadow-[0_6px_20px_var(--btn-shadow)]"
+                style={
+                  {
+                    background: accent,
+                    color: accentFg,
+                    "--btn-shadow": rgbaHex(accent, 0.28),
+                  } as React.CSSProperties
+                }
+                onClick={() => void goNext()}
               >
-                {initials}
-              </div>
+                {step === 1 ? "Continuar para o programa" : "Continuar para o convite"}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={saving}
+                className="h-[46px] rounded-[11px] px-6 font-bold shadow-[0_6px_20px_var(--btn-shadow)]"
+                style={
+                  {
+                    background: accent,
+                    color: accentFg,
+                    "--btn-shadow": rgbaHex(accent, 0.28),
+                  } as React.CSSProperties
+                }
+                onClick={() => void publish()}
+              >
+                {saving ? "Publicando…" : "Publicar espaço"}
+              </Button>
             )}
-            <div>
-              <p className="font-bold">{name || "Seu espaço"}</p>
-              <p className="text-xs text-muted-foreground">/{slug || "slug"}</p>
-            </div>
+            <span className="ml-auto text-[12.5px] text-muted-foreground">Leva uns 3 minutos</span>
           </div>
-          {bio ? <p className="text-sm text-muted-foreground">{bio}</p> : null}
-        </CardContent>
-      </Card>
-    </div>
+        </main>
+
+        <aside className="mx-auto w-full max-w-[640px] px-5 py-8 md:px-10 md:py-9 lg:mx-0" aria-label="Pré-visualização">
+          <SpaceLivePreview
+            accent={accent}
+            fullLink={fullLink}
+            displayName={displayName}
+            displayBio={displayBio}
+            logoPreview={logoPreview}
+            programName={programName}
+            programDesc={programDesc}
+            programWeeks={programWeeks}
+            memberCount={memberCount}
+            showProgram={showProgram}
+            published={published}
+            copied={copied}
+            onCopy={() => void copyLink()}
+          />
+        </aside>
+      </div>
+    </>
   );
 }

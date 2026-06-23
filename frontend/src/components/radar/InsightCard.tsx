@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { LucideIcon } from "lucide-react";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import type { UiRiskLevel } from "@/lib/api/domain-types";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ export type InsightCardProps = {
   riskLevel?: UiRiskLevel | "";
   riskLabel?: string;
   glowColor?: string;
+  icon?: LucideIcon;
   className?: string;
 };
 
@@ -49,6 +51,7 @@ export function InsightCard({
   riskLevel,
   riskLabel,
   glowColor = "hsl(var(--glow-accent))",
+  icon: Icon,
   className,
 }: InsightCardProps) {
   const sparkPaths = useMemo(() => (spark ? buildSparkPaths(spark) : null), [spark]);
@@ -76,7 +79,8 @@ export function InsightCard({
 
       <div className="relative flex h-full flex-col gap-3.5">
         <div className="flex min-h-6 flex-wrap items-start justify-between gap-2">
-          <span className="whitespace-nowrap text-[11.5px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-[11.5px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+            {Icon ? <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden /> : null}
             {label}
           </span>
           {riskLevel ? <RiskBadge level={riskLevel} label={riskLabel} /> : null}

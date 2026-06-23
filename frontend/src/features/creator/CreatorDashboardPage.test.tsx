@@ -2,11 +2,14 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { ToastProvider } from "@/components/ui/toast";
 import { CreatorDashboardPage } from "@/features/creator/CreatorDashboardPage";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
 import { RadarCopilotProvider } from "@/features/radar/RadarCopilotProvider";
 import { RadarFloatingWidget } from "@/components/radar/RadarFloatingWidget";
 import { retentionApi } from "@/lib/api/retention-api";
+import { spaceApi } from "@/lib/api/space-api";
+import { copilotApi } from "@/lib/api/copilot-api";
 
 vi.mock("@/lib/api/retention-api", () => ({
   retentionApi: {
@@ -15,9 +18,16 @@ vi.mock("@/lib/api/retention-api", () => ({
   },
 }));
 
+vi.mock("@/lib/api/space-api", () => ({
+  spaceApi: {
+    get: vi.fn(),
+  },
+}));
+
 vi.mock("@/lib/api/copilot-api", () => ({
   copilotApi: {
     ask: vi.fn(),
+    nudge: vi.fn(),
   },
 }));
 
@@ -48,12 +58,14 @@ const authValue: AuthContextValue = {
 function renderDashboard() {
   return render(
     <AuthContext.Provider value={authValue}>
-      <MemoryRouter>
-        <RadarCopilotProvider>
-          <CreatorDashboardPage />
-          <RadarFloatingWidget />
-        </RadarCopilotProvider>
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter>
+          <RadarCopilotProvider>
+            <CreatorDashboardPage />
+            <RadarFloatingWidget />
+          </RadarCopilotProvider>
+        </MemoryRouter>
+      </ToastProvider>
     </AuthContext.Provider>,
   );
 }
@@ -61,6 +73,16 @@ function renderDashboard() {
 describe("CreatorDashboardPage", () => {
   beforeEach(() => {
     vi.mocked(retentionApi.studentsAtRisk).mockResolvedValue([]);
+    vi.mocked(spaceApi.get).mockResolvedValue({
+      id: "s1",
+      creatorId: "c1",
+      name: "Comunidade",
+      slug: "marina-duarte",
+      logoUrl: null,
+      primaryColor: null,
+      bio: null,
+      createdAt: "2026-01-01",
+    });
   });
 
   it("shows empty attention state when no active students", async () => {
@@ -76,8 +98,9 @@ describe("CreatorDashboardPage", () => {
     renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText("Nenhum aluno ainda")).toBeInTheDocument();
+      expect(screen.getByText("Você ainda não tem alunos")).toBeInTheDocument();
     });
+    expect(screen.getByRole("button", { name: /Convidar primeiro aluno/i })).toBeInTheDocument();
   });
 
   it("shows positive attention state when students exist but none at risk", async () => {
@@ -93,11 +116,12 @@ describe("CreatorDashboardPage", () => {
     renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText("Comunidade saudável")).toBeInTheDocument();
+      expect(screen.getByText("Ninguém em risco hoje")).toBeInTheDocument();
     });
+    expect(screen.getByText("Tudo em dia")).toBeInTheDocument();
   });
 
-  it("shows alerts attention state when students are at risk", async () => {
+  it("shows alerts attention state with reminder action", async () => {
     vi.mocked(retentionApi.overview).mockResolvedValue({
       activeStudents: 10,
       avgAdherence: "65.00",
@@ -115,17 +139,28 @@ describe("CreatorDashboardPage", () => {
         assumptions: ["Sem check-in há 9 dias"],
       },
     ]);
+    vi.mocked(copilotApi.nudge).mockResolvedValue({
+      studentId: "s1",
+      studentName: "João Silva",
+      message: "Oi João, sentimos sua falta!",
+      assumptions: [],
+    });
 
+    const user = userEvent.setup();
     renderDashboard();
 
     await waitFor(() => {
       expect(screen.getByText("João Silva")).toBeInTheDocument();
-      expect(screen.getAllByText("Risco alto").length).toBeGreaterThan(0);
+    });
+
+    await user.click(screen.getByRole("button", { name: /Enviar lembrete/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
   });
 
-  it("opens the shared radar widget from dashboard CTA", async () => {
-    const user = userEvent.setup();
+  it("renders embedded radar chat with suggestions", async () => {
     vi.mocked(retentionApi.overview).mockResolvedValue({
       activeStudents: 5,
       avgAdherence: "78.00",
@@ -138,13 +173,8 @@ describe("CreatorDashboardPage", () => {
     renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Abrir chat do Radar" })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: "Abrir chat do Radar" }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByText("Pergunte ao Radar")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Quem merece um parabéns?" })).toBeInTheDocument();
     });
   });
 });

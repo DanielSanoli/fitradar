@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { Home, LineChart } from "lucide-react";
+import { CalendarCheck, Target } from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
-  { to: "/student", label: "Início", icon: Home, end: true },
-  { to: "/student/progress", label: "Progresso", icon: LineChart },
+  { to: "/student", label: "Início", icon: CalendarCheck, end: true },
+  { to: "/student/progress", label: "Progresso", icon: Target },
 ];
 
 export function StudentLayout() {

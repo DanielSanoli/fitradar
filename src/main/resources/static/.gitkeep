@@ -1,0 +1,1 @@
+# Populated at build time from frontend/dist (see Dockerfile and mvn package -Dskip.frontend.build=false).

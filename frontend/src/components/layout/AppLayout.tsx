@@ -14,7 +14,7 @@ const titles: Record<string, string> = {
   "/app": "Painel do criador",
   "/app/retention": "Retenção",
   "/app/students": "Alunos",
-  "/app/programs": "Programas",
+  "/app/programs": "Programas & Treinos",
   "/app/space": "Construtor do Espaço",
   "/app/ranking": "Ranking",
   "/app/settings": "Configurações",

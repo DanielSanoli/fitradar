@@ -74,7 +74,7 @@ describe("RadarFloatingWidget", () => {
     });
 
     expect(
-      screen.getByText(/Pergunte sobre os alunos em risco ou a visão geral/i),
+      screen.getByText(/Eu cruzo os sinais da sua comunidade/i),
     ).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
@@ -96,7 +96,7 @@ describe("RadarFloatingWidget", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Pergunte sobre os alunos em risco ou a visão geral/i),
+        screen.getByText(/Eu cruzo os sinais da sua comunidade/i),
       ).toBeInTheDocument();
     });
   });

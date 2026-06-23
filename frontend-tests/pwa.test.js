@@ -2,38 +2,30 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const staticRoot = path.resolve(import.meta.dirname, "../src/main/resources/static");
+const publicRoot = path.resolve(import.meta.dirname, "../frontend/public");
+const viteConfigPath = path.resolve(import.meta.dirname, "../frontend/vite.config.ts");
 
-describe("PWA assets", () => {
-  it("manifest is valid JSON with required fields", () => {
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(staticRoot, "manifest.webmanifest"), "utf8")
-    );
-    expect(manifest.name).toBeTruthy();
-    expect(manifest.short_name).toBeTruthy();
-    expect(manifest.start_url).toBeTruthy();
-    expect(manifest.display).toBe("standalone");
-    expect(manifest.icons.length).toBeGreaterThan(0);
-    expect(manifest.icons.some((i) => i.purpose === "maskable")).toBe(true);
+describe("React PWA assets (frontend/public)", () => {
+  it("push service worker handles push and notification click", () => {
+    const sw = fs.readFileSync(path.join(publicRoot, "push-sw.js"), "utf8");
+    expect(sw).toContain('addEventListener("push"');
+    expect(sw).toContain('addEventListener("notificationclick"');
+    expect(sw).toContain("/student");
   });
 
-  it("service worker registers push and cache handlers", () => {
-    const sw = fs.readFileSync(path.join(staticRoot, "sw.js"), "utf8");
-    expect(sw).toContain("addEventListener(\"install\"");
-    expect(sw).toContain("addEventListener(\"fetch\"");
-    expect(sw).toContain("addEventListener(\"push\"");
-    expect(sw).toContain("skipWaiting");
+  it("offline shell exists for Workbox includeAssets", () => {
+    expect(fs.existsSync(path.join(publicRoot, "offline.html"))).toBe(true);
   });
 
-  it("pwa.js registers service worker", () => {
-    const pwa = fs.readFileSync(path.join(staticRoot, "js/pwa.js"), "utf8");
-    expect(pwa).toContain("serviceWorker.register");
-    expect(pwa).toContain("Notification");
+  it("privacy policy is served as static HTML", () => {
+    const html = fs.readFileSync(path.join(publicRoot, "privacy.html"), "utf8");
+    expect(html).toContain('lang="pt-BR"');
+    expect(html).toContain("Política de Privacidade");
   });
 
-  it("student.html links manifest and pwa script", () => {
-    const html = fs.readFileSync(path.join(staticRoot, "student.html"), "utf8");
-    expect(html).toContain('rel="manifest"');
-    expect(html).toContain("/js/pwa.js");
+  it("vite PWA manifest targets student area on same origin", () => {
+    const config = fs.readFileSync(viteConfigPath, "utf8");
+    expect(config).toContain('start_url: "/student"');
+    expect(config).toContain("navigateFallbackDenylist: [/^\\/api/]");
   });
 });

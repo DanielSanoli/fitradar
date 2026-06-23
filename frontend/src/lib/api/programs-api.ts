@@ -25,6 +25,9 @@ export const programsApi = {
   createWorkout: (programId: string, body: WorkoutRequest) =>
     api.post<WorkoutResponse>(`${API_PREFIX}/programs/${programId}/workouts`, body),
 
+  updateWorkout: (programId: string, workoutId: string, body: WorkoutRequest) =>
+    api.put<WorkoutResponse>(`${API_PREFIX}/programs/${programId}/workouts/${workoutId}`, body),
+
   removeWorkout: (programId: string, workoutId: string) =>
     api.delete<void>(`${API_PREFIX}/programs/${programId}/workouts/${workoutId}`),
 };

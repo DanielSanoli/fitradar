@@ -78,7 +78,7 @@ public class AuthService {
 
         String verificationToken = tokenService.createEmailVerificationToken(savedUser);
         try {
-            emailService.sendEmailVerification(email, publicBaseUrl + "/app.html?verify=" + verificationToken);
+            emailService.sendEmailVerification(email, publicBaseUrl + "/login?verify=" + verificationToken);
         } catch (RuntimeException exception) {
             log.warn("Falha ao enviar e-mail de verificação para conta terminando em {}", maskEmail(email));
         }
@@ -126,7 +126,7 @@ public class AuthService {
         userRepository.findByEmailIgnoreCase(normalizeEmail(request.email())).ifPresent(user -> {
             String token = tokenService.createPasswordResetToken(user);
             try {
-                emailService.sendPasswordResetEmail(user.getEmail(), publicBaseUrl + "/app.html?reset=" + token);
+                emailService.sendPasswordResetEmail(user.getEmail(), publicBaseUrl + "/login?reset=" + token);
             } catch (RuntimeException exception) {
                 log.error("Falha ao enviar e-mail de recuperação para conta terminando em {}", maskEmail(user.getEmail()));
             }

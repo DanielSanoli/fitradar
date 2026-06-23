@@ -1,4 +1,6 @@
-import { AlertCircle, Inbox, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { FitnessEmptyIcon } from "@/components/fitness/FitnessEmptyIcon";
+import type { FitnessIconContext } from "@/lib/icons/fitness-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +10,8 @@ export type PanelStateProps = {
   message?: string;
   title?: string;
   icon?: React.ReactNode;
+  iconContext?: FitnessIconContext;
+  emptyVariant?: "creator" | "student";
   onRetry?: () => void;
   actionLabel?: string;
   onAction?: () => void;
@@ -21,6 +25,8 @@ export function PanelState({
   message,
   title,
   icon,
+  iconContext,
+  emptyVariant = "creator",
   onRetry,
   actionLabel,
   onAction,
@@ -73,8 +79,13 @@ export function PanelState({
         className,
       )}
     >
-      <div className="text-3xl" aria-hidden>
-        {icon ?? <Inbox className="mx-auto size-10 text-muted-foreground" />}
+      <div aria-hidden>
+        {icon ??
+          (iconContext ? (
+            <FitnessEmptyIcon context={iconContext} variant={emptyVariant} />
+          ) : (
+            <FitnessEmptyIcon context="activity" variant={emptyVariant} />
+          ))}
       </div>
       <div>
         <p className="font-semibold text-foreground">{title ?? "Nada por aqui"}</p>

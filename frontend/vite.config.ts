@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "icons/icon.svg", "icons/icon-maskable.svg", "offline.html"],
+      includeAssets: ["favicon.svg", "icons/icon.svg", "icons/icon-maskable.svg", "offline.html", "privacy.html"],
       manifest: {
         name: "FitRadar — Meus treinos",
         short_name: "FitRadar",
@@ -100,6 +100,12 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: "jsdom",

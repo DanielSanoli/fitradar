@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RADAR_DISCLAIMER, stripRadarDisclaimer } from "@/lib/radar/radar-disclaimer";
 import { cn } from "@/lib/utils";
 
 export type RadarMessage = {
@@ -8,7 +9,6 @@ export type RadarMessage = {
   role: "radar" | "user";
   text: string;
   list?: string[];
-  showDisclaimer?: boolean;
 };
 
 export type RadarChatProps = {
@@ -32,17 +32,17 @@ const DEFAULT_SUGGESTIONS = [
   "Como está a aderência geral?",
 ];
 
-function Disclaimer() {
+function RadarDisclaimerFooter() {
   return (
-    <div className="mt-2.5 flex items-center gap-1.5 border-t border-border pt-2 text-[11px] text-muted-foreground">
+    <p className="flex items-start gap-1.5 text-[11px] leading-snug text-muted-foreground">
       <span
-        className="inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border border-muted-foreground/60 text-[9px] font-bold italic"
+        className="mt-px inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border border-muted-foreground/50 text-[9px] font-bold italic"
         aria-hidden
       >
         i
       </span>
-      Sugestão, não orientação médica/profissional.
-    </div>
+      {RADAR_DISCLAIMER}
+    </p>
   );
 }
 
@@ -90,55 +90,56 @@ export function RadarChat({
     await onAsk?.(q);
   };
 
+  const panelBackground = "linear-gradient(180deg, hsl(215 18% 14.5%), hsl(215 22% 11%))";
+
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden",
+        "flex min-h-0 flex-col overflow-hidden",
         embedded
-          ? "h-full min-h-0"
+          ? "h-full"
           : "min-h-[420px] rounded-[14px] border border-border shadow-[0_8px_30px_rgba(0,0,0,0.35)]",
         className,
       )}
-      style={
-        embedded
-          ? undefined
-          : {
-              background: "linear-gradient(180deg, hsl(215 18% 14.5%), hsl(215 22% 11%))",
-            }
-      }
+      style={{ background: panelBackground }}
     >
       <div
-        className={cn(
-          "relative flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/7 to-transparent px-5 py-4",
-          embedded && "bg-card",
-        )}
-        style={
-          embedded
-            ? { background: "linear-gradient(180deg, hsl(215 18% 14.5%), hsl(215 22% 11%))" }
-            : undefined
-        }
+        className="shrink-0 border-b border-border px-5 py-4 pr-12"
+        style={{ background: panelBackground }}
       >
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-primary/30 bg-primary/15">
-          <span
-            className="size-3 rotate-45 rounded-[3px] bg-primary shadow-[0_0_14px_hsl(var(--primary))]"
-            aria-hidden
-          />
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[15px] font-bold tracking-tight text-foreground">{title}</span>
-          <span className="text-xs text-muted-foreground">{subtitle}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-primary/30 bg-primary/15">
+            <span
+              className="size-3 rotate-45 rounded-[3px] bg-primary shadow-[0_0_14px_hsl(var(--primary))]"
+              aria-hidden
+            />
+          </div>
+          <div className="min-w-0 flex flex-col gap-0.5">
+            <span className="text-[15px] font-bold tracking-tight text-foreground">{title}</span>
+            <span className="text-xs text-muted-foreground">{subtitle}</span>
+          </div>
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-1.5 pt-4">
+      <div
+        ref={scrollRef}
+        className="radar-chat-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
         {messages.map((msg) =>
           msg.role === "radar" ? (
             <div key={msg.id} className="mb-3.5 flex max-w-full items-start gap-2.5">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-xs font-extrabold text-primary">
+              <div
+                className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-xs font-extrabold text-primary"
+                aria-hidden
+              >
                 R
               </div>
               <div className="min-w-0 flex-1 rounded-[4px_14px_14px_14px] border border-border bg-secondary px-3.5 py-3">
-                <p className="text-[13.5px] leading-relaxed text-foreground/90">{msg.text}</p>
+                <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-foreground/90">
+                  {stripRadarDisclaimer(msg.text)}
+                </p>
                 {msg.list && msg.list.length > 0 ? (
                   <ul className="mt-2.5 flex flex-col gap-2">
                     {msg.list.map((item) => (
@@ -155,7 +156,6 @@ export function RadarChat({
                     ))}
                   </ul>
                 ) : null}
-                {msg.showDisclaimer ? <Disclaimer /> : null}
               </div>
             </div>
           ) : (
@@ -168,7 +168,10 @@ export function RadarChat({
         )}
         {loading ? (
           <div className="mb-3.5 flex items-start gap-2.5">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-xs font-extrabold text-primary">
+            <div
+              className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-xs font-extrabold text-primary"
+              aria-hidden
+            >
               R
             </div>
             <div className="rounded-[4px_14px_14px_14px] border border-border bg-secondary px-3.5 py-3 text-sm text-muted-foreground">
@@ -178,7 +181,7 @@ export function RadarChat({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2.5 border-t border-border px-5 py-3.5">
+      <div className="shrink-0 space-y-3 border-t border-border bg-card/40 px-5 py-4">
         <div className="flex flex-wrap gap-2">
           {suggestions.map((sug) => (
             <button
@@ -186,7 +189,7 @@ export function RadarChat({
               type="button"
               onClick={() => submit(sug)}
               disabled={loading}
-              className="cursor-pointer rounded-full border border-primary/30 bg-primary/8 px-3.5 py-2 text-[12.5px] font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-primary/15 disabled:opacity-50"
+              className="cursor-pointer rounded-full border border-primary/30 bg-primary/8 px-3.5 py-2 text-left text-[12.5px] font-semibold leading-snug text-primary transition-colors hover:border-primary/50 hover:bg-primary/15 disabled:opacity-50"
             >
               {sug}
             </button>
@@ -211,15 +214,7 @@ export function RadarChat({
             Enviar
           </Button>
         </form>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span
-            className="inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border border-muted-foreground/50 text-[9px] font-bold italic"
-            aria-hidden
-          >
-            i
-          </span>
-          As respostas do Radar são sugestões — não substituem orientação médica/profissional.
-        </div>
+        <RadarDisclaimerFooter />
       </div>
     </div>
   );

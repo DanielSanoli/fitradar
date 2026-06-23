@@ -1,9 +1,9 @@
 import { NavLink } from "react-router-dom";
 import {
-  ClipboardList,
+  Activity,
+  Dumbbell,
   LayoutDashboard,
   LogOut,
-  Radar,
   Settings,
   Sparkles,
   Trophy,
@@ -12,18 +12,31 @@ import {
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 const creatorLinks = [
   { to: "/app", label: "Visão geral", icon: LayoutDashboard, end: true },
+  { to: "/app/retention", label: "Retenção", icon: Activity },
   { to: "/app/students", label: "Alunos", icon: Users },
-  { to: "/app/programs", label: "Programas", icon: ClipboardList },
-  { to: "/app/space", label: "Espaço", icon: Sparkles },
-  { to: "/app/retention", label: "Retenção", icon: Radar },
+  { to: "/app/programs", label: "Programas", icon: Dumbbell },
+  { to: "/app/space", label: "Meu espaço", icon: Sparkles },
   { to: "/app/ranking", label: "Ranking", icon: Trophy },
   { to: "/app/settings", label: "Configurações", icon: Settings },
 ];
+
+function userInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function planLabel(plan: string | undefined): string {
+  if (!plan) return "Plano";
+  return plan === "PRO" ? "Plano Pro" : `Plano ${plan}`;
+}
 
 type SidebarProps = {
   variant: "creator" | "student";
@@ -32,8 +45,7 @@ type SidebarProps = {
 };
 
 export function Sidebar({ variant, className, onNavigate }: SidebarProps) {
-  const { logout } = useAuth();
-  const links = creatorLinks;
+  const { logout, user } = useAuth();
 
   if (variant === "student") {
     return null;
@@ -46,12 +58,12 @@ export function Sidebar({ variant, className, onNavigate }: SidebarProps) {
         className,
       )}
     >
-      <div className="flex h-14 items-center px-4">
+      <div className="flex h-16 items-center px-5">
         <BrandLogo />
       </div>
       <Separator className="bg-sidebar-border" />
       <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Principal">
-        {links.map(({ to, label, icon: Icon, end }) => (
+        {creatorLinks.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -59,19 +71,30 @@ export function Sidebar({ variant, className, onNavigate }: SidebarProps) {
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  ? "bg-sidebar-accent pl-4 font-semibold text-sidebar-accent-foreground before:absolute before:bottom-2 before:left-0 before:top-2 before:w-0.5 before:rounded-full before:bg-primary before:shadow-[0_0_10px_hsl(var(--primary))]"
                   : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
               )
             }
           >
-            <Icon className="size-4 shrink-0" aria-hidden />
+            <Icon className="size-[18px] shrink-0" aria-hidden />
             {label}
           </NavLink>
         ))}
       </nav>
-      <div className="p-3">
+      <div className="space-y-2 p-3">
+        {user ? (
+          <div className="flex items-center gap-2.5 rounded-xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-2.5">
+            <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] border border-primary/30 bg-primary/15 text-[13px] font-extrabold text-primary">
+              {userInitials(user.name)}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold text-foreground">{user.name}</p>
+              <p className="truncate text-[11.5px] text-muted-foreground">{planLabel(user.plan)}</p>
+            </div>
+          </div>
+        ) : null}
         <Button
           variant="outline"
           className="w-full justify-start border-sidebar-border bg-transparent"
