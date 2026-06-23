@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { MessageSquare } from "lucide-react";
 import { InsightCard } from "@/components/radar/InsightCard";
-import { RadarChat, type RadarMessage } from "@/components/radar/RadarChat";
 import { RiskBadge } from "@/components/radar/RiskBadge";
 import { PanelState } from "@/components/ui/PanelState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { copilotApi } from "@/lib/api/copilot-api";
+import { useRadarCopilot } from "@/features/radar/RadarCopilotProvider";
 import {
   formatAdherence,
   riskLevelToUi,
@@ -15,7 +15,6 @@ import {
 } from "@/lib/api/domain-types";
 import { retentionApi } from "@/lib/api/retention-api";
 import { ApiError } from "@/lib/api/types";
-import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 type AttentionState = "empty" | "positive" | "alerts";
@@ -36,19 +35,13 @@ function initials(name: string): string {
 
 export function CreatorDashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { openWidget, setHighlight } = useRadarCopilot();
   const [overview, setOverview] = useState<CreatorOverviewResult | null>(null);
   const [atRisk, setAtRisk] = useState<ChurnRiskResult[]>([]);
   const [overviewState, setOverviewState] = useState<"loading" | "error" | "content">("loading");
   const [riskState, setRiskState] = useState<"loading" | "error" | "content">("loading");
   const [overviewError, setOverviewError] = useState<string>();
   const [riskError, setRiskError] = useState<string>();
-  const [chatMessages, setChatMessages] = useState<RadarMessage[]>([]);
-  const [chatLoading, setChatLoading] = useState(false);
-
-  const greeting = user?.name
-    ? `Oi, ${user.name.split(" ")[0]}! Pergunte sobre os alunos em risco ou a visão geral da sua comunidade.`
-    : undefined;
 
   const loadOverview = useCallback(async () => {
     setOverviewState("loading");
@@ -80,43 +73,10 @@ export function CreatorDashboardPage() {
   }, [loadOverview, loadAtRisk]);
 
   useEffect(() => {
-    if (greeting) {
-      setChatMessages([{ id: "greeting", role: "radar", text: greeting }]);
-    }
-  }, [greeting]);
+    setHighlight((overview?.atRiskCount ?? 0) > 0);
+  }, [overview?.atRiskCount, setHighlight]);
 
   const attention = deriveAttentionState(overview);
-
-  const handleAsk = async (question: string) => {
-    setChatMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", text: question }]);
-    setChatLoading(true);
-    try {
-      const res = await copilotApi.ask({ question });
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `r-${Date.now()}`,
-          role: "radar",
-          text: res.answer,
-          showDisclaimer: true,
-        },
-      ]);
-    } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Não consegui responder agora.";
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `e-${Date.now()}`,
-          role: "radar",
-          text: `Não consegui responder agora. Tente de novo em instantes.\n\n${msg}`,
-          showDisclaimer: true,
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
   const adhDisplay = formatAdherence(overview?.avgAdherence);
 
   return (
@@ -269,13 +229,28 @@ export function CreatorDashboardPage() {
           </CardContent>
         </Card>
 
-        <RadarChat
-          greeting={greeting}
-          messages={chatMessages}
-          onAsk={handleAsk}
-          loading={chatLoading}
-          className="min-h-[min(480px,70vh)]"
-        />
+        <Card className="flex flex-col justify-between border-primary/25 bg-gradient-to-br from-primary/8 to-card shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+          <CardContent className="flex flex-col gap-4 pt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/15">
+                <MessageSquare className="size-5 text-primary" aria-hidden />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Pergunte ao Radar</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Copiloto de retenção — disponível em qualquer tela pelo botão flutuante.
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Pergunte sobre alunos em risco, visão geral da comunidade ou próximas ações. O mesmo
+              chat abre no canto inferior direito.
+            </p>
+            <Button className="w-full sm:w-auto" onClick={openWidget}>
+              Abrir chat do Radar
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

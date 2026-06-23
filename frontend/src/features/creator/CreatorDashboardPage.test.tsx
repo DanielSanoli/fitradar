@@ -1,8 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { CreatorDashboardPage } from "@/features/creator/CreatorDashboardPage";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
+import { RadarCopilotProvider } from "@/features/radar/RadarCopilotProvider";
+import { RadarFloatingWidget } from "@/components/radar/RadarFloatingWidget";
 import { retentionApi } from "@/lib/api/retention-api";
 
 vi.mock("@/lib/api/retention-api", () => ({
@@ -46,7 +49,10 @@ function renderDashboard() {
   return render(
     <AuthContext.Provider value={authValue}>
       <MemoryRouter>
-        <CreatorDashboardPage />
+        <RadarCopilotProvider>
+          <CreatorDashboardPage />
+          <RadarFloatingWidget />
+        </RadarCopilotProvider>
       </MemoryRouter>
     </AuthContext.Provider>,
   );
@@ -115,6 +121,30 @@ describe("CreatorDashboardPage", () => {
     await waitFor(() => {
       expect(screen.getByText("João Silva")).toBeInTheDocument();
       expect(screen.getAllByText("Risco alto").length).toBeGreaterThan(0);
+    });
+  });
+
+  it("opens the shared radar widget from dashboard CTA", async () => {
+    const user = userEvent.setup();
+    vi.mocked(retentionApi.overview).mockResolvedValue({
+      activeStudents: 5,
+      avgAdherence: "78.00",
+      atRiskCount: 0,
+      checkInsThisWeek: 12,
+      newStudentsThisWeek: 1,
+      assumptions: [],
+    });
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Abrir chat do Radar" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Abrir chat do Radar" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
   });
 });

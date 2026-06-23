@@ -18,6 +18,9 @@ export type RadarChatProps = {
   onAsk?: (question: string) => void | Promise<void>;
   loading?: boolean;
   className?: string;
+  title?: string;
+  subtitle?: string;
+  embedded?: boolean;
 };
 
 const DEFAULT_GREETING =
@@ -50,6 +53,9 @@ export function RadarChat({
   onAsk,
   loading = false,
   className,
+  title = "Pergunte ao Radar",
+  subtitle = "Copiloto de retenção · lê os sinais da sua comunidade",
+  embedded = false,
 }: RadarChatProps) {
   const [internalMessages, setInternalMessages] = useState<RadarMessage[]>([
     { id: "greeting", role: "radar", text: greeting },
@@ -87,14 +93,31 @@ export function RadarChat({
   return (
     <div
       className={cn(
-        "flex h-full min-h-[420px] flex-col overflow-hidden rounded-[14px] border border-border shadow-[0_8px_30px_rgba(0,0,0,0.35)]",
+        "flex flex-col overflow-hidden",
+        embedded
+          ? "h-full min-h-0"
+          : "min-h-[420px] rounded-[14px] border border-border shadow-[0_8px_30px_rgba(0,0,0,0.35)]",
         className,
       )}
-      style={{
-        background: "linear-gradient(180deg, hsl(215 18% 14.5%), hsl(215 22% 11%))",
-      }}
+      style={
+        embedded
+          ? undefined
+          : {
+              background: "linear-gradient(180deg, hsl(215 18% 14.5%), hsl(215 22% 11%))",
+            }
+      }
     >
-      <div className="relative flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/7 to-transparent px-5 py-4">
+      <div
+        className={cn(
+          "relative flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary/7 to-transparent px-5 py-4",
+          embedded && "bg-card",
+        )}
+        style={
+          embedded
+            ? { background: "linear-gradient(180deg, hsl(215 18% 14.5%), hsl(215 22% 11%))" }
+            : undefined
+        }
+      >
         <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-primary/30 bg-primary/15">
           <span
             className="size-3 rotate-45 rounded-[3px] bg-primary shadow-[0_0_14px_hsl(var(--primary))]"
@@ -102,12 +125,8 @@ export function RadarChat({
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-[15px] font-bold tracking-tight text-foreground">
-            Pergunte ao Radar
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Copiloto de retenção · lê os sinais da sua comunidade
-          </span>
+          <span className="text-[15px] font-bold tracking-tight text-foreground">{title}</span>
+          <span className="text-xs text-muted-foreground">{subtitle}</span>
         </div>
       </div>
 

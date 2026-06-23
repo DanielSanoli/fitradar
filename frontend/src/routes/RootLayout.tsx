@@ -1,4 +1,5 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthenticatedRadarShell } from "@/components/radar/AuthenticatedRadarShell";
 import { Outlet } from "react-router-dom";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { ToastProvider } from "@/components/ui/toast";
@@ -9,8 +10,10 @@ export function RootLayout() {
     <ToastProvider>
       <ErrorBoundary>
         <AuthProvider>
-          <Outlet />
-          <InstallBanner />
+          <AuthenticatedRadarShell>
+            <Outlet />
+            <InstallBanner />
+          </AuthenticatedRadarShell>
         </AuthProvider>
       </ErrorBoundary>
     </ToastProvider>
