@@ -3,7 +3,8 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { LoginPage } from "@/features/auth/LoginPage";
+import { LoginRoute } from "@/features/auth/LoginRoute";
+import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ProtectedRoute, PublicOnlyRoute } from "@/features/auth/ProtectedRoute";
 import { RegisterPage } from "@/features/auth/RegisterPage";
 import { BillingRequiredPage } from "@/pages/BillingRequiredPage";
@@ -56,6 +57,11 @@ const RetentionPage = lazy(() =>
 const RankingPage = lazy(() =>
   import("@/features/creator/RankingPage").then((m) => ({ default: m.RankingPage })),
 );
+const StudentSettingsPage = lazy(() =>
+  import("@/features/student/StudentSettingsPage").then((m) => ({
+    default: m.StudentSettingsPage,
+  })),
+);
 const StudentProgressPage = lazy(() =>
   import("@/features/student/StudentProgressPage").then((m) => ({
     default: m.StudentProgressPage,
@@ -80,7 +86,8 @@ export const router = createBrowserRouter([
           {
             element: <PublicOnlyRoute />,
             children: [
-              { path: "login", element: <LoginPage /> },
+              { path: "login", element: <LoginRoute /> },
+              { path: "forgot-password", element: <ForgotPasswordPage /> },
               { path: "register", element: <RegisterPage /> },
             ],
           },
@@ -235,6 +242,14 @@ export const router = createBrowserRouter([
                 element: (
                   <Lazy>
                     <StudentProgressPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "settings",
+                element: (
+                  <Lazy>
+                    <StudentSettingsPage />
                   </Lazy>
                 ),
               },

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";import { LoginPage } from "@/features/auth/LoginPage";
+import { MemoryRouter } from "react-router-dom";
+import { LoginPage } from "@/features/auth/LoginPage";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
 
 function renderLogin() {
@@ -33,6 +34,10 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /entrar/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Esqueci minha senha/i })).toHaveAttribute(
+      "href",
+      "/forgot-password",
+    );
   });
 
   it("submits credentials", async () => {

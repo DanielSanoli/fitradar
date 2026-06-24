@@ -96,6 +96,44 @@ export function PushOptInBanner({
 
 /** Painel de configurações — reativar/desativar push. */
 export function PushSettingsCard({ className }: { className?: string }) {
+  const push = usePushNotifications();
+
+  return (
+    <div className={cn("rounded-[14px] border border-border bg-card p-4", className)}>
+      <div className="flex items-center gap-3">
+        {push.enabled ? (
+          <Bell className="size-5 text-primary" aria-hidden />
+        ) : (
+          <BellOff className="size-5 text-muted-foreground" aria-hidden />
+        )}
+        <div className="flex-1">
+          <p className="text-sm font-semibold">Notificações push</p>
+          <p className="text-xs text-muted-foreground">
+            {push.enabled ? "Lembretes do Radar ativos." : "Receba lembretes de treino no celular."}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {push.enabled ? (
+          <>
+            <Button size="sm" variant="outline" disabled={push.loading} onClick={() => void push.test()}>
+              Testar
+            </Button>
+            <Button size="sm" variant="ghost" disabled={push.loading} onClick={() => void push.disable()}>
+              Desativar
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" disabled={push.loading} onClick={() => void push.enable()}>
+            Ativar notificações
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function usePushNotifications() {
   const { toast } = useToast();
   const [enabled, setEnabled] = useState(() => pwaStorage.isPushEnabled());
   const [loading, setLoading] = useState(false);
@@ -153,37 +191,62 @@ export function PushSettingsCard({ className }: { className?: string }) {
     }
   };
 
+  return { enabled, loading, enable, disable, test, setEnabled };
+}
+
+/** Toggle acessível — liga/desliga push (subscribe / unsubscribe). */
+export function PushNotificationSwitch({
+  className,
+  labelId = "push-notifications-label",
+}: {
+  className?: string;
+  labelId?: string;
+}) {
+  const push = usePushNotifications();
+
   return (
-    <div className={cn("rounded-[14px] border border-border bg-card p-4", className)}>
-      <div className="flex items-center gap-3">
-        {enabled ? (
-          <Bell className="size-5 text-primary" aria-hidden />
-        ) : (
-          <BellOff className="size-5 text-muted-foreground" aria-hidden />
-        )}
-        <div className="flex-1">
-          <p className="text-sm font-semibold">Notificações push</p>
-          <p className="text-xs text-muted-foreground">
-            {enabled ? "Lembretes do Radar ativos." : "Receba lembretes de treino no celular."}
-          </p>
-        </div>
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 rounded-[11px] border border-border bg-secondary/20 px-4 py-3.5",
+        className,
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p id={labelId} className="text-sm font-semibold">
+          Lembretes de treino
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {push.enabled
+            ? "Push ativo — o Radar pode te avisar no celular."
+            : "Receba um toque quando for hora de voltar aos treinos."}
+        </p>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {enabled ? (
-          <>
-            <Button size="sm" variant="outline" disabled={loading} onClick={() => void test()}>
-              Testar
-            </Button>
-            <Button size="sm" variant="ghost" disabled={loading} onClick={() => void disable()}>
-              Desativar
-            </Button>
-          </>
-        ) : (
-          <Button size="sm" disabled={loading} onClick={() => void enable()}>
-            Ativar notificações
-          </Button>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={push.enabled}
+        aria-labelledby={labelId}
+        aria-busy={push.loading}
+        disabled={push.loading}
+        onClick={() => void (push.enabled ? push.disable() : push.enable())}
+        className={cn(
+          "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "disabled:cursor-not-allowed disabled:opacity-60",
+          push.enabled
+            ? "border-primary/50 bg-primary"
+            : "border-border bg-muted",
         )}
-      </div>
+      >
+        <span
+          className={cn(
+            "pointer-events-none block size-5 rounded-full bg-background shadow transition-transform",
+            push.enabled ? "translate-x-[22px]" : "translate-x-0.5",
+          )}
+          aria-hidden
+        />
+        <span className="sr-only">{push.enabled ? "Desativar notificações" : "Ativar notificações"}</span>
+      </button>
     </div>
   );
 }

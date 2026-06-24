@@ -24,6 +24,13 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
   });
 }
 
+export async function resetPassword(token: string, password: string): Promise<{ message: string }> {
+  return apiRequestPublic<{ message: string }>("POST", `${API_PREFIX}/auth/reset-password`, {
+    token,
+    password,
+  });
+}
+
 export async function refreshSession(): Promise<AuthResponse | null> {
   const refreshToken = readStoredRefreshToken();
   if (!refreshToken) return null;

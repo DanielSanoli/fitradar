@@ -20,6 +20,7 @@ const titles: Record<string, string> = {
   "/app/settings": "Configurações",
   "/student": "Área do aluno",
   "/student/progress": "Progresso",
+  "/student/settings": "Perfil",
 };
 
 export function AppLayout({ variant }: AppLayoutProps) {

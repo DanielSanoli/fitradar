@@ -1,15 +1,22 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { RESET_PASSWORD_SUCCESS } from "@/lib/auth/password-reset-copy";
 import { ApiError } from "@/lib/api/types";
 
 export function LoginPage() {
   const { login } = useAuth();
+  const location = useLocation();
+  const resetNotice =
+    (location.state as { resetSuccess?: boolean; message?: string } | null)?.resetSuccess === true
+      ? ((location.state as { message?: string }).message ?? RESET_PASSWORD_SUCCESS)
+      : null;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,9 +51,14 @@ export function LoginPage() {
           <CardDescription>Use o e-mail cadastrado na plataforma.</CardDescription>
         </CardHeader>
         <CardContent>
+          {resetNotice ? (
+            <Alert className="mb-4" role="status" aria-live="polite">
+              <AlertDescription>{resetNotice}</AlertDescription>
+            </Alert>
+          ) : null}
           <form className="space-y-4" onSubmit={onSubmit} noValidate>
             {error ? (
-              <Alert variant="destructive">
+              <Alert variant="destructive" role="alert">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             ) : null}
@@ -63,7 +75,15 @@ export function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="password">Senha</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Esqueci minha senha
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"

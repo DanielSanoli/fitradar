@@ -18,6 +18,7 @@ function renderAt(path: string) {
         <Route element={<StudentLayout />}>
           <Route path="/student" element={<div data-testid="page-home">Home</div>} />
           <Route path="/student/progress" element={<div data-testid="page-progress">Progress</div>} />
+          <Route path="/student/settings" element={<div data-testid="page-settings">Settings</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -36,6 +37,7 @@ describe("StudentLayout bottom nav", () => {
     expect(nav.getAllByRole("link")).toHaveLength(STUDENT_NAV_ITEMS.length);
     expect(nav.getByRole("link", { name: "Início" })).toBeVisible();
     expect(nav.getByRole("link", { name: "Progresso" })).toBeVisible();
+    expect(nav.getByRole("link", { name: "Perfil" })).toBeVisible();
   });
 
   it("renders all nav items on /student/progress", () => {
@@ -45,6 +47,7 @@ describe("StudentLayout bottom nav", () => {
     expect(nav.getAllByRole("link")).toHaveLength(STUDENT_NAV_ITEMS.length);
     expect(nav.getByRole("link", { name: "Início" })).toBeVisible();
     expect(nav.getByRole("link", { name: "Progresso" })).toBeVisible();
+    expect(nav.getByRole("link", { name: "Perfil" })).toBeVisible();
   });
 
   it("marks the current route with aria-current and keeps others navigable", () => {
@@ -58,6 +61,14 @@ describe("StudentLayout bottom nav", () => {
     expect(inicio).not.toHaveAttribute("aria-current");
     expect(inicio).toHaveAttribute("href", "/student");
     expect(progresso).toHaveAttribute("href", "/student/progress");
+  });
+
+  it("highlights Perfil when on /student/settings", () => {
+    renderAt("/student/settings");
+
+    const nav = bottomNav();
+    expect(nav.getByRole("link", { name: "Perfil" })).toHaveAttribute("aria-current", "page");
+    expect(nav.getByRole("link", { name: "Perfil" })).toHaveAttribute("href", "/student/settings");
   });
 
   it("highlights Início when on /student", () => {

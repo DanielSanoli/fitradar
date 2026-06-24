@@ -12,6 +12,7 @@ public class SpaForwardController {
 
     @GetMapping({
             "/login",
+            "/forgot-password",
             "/register",
             "/billing-required",
             "/404",
