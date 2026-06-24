@@ -215,4 +215,21 @@ describe("StudentHomePage", () => {
       expect(screen.getByText("Dia de descanso")).toBeInTheDocument();
     });
   });
+
+  it("preview toggle switches home layout without enabling check-in", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Treino" })).toHaveAttribute("aria-pressed", "true");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Descanso" }));
+
+    expect(screen.getByText("Dia de descanso")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /treino feito!/i })).not.toBeInTheDocument();
+  });
 });

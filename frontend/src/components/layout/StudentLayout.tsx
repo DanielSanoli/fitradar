@@ -1,15 +1,11 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { CalendarCheck, Target } from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { SkipLink } from "@/components/layout/SkipLink";
+import { StudentBottomNav } from "@/components/layout/StudentBottomNav";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-
-const navItems = [
-  { to: "/student", label: "Início", icon: CalendarCheck, end: true },
-  { to: "/student/progress", label: "Progresso", icon: Target },
-];
+import { STUDENT_NAV_ITEMS } from "@/lib/student/student-nav";
+import { cn } from "@/lib/utils";
 
 export function StudentLayout() {
   const { logout, user } = useAuth();
@@ -21,8 +17,8 @@ export function StudentLayout() {
         <div className="flex h-14 items-center px-4">
           <BrandLogo />
         </div>
-        <nav className="flex flex-1 flex-col gap-1 p-3">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+        <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Menu lateral do aluno">
+          {STUDENT_NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -36,7 +32,7 @@ export function StudentLayout() {
                 )
               }
             >
-              <Icon className="size-4" aria-hidden />
+              <Icon className="size-4 shrink-0" aria-hidden />
               {label}
             </NavLink>
           ))}
@@ -54,33 +50,14 @@ export function StudentLayout() {
           <span className="max-w-[10rem] truncate text-sm text-muted-foreground">{user?.name}</span>
         </header>
 
-        <main id="main-content" className="flex-1 p-4 md:p-6">
+        <main
+          id="main-content"
+          className="flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:p-6 md:pb-6"
+        >
           <Outlet />
         </main>
 
-        <nav
-          className="sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md md:hidden"
-          aria-label="Navegação do aluno"
-        >
-          <div className="mx-auto flex max-w-lg">
-            {navItems.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cn(
-                    "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground",
-                  )
-                }
-              >
-                <Icon className="size-5" aria-hidden />
-                {label}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
+        <StudentBottomNav />
       </div>
     </div>
   );

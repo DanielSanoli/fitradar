@@ -116,7 +116,7 @@ export function AttentionTodayPanel({
           </div>
           {state === "alerts" ? (
             <Link
-              to="/app/students"
+              to="/app/retention"
               className="shrink-0 text-[13px] font-semibold text-primary hover:underline"
             >
               Ver todos →

@@ -4,7 +4,11 @@ import com.sanoli.fitradar.domain.RiskLevel;
 import com.sanoli.fitradar.dto.AlertResponse;
 import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.retention.engine.ChurnRiskResult;
+import com.sanoli.fitradar.retention.engine.CreatorAdherenceTrendResult;
 import com.sanoli.fitradar.retention.engine.CreatorOverviewResult;
+import com.sanoli.fitradar.retention.engine.CreatorRankingResult;
+import com.sanoli.fitradar.retention.engine.RankingMetric;
+import com.sanoli.fitradar.retention.engine.RankingPeriod;
 import com.sanoli.fitradar.retention.engine.RetentionEngineService;
 import com.sanoli.fitradar.retention.engine.StudentProgressResult;
 import com.sanoli.fitradar.retention.rules.RetentionRuleEngine;
@@ -55,6 +59,21 @@ public class RetentionController {
     @Operation(summary = "Painel de retenção do criador")
     public ResponseEntity<CreatorOverviewResult> overview() {
         return ResponseEntity.ok(engine.creatorOverview(creatorId()));
+    }
+
+    @GetMapping("/adherence-trend")
+    @Operation(summary = "Tendência de aderência da comunidade (motor determinístico)")
+    public ResponseEntity<CreatorAdherenceTrendResult> adherenceTrend() {
+        return ResponseEntity.ok(engine.creatorAdherenceTrend(creatorId()));
+    }
+
+    @GetMapping("/ranking")
+    @Operation(summary = "Ranking da comunidade do criador (motor determinístico)")
+    public ResponseEntity<CreatorRankingResult> ranking(
+            @RequestParam(name = "metric", defaultValue = "ADHERENCE") RankingMetric metric,
+            @RequestParam(name = "period", defaultValue = "WEEK") RankingPeriod period
+    ) {
+        return ResponseEntity.ok(engine.creatorRanking(creatorId(), metric, period));
     }
 
     @GetMapping("/students-at-risk")

@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BedDouble, CalendarCheck, Check, ChevronRight, Dumbbell, Flame } from "lucide-react";
 import { CheckInCelebrationOverlay } from "@/components/student/CheckInCelebrationOverlay";
 import { CheckInSheet } from "@/components/student/CheckInSheet";
+import {
+  HOME_VIEW_OPTIONS,
+  StudentStatePreviewToggle,
+  type StudentHomeViewMode,
+} from "@/components/student/StudentStatePreviewToggle";
 import { WorkoutExerciseList } from "@/components/student/WorkoutExerciseList";
 import { CreatorSpaceBrand } from "@/components/fitness/CreatorSpaceBrand";
 import { PushOptInBanner } from "@/components/pwa/PushPrompt";
@@ -20,16 +25,9 @@ import { ApiError } from "@/lib/api/types";
 import { useAuth } from "@/hooks/useAuth";
 import { formatGreetingDate, localDateKey } from "@/lib/student/date-utils";
 import { streakSubtitle } from "@/lib/student/student-copy";
+import { deriveHomeViewMode } from "@/lib/student/student-view-state";
 import { countExercises } from "@/lib/student/workout-content";
 import { cn } from "@/lib/utils";
-
-type HomeMode = "workout" | "rest" | "none";
-
-function deriveMode(progress: StudentProgressResult | null): HomeMode {
-  if (!progress?.enrolled) return "none";
-  if (progress.nextWorkoutTitle) return "workout";
-  return "rest";
-}
 
 const UPCOMING_LABELS = ["Amanhã", "Depois", "Em breve"] as const;
 
@@ -51,6 +49,8 @@ export function StudentHomePage() {
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [celebrateStreak, setCelebrateStreak] = useState(0);
+  const [viewMode, setViewMode] = useState<StudentHomeViewMode>("workout");
+  const [viewModeTouched, setViewModeTouched] = useState(false);
   const streakBeforeCheckIn = useRef(0);
   const { toast } = useToast();
 
@@ -93,21 +93,29 @@ export function StudentHomePage() {
     void load();
   }, [load]);
 
-  const mode = deriveMode(progress);
+  useEffect(() => {
+    if (progress && !viewModeTouched) {
+      setViewMode(deriveHomeViewMode(progress));
+    }
+  }, [progress, viewModeTouched]);
+
+  const apiMode = deriveHomeViewMode(progress);
   const nextWorkout = workouts.find((w) => w.id === progress?.nextWorkoutId) ?? workouts[0];
+  const displayWorkout =
+    viewMode === "workout" ? nextWorkout ?? workouts[0] : nextWorkout;
   const firstName = user?.name?.split(" ")[0] ?? "Aluno";
   const enrolledProgram = programs.find((p) => p.enrolled);
   const programTitle = enrolledProgram?.title ?? space?.name ?? "FitRadar";
 
   const upcoming = useMemo(() => {
-    if (!nextWorkout) return [];
-    const idx = workouts.findIndex((w) => w.id === nextWorkout.id);
+    if (!displayWorkout) return [];
+    const idx = workouts.findIndex((w) => w.id === displayWorkout.id);
     return workouts.slice(idx + 1, idx + 4).map((w, i) => ({
       workout: w,
       dayLabel: UPCOMING_LABELS[i] ?? "Em breve",
       exCount: countExercises(w.contentMarkdown) || (w.description ? 1 : 0),
     }));
-  }, [workouts, nextWorkout]);
+  }, [workouts, displayWorkout]);
 
   const finishCheckIn = async (skipped: boolean) => {
     if (!activeWorkout) return;
@@ -176,10 +184,10 @@ export function StudentHomePage() {
     setSheetOpen(true);
   };
 
-  const todayDoneFlag = nextWorkout ? doneToday.has(nextWorkout.id) : false;
-  const exTotal = nextWorkout ? countExercises(nextWorkout.contentMarkdown) : 0;
+  const todayDoneFlag = displayWorkout ? doneToday.has(displayWorkout.id) : false;
+  const exTotal = displayWorkout ? countExercises(displayWorkout.contentMarkdown) : 0;
   const hasExercises =
-    exTotal > 0 || Boolean(nextWorkout?.contentMarkdown?.trim());
+    exTotal > 0 || Boolean(displayWorkout?.contentMarkdown?.trim());
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 motion-safe:animate-in motion-safe:fade-in md:pb-8">
@@ -199,6 +207,18 @@ export function StudentHomePage() {
         <h1 className="text-[23px] font-extrabold tracking-tight">Bom dia, {firstName}!</h1>
         <p className="text-sm capitalize text-muted-foreground">{formatGreetingDate()}</p>
       </header>
+
+      {state === "content" && progress ? (
+        <StudentStatePreviewToggle
+          value={viewMode}
+          options={HOME_VIEW_OPTIONS}
+          onChange={(next) => {
+            setViewModeTouched(true);
+            setViewMode(next);
+          }}
+          className="px-1"
+        />
+      ) : null}
 
       <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
         {progress ? (
@@ -220,7 +240,7 @@ export function StudentHomePage() {
               </div>
             </div>
 
-            {mode === "workout" && nextWorkout ? (
+            {viewMode === "workout" && displayWorkout ? (
               <div className="flex flex-col gap-3.5">
                 <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
                   <div className="h-[3px] bg-gradient-to-r from-primary to-primary/70" aria-hidden />
@@ -243,16 +263,16 @@ export function StudentHomePage() {
 
                     <div>
                       <h2 className="text-[21px] font-extrabold leading-tight tracking-tight">
-                        {nextWorkout.title}
+                        {displayWorkout.title}
                       </h2>
-                      {nextWorkout.description ? (
-                        <p className="mt-1 text-sm text-muted-foreground">{nextWorkout.description}</p>
+                      {displayWorkout.description ? (
+                        <p className="mt-1 text-sm text-muted-foreground">{displayWorkout.description}</p>
                       ) : null}
                     </div>
 
                     {hasExercises ? (
                       <WorkoutExerciseList
-                        contentMarkdown={nextWorkout.contentMarkdown}
+                        contentMarkdown={displayWorkout.contentMarkdown}
                         className="space-y-2"
                       />
                     ) : (
@@ -269,7 +289,7 @@ export function StudentHomePage() {
 
                 <Button
                   size="lg"
-                  disabled={todayDoneFlag || submitting}
+                  disabled={todayDoneFlag || submitting || !nextWorkout || viewMode !== apiMode}
                   onClick={() => void quickCheckIn()}
                   className={cn(
                     "h-14 gap-2.5 rounded-[14px] text-base font-bold shadow-[0_6px_20px_hsl(var(--primary)/0.36)]",
@@ -285,7 +305,7 @@ export function StudentHomePage() {
                   {todayDoneFlag ? "Treino concluído hoje" : "Treino feito!"}
                 </Button>
 
-                {!todayDoneFlag ? (
+                {!todayDoneFlag && nextWorkout && viewMode === apiMode ? (
                   <button
                     type="button"
                     onClick={openCheckInSheet}
@@ -296,9 +316,13 @@ export function StudentHomePage() {
                   </button>
                 ) : null}
               </div>
+            ) : viewMode === "workout" ? (
+              <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+                Nenhum treino disponível para exibir neste estado.
+              </p>
             ) : null}
 
-            {mode === "rest" ? (
+            {viewMode === "rest" ? (
               <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
                 <div className="h-[3px] bg-gradient-to-r from-violet-500 to-violet-400/70" aria-hidden />
                 <div className="flex flex-col items-center gap-4 px-[18px] py-6 text-center">
@@ -324,7 +348,7 @@ export function StudentHomePage() {
               </div>
             ) : null}
 
-            {mode === "none" ? (
+            {viewMode === "none" ? (
               <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
                 <div className="h-[3px] bg-gradient-to-r from-amber-400 to-amber-300/70" aria-hidden />
                 <div className="flex flex-col items-center gap-5 px-[18px] py-7 text-center">
@@ -350,7 +374,7 @@ export function StudentHomePage() {
               </div>
             ) : null}
 
-            {(mode === "workout" || mode === "rest") && upcoming.length > 0 ? (
+            {(viewMode === "workout" || viewMode === "rest") && upcoming.length > 0 ? (
               <section className="space-y-2.5" aria-label="Próximos treinos">
                 <h2 className="text-sm font-bold text-foreground/90">Próximos treinos</h2>
                 <ul className="space-y-2">

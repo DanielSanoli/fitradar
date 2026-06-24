@@ -263,6 +263,135 @@ public class RetentionEngineService {
     }
 
     // ---------------------------------------------------------------------
+    // 5.5b creatorAdherenceTrend
+    // ---------------------------------------------------------------------
+
+    private static final int TREND_WEEKS = 8;
+
+    @Transactional(readOnly = true)
+    public CreatorAdherenceTrendResult creatorAdherenceTrend(UUID creatorId) {
+        LocalDate today = today();
+        List<AppUser> active = activeStudents(creatorId);
+        List<String> assumptions = new ArrayList<>();
+
+        if (active.isEmpty()) {
+            assumptions.add("Sem alunos ativos para calcular tendência");
+            return new CreatorAdherenceTrendResult(null, null, null, List.of(), assumptions);
+        }
+
+        RetentionBatchContext batch = RetentionBatchContext.load(
+                active, enrollmentRepository, workoutRepository, checkInRepository, today, properties);
+
+        BigDecimal current = avgCommunityAdherence(active, batch, today.minusDays(29), today);
+        BigDecimal previous = avgCommunityAdherence(active, batch, today.minusDays(59), today.minusDays(30));
+
+        BigDecimal change = null;
+        if (current != null && previous != null) {
+            change = current.subtract(previous).setScale(PCT_SCALE, RoundingMode.HALF_EVEN);
+        }
+
+        LocalDate currentWeekStart = today.with(DayOfWeek.MONDAY);
+        List<AdherenceTrendPoint> weeklySeries = new ArrayList<>();
+        for (int i = TREND_WEEKS - 1; i >= 0; i--) {
+            LocalDate weekStart = currentWeekStart.minusWeeks(i);
+            LocalDate weekEnd = weekStart.plusDays(6);
+            if (weekEnd.isAfter(today)) {
+                weekEnd = today;
+            }
+            if (weekStart.isAfter(today)) {
+                continue;
+            }
+            BigDecimal avg = avgCommunityAdherence(active, batch, weekStart, weekEnd);
+            weeklySeries.add(new AdherenceTrendPoint(weekStart, avg));
+        }
+
+        assumptions.add("Aderência média da comunidade (alunos com matrícula ativa)");
+        assumptions.add("Período atual: últimos 30 dias; anterior: 30 dias imediatamente anteriores");
+        assumptions.add(String.format("Série semanal: %d semana(s) até %s", weeklySeries.size(), today));
+
+        return new CreatorAdherenceTrendResult(current, previous, change, weeklySeries, assumptions);
+    }
+
+    // ---------------------------------------------------------------------
+    // 5.5c creatorRanking
+    // ---------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public CreatorRankingResult creatorRanking(UUID creatorId, RankingMetric metric, RankingPeriod period) {
+        LocalDate today = today();
+        LocalDate from = period == RankingPeriod.WEEK ? today.minusDays(6) : today.minusDays(29);
+        List<AppUser> active = activeStudents(creatorId);
+
+        List<String> assumptions = new ArrayList<>();
+        assumptions.add(String.format("Ranking por %s", metric == RankingMetric.ADHERENCE ? "aderência" : "streak"));
+        assumptions.add(period == RankingPeriod.WEEK
+                ? String.format("Aderência calculada de %s a %s (7 dias)", from, today)
+                : String.format("Aderência calculada de %s a %s (30 dias)", from, today));
+        if (metric == RankingMetric.STREAK) {
+            assumptions.add(String.format("Streak = dias consecutivos com check-in até %s (período não altera o streak)", today));
+        }
+        assumptions.add("Somente alunos com matrícula ativa");
+
+        if (active.isEmpty()) {
+            return new CreatorRankingResult(metric, period, List.of(), assumptions);
+        }
+
+        RetentionBatchContext batch = RetentionBatchContext.load(
+                active, enrollmentRepository, workoutRepository, checkInRepository, today, properties);
+
+        record Scored(AppUser student, BigDecimal value) {
+        }
+
+        List<Scored> scored = new ArrayList<>();
+        for (AppUser student : active) {
+            BigDecimal value = metric == RankingMetric.ADHERENCE
+                    ? batch.adherenceRate(student.getId(), from, today)
+                    : BigDecimal.valueOf(currentStreak(student.getId(), today));
+            scored.add(new Scored(student, value));
+        }
+
+        scored.sort(Comparator
+                .comparing(Scored::value, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(s -> s.student().getName(), String.CASE_INSENSITIVE_ORDER));
+
+        List<CreatorRankingEntry> entries = new ArrayList<>();
+        int rank = 1;
+        for (Scored row : scored) {
+            entries.add(new CreatorRankingEntry(
+                    rank++,
+                    row.student().getId(),
+                    row.student().getName(),
+                    row.value()
+            ));
+        }
+
+        return new CreatorRankingResult(metric, period, entries, assumptions);
+    }
+
+    private BigDecimal avgCommunityAdherence(
+            List<AppUser> active,
+            RetentionBatchContext batch,
+            LocalDate from,
+            LocalDate to
+    ) {
+        if (from.isAfter(to)) {
+            return null;
+        }
+        BigDecimal sum = BigDecimal.ZERO;
+        int counted = 0;
+        for (AppUser student : active) {
+            BigDecimal rate = batch.adherenceRate(student.getId(), from, to);
+            if (rate != null) {
+                sum = sum.add(rate);
+                counted++;
+            }
+        }
+        return counted > 0
+                ? sum.divide(BigDecimal.valueOf(counted), PCT_SCALE, RoundingMode.HALF_EVEN)
+                : null;
+    }
+
+    // ---------------------------------------------------------------------
     // 5.6 studentProgress
     // ---------------------------------------------------------------------
 

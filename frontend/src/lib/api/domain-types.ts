@@ -15,6 +15,36 @@ export type CreatorOverviewResult = {
   assumptions: string[];
 };
 
+export type AdherenceTrendPoint = {
+  weekStart: string;
+  avgAdherence: string | null;
+};
+
+export type CreatorAdherenceTrendResult = {
+  currentPeriodAdherence: string | null;
+  previousPeriodAdherence: string | null;
+  changePoints: string | null;
+  weeklySeries: AdherenceTrendPoint[];
+  assumptions: string[];
+};
+
+export type RankingMetric = "ADHERENCE" | "STREAK";
+export type RankingPeriod = "WEEK" | "MONTH";
+
+export type CreatorRankingEntry = {
+  rank: number;
+  studentId: string;
+  studentName: string;
+  value: string | null;
+};
+
+export type CreatorRankingResult = {
+  metric: RankingMetric;
+  period: RankingPeriod;
+  entries: CreatorRankingEntry[];
+  assumptions: string[];
+};
+
 export type ChurnRiskResult = {
   studentId: string;
   studentName: string;

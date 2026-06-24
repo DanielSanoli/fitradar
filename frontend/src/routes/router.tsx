@@ -9,7 +9,6 @@ import { RegisterPage } from "@/features/auth/RegisterPage";
 import { BillingRequiredPage } from "@/pages/BillingRequiredPage";
 import { HomePage } from "@/pages/HomePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import { RootLayout } from "@/routes/RootLayout";
 
 const CreatorDashboardPage = lazy(() =>
@@ -50,6 +49,12 @@ const CreatorSettingsPage = lazy(() =>
   import("@/features/creator/CreatorSettingsPage").then((m) => ({
     default: m.CreatorSettingsPage,
   })),
+);
+const RetentionPage = lazy(() =>
+  import("@/features/creator/RetentionPage").then((m) => ({ default: m.RetentionPage })),
+);
+const RankingPage = lazy(() =>
+  import("@/features/creator/RankingPage").then((m) => ({ default: m.RankingPage })),
 );
 const StudentProgressPage = lazy(() =>
   import("@/features/student/StudentProgressPage").then((m) => ({
@@ -164,16 +169,17 @@ export const router = createBrowserRouter([
               {
                 path: "retention",
                 element: (
-                  <PlaceholderPage
-                    title="Retenção"
-                    description="Alertas detalhados e reavaliação — em breve."
-                  />
+                  <Lazy>
+                    <RetentionPage />
+                  </Lazy>
                 ),
               },
               {
                 path: "ranking",
                 element: (
-                  <PlaceholderPage title="Ranking" description="Gamificação — em breve." />
+                  <Lazy>
+                    <RankingPage />
+                  </Lazy>
                 ),
               },
               {

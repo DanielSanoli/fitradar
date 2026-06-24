@@ -257,6 +257,100 @@ class RetentionEngineServiceTest {
         assertThat(progress.nextWorkoutId()).isEqualTo(workout2);
     }
 
+    // ----------------------------- 5.5b creatorAdherenceTrend -----------------------------
+
+    @Test
+    void creatorAdherenceTrend_withoutActiveStudents_returnsEmptySeries() {
+        UUID creator = UUID.randomUUID();
+        when(userRepository.findByCreatorIdAndRole(creator, UserRole.STUDENT)).thenReturn(List.of());
+
+        CreatorAdherenceTrendResult trend = engine.creatorAdherenceTrend(creator);
+
+        assertThat(trend.currentPeriodAdherence()).isNull();
+        assertThat(trend.previousPeriodAdherence()).isNull();
+        assertThat(trend.changePoints()).isNull();
+        assertThat(trend.weeklySeries()).isEmpty();
+        assertThat(trend.assumptions()).anyMatch(a -> a.contains("Sem alunos ativos"));
+    }
+
+    @Test
+    void creatorAdherenceTrend_withActiveStudent_returnsWeeklySeriesAndChange() {
+        UUID creator = UUID.randomUUID();
+        UUID student = UUID.randomUUID();
+        UUID program = UUID.randomUUID();
+        AppUser appUser = user(student, "Aluno", UserRole.STUDENT);
+
+        when(userRepository.findByCreatorIdAndRole(creator, UserRole.STUDENT)).thenReturn(List.of(appUser));
+        when(enrollmentRepository.findByStudentIdInAndActiveTrue(any()))
+                .thenReturn(List.of(enrollment(student, program, TODAY.minusDays(60))));
+        when(enrollmentRepository.findByStudentIdAndActiveTrue(student))
+                .thenReturn(List.of(enrollment(student, program, TODAY.minusDays(60))));
+        when(workoutRepository.countByProgramId(program)).thenReturn(3L);
+        when(workoutRepository.countGroupByProgramIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{program, 3L}));
+        when(checkInRepository.findMaxDateByStudentIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{student, TODAY}));
+        when(checkInRepository.countByStudentIdAndStatusAndDateBetween(
+                eq(student), eq(CheckInStatus.DONE), any(), any())).thenReturn(5L);
+
+        CreatorAdherenceTrendResult trend = engine.creatorAdherenceTrend(creator);
+
+        assertThat(trend.weeklySeries()).hasSize(8);
+        assertThat(trend.currentPeriodAdherence()).isNotNull();
+        assertThat(trend.assumptions()).isNotEmpty();
+    }
+
+    // ----------------------------- 5.5c creatorRanking -----------------------------
+
+    @Test
+    void creatorRanking_withoutActiveStudents_returnsEmpty() {
+        UUID creator = UUID.randomUUID();
+        when(userRepository.findByCreatorIdAndRole(creator, UserRole.STUDENT)).thenReturn(List.of());
+
+        CreatorRankingResult ranking = engine.creatorRanking(creator, RankingMetric.STREAK, RankingPeriod.WEEK);
+
+        assertThat(ranking.entries()).isEmpty();
+        assertThat(ranking.metric()).isEqualTo(RankingMetric.STREAK);
+    }
+
+    @Test
+    void creatorRanking_byStreak_ordersDescending() {
+        UUID creator = UUID.randomUUID();
+        UUID studentA = UUID.randomUUID();
+        UUID studentB = UUID.randomUUID();
+        UUID program = UUID.randomUUID();
+        AppUser alunoA = user(studentA, "Ana", UserRole.STUDENT);
+        AppUser alunoB = user(studentB, "Bruno", UserRole.STUDENT);
+
+        when(userRepository.findByCreatorIdAndRole(creator, UserRole.STUDENT)).thenReturn(List.of(alunoA, alunoB));
+        when(enrollmentRepository.findByStudentIdInAndActiveTrue(any()))
+                .thenReturn(List.of(
+                        enrollment(studentA, program, TODAY.minusDays(30)),
+                        enrollment(studentB, program, TODAY.minusDays(30))));
+        when(enrollmentRepository.findByStudentIdAndActiveTrue(studentA))
+                .thenReturn(List.of(enrollment(studentA, program, TODAY.minusDays(30))));
+        when(enrollmentRepository.findByStudentIdAndActiveTrue(studentB))
+                .thenReturn(List.of(enrollment(studentB, program, TODAY.minusDays(30))));
+        when(workoutRepository.countGroupByProgramIdIn(any()))
+                .thenReturn(Collections.singletonList(new Object[]{program, 3L}));
+        when(checkInRepository.findMaxDateByStudentIdIn(any()))
+                .thenReturn(List.of(
+                        new Object[]{studentA, TODAY},
+                        new Object[]{studentB, TODAY.minusDays(5)}));
+        when(checkInRepository.findByStudentIdOrderByDateDesc(studentA))
+                .thenReturn(List.of(
+                        checkIn(studentA, UUID.randomUUID(), TODAY),
+                        checkIn(studentA, UUID.randomUUID(), TODAY.minusDays(1))));
+        when(checkInRepository.findByStudentIdOrderByDateDesc(studentB))
+                .thenReturn(List.of(checkIn(studentB, UUID.randomUUID(), TODAY.minusDays(5))));
+
+        CreatorRankingResult ranking = engine.creatorRanking(creator, RankingMetric.STREAK, RankingPeriod.WEEK);
+
+        assertThat(ranking.entries()).hasSize(2);
+        assertThat(ranking.entries().get(0).studentName()).isEqualTo("Ana");
+        assertThat(ranking.entries().get(0).value().intValue()).isEqualTo(2);
+    }
+
     // ----------------------------- fixtures -----------------------------
 
     private AppUser user(UUID id, String name, UserRole role) {

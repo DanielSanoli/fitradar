@@ -69,10 +69,11 @@ export default defineConfig({
               request.destination === "style" ||
               request.destination === "font" ||
               request.destination === "image",
-            handler: "CacheFirst",
+            handler: "NetworkFirst",
             options: {
               cacheName: "static-assets",
-              expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              networkTimeoutSeconds: 3,
             },
           },
           {

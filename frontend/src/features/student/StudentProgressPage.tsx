@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, ClipboardList, Flame, Trophy, Zap } from "lucide-react";
 import { AdherenceRing } from "@/components/fitness/AdherenceRing";
 import { WeeklyActivityChart } from "@/components/student/WeeklyActivityChart";
+import {
+  PROGRESS_VIEW_OPTIONS,
+  StudentStatePreviewToggle,
+  type StudentProgressViewMode,
+} from "@/components/student/StudentStatePreviewToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PushSettingsCard } from "@/components/pwa/PushPrompt";
@@ -16,10 +21,10 @@ import type {
   WorkoutResponse,
 } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
+import { deriveProgressViewMode } from "@/lib/student/student-view-state";
 import {
   adherenceLabelFromDto,
   adherenceRingColor,
-  isEarlyJourney,
 } from "@/lib/student/student-copy";
 import { buildWeekBars, weekSummaryFromDto } from "@/lib/student/weekly-activity";
 import { countExercises } from "@/lib/student/workout-content";
@@ -46,6 +51,8 @@ export function StudentProgressPage() {
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
   const [gamificationWarning, setGamificationWarning] = useState<string>();
+  const [viewMode, setViewMode] = useState<StudentProgressViewMode>("active");
+  const [viewModeTouched, setViewModeTouched] = useState(false);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -97,7 +104,13 @@ export function StudentProgressPage() {
   const totalDoneFallback = checkIns.filter((c) => c.status === "DONE").length;
   const totalDone = totalDoneFromGamification ?? totalDoneFallback;
   const streak = progress?.currentStreak ?? 0;
-  const early = isEarlyJourney(totalDoneFromGamification, progress?.adherence ?? null);
+  const showEarly = viewMode === "early";
+
+  useEffect(() => {
+    if (progress && !viewModeTouched) {
+      setViewMode(deriveProgressViewMode(totalDoneFromGamification, progress.adherence));
+    }
+  }, [progress, totalDoneFromGamification, viewModeTouched]);
   const ringColor = adherenceRingColor(progress?.adherence ?? null);
   const statusLabel = adherenceLabelFromDto(progress?.adherence ?? null);
 
@@ -141,14 +154,26 @@ export function StudentProgressPage() {
           <span className="size-9" aria-hidden />
         </div>
         <h1 className="text-xl font-extrabold tracking-tight">
-          {early ? "Você está começando!" : `Boa semana, ${firstName}!`}
+          {showEarly ? "Você está começando!" : `Boa semana, ${firstName}!`}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {early
+          {showEarly
             ? "Cada treino conta — o gráfico vai crescer com você."
             : "Veja sua evolução no programa."}
         </p>
       </header>
+
+      {state === "content" && progress ? (
+        <StudentStatePreviewToggle
+          value={viewMode}
+          options={PROGRESS_VIEW_OPTIONS}
+          onChange={(next) => {
+            setViewModeTouched(true);
+            setViewMode(next);
+          }}
+          className="px-1"
+        />
+      ) : null}
 
       <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
         {progress ? (
@@ -161,7 +186,7 @@ export function StudentProgressPage() {
               </Alert>
             ) : null}
 
-            {!early ? (
+            {!showEarly ? (
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col items-center gap-2 rounded-[18px] border border-border bg-card px-3.5 py-[18px] shadow-[0_6px_20px_rgba(0,0,0,0.28)]">
@@ -392,7 +417,7 @@ export function StudentProgressPage() {
                 <div>
                   <p className="text-sm font-bold">Pergunte ao Radar</p>
                   <p className="text-[11.5px] text-muted-foreground">
-                    {early ? "Seu copiloto de treino" : "Insights sobre seu progresso"}
+                    {showEarly ? "Seu copiloto de treino" : "Insights sobre seu progresso"}
                   </p>
                 </div>
               </div>

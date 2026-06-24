@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type FilterPillProps = {
-  label: string;
+  label: ReactNode;
   active?: boolean;
   onClick: () => void;
   "aria-current"?: boolean | "true" | "false";

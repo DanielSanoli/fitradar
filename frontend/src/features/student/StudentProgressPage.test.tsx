@@ -207,4 +207,44 @@ describe("StudentProgressPage", () => {
     expect(openWidgetMock).toHaveBeenCalled();
     expect(askMock).toHaveBeenCalledWith("Como estou indo?");
   });
+
+  it("preview toggle switches between active and early journey layouts", async () => {
+    vi.mocked(memberApi.myProgress).mockResolvedValue({
+      studentId: "1",
+      studentName: "Lucas",
+      enrolled: true,
+      adherence: "80.00",
+      currentStreak: 7,
+      weeklyDone: 3,
+      nextWorkoutId: "w1",
+      nextWorkoutTitle: "Upper Body A",
+      message: null,
+      assumptions: [],
+    });
+    vi.mocked(memberApi.myGamification).mockResolvedValue({
+      studentId: "1",
+      currentStreak: 7,
+      longestStreak: 10,
+      totalCheckInsDone: 12,
+      badges: [],
+      rank: 1,
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText("Esta semana")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Progresso ativo" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: "Início da jornada" }));
+
+    expect(screen.getByText("Você está começando!")).toBeInTheDocument();
+    expect(screen.getByText("Seus próximos marcos")).toBeInTheDocument();
+    expect(screen.queryByText("Esta semana")).not.toBeInTheDocument();
+  });
 });
