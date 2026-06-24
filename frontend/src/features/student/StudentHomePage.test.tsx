@@ -105,6 +105,7 @@ describe("StudentHomePage", () => {
       logoUrl: null,
       primaryColor: null,
       bio: null,
+      category: "OTHER",
       createdAt: "2024-01-01T00:00:00Z",
     });
     vi.mocked(memberApi.myPrograms).mockResolvedValue([]);

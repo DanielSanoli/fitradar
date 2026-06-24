@@ -1,17 +1,20 @@
 import { Check, Lock } from "lucide-react";
 import { FitnessIcon } from "@/components/fitness/FitnessIcon";
+import { SpaceCategoryMark } from "@/components/fitness/SpaceCategoryMark";
 import { cn } from "@/lib/utils";
+import type { SpaceCategory } from "@/lib/api/domain-types";
 import {
   foregroundOnAccent,
   rgbaHex,
-  spaceInitials,
 } from "@/lib/creator/space-theme";
+import { spaceCategoryLabel, normalizeSpaceCategory } from "@/lib/creator/space-categories";
 
 type SpaceLivePreviewProps = {
   accent: string;
   fullLink: string;
   displayName: string;
   displayBio: string;
+  category: SpaceCategory;
   logoPreview?: string | null;
   programName: string;
   programDesc: string;
@@ -29,6 +32,7 @@ export function SpaceLivePreview({
   fullLink,
   displayName,
   displayBio,
+  category,
   logoPreview,
   programName,
   programDesc,
@@ -43,7 +47,7 @@ export function SpaceLivePreview({
   const accentFg = foregroundOnAccent(accent);
   const accentSoft = rgbaHex(accent, 0.16);
   const accentBorder = rgbaHex(accent, 0.4);
-  const initials = spaceInitials(displayName);
+  const areaLabel = spaceCategoryLabel(normalizeSpaceCategory(category));
   const displayProgram = programName.trim() || "Seu primeiro programa";
   const weeksLabel = programWeeks === "0" ? "Contínuo" : `${programWeeks} semanas`;
   const displayProgramSub = programDesc.trim() || weeksLabel;
@@ -82,23 +86,19 @@ export function SpaceLivePreview({
           />
           <div className="-mt-[34px] flex flex-col px-7 pb-7">
             {logoPreview ? (
-              <img
-                src={logoPreview}
-                alt=""
-                className="size-[72px] rounded-[20px] border-[3px] border-[hsl(215_22%_9%)] object-cover shadow-lg"
-                style={{ boxShadow: `0 10px 26px ${rgbaHex(accent, 0.35)}` }}
-              />
-            ) : (
-              <div
-                className="flex size-[72px] items-center justify-center rounded-[20px] border-[3px] border-[hsl(215_22%_9%)] text-[26px] font-extrabold"
-                style={{
-                  background: `linear-gradient(140deg, ${accent}, ${rgbaHex(accent, 0.7)})`,
-                  color: accentFg,
-                  boxShadow: `0 10px 26px ${rgbaHex(accent, 0.35)}`,
-                }}
-              >
-                {initials}
+              <div className="relative">
+                <img
+                  src={logoPreview}
+                  alt=""
+                  className="size-[72px] rounded-[20px] border-[3px] border-[hsl(215_22%_9%)] object-cover shadow-lg"
+                  style={{ boxShadow: `0 10px 26px ${rgbaHex(accent, 0.35)}` }}
+                />
+                <span className="absolute -bottom-1 -right-1 rounded-lg border border-[hsl(215_22%_9%)] bg-card p-0.5">
+                  <SpaceCategoryMark category={category} primaryColor={accent} size="sm" />
+                </span>
               </div>
+            ) : (
+              <SpaceCategoryMark category={category} primaryColor={accent} size="lg" />
             )}
 
             <div className="mt-4 flex items-start justify-between gap-3.5">
@@ -111,7 +111,7 @@ export function SpaceLivePreview({
                     className="size-[7px] rounded-full"
                     style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
                   />
-                  Espaço no FitRadar · {memberCount} aluno{memberCount === 1 ? "" : "s"}
+                  {areaLabel} · Espaço no FitRadar · {memberCount} aluno{memberCount === 1 ? "" : "s"}
                 </div>
               </div>
               <button

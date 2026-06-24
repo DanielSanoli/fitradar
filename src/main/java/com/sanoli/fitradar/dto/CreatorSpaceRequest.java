@@ -1,5 +1,6 @@
 package com.sanoli.fitradar.dto;
 
+import com.sanoli.fitradar.domain.SpaceCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -15,6 +16,8 @@ public record CreatorSpaceRequest(
         String primaryColor,
 
         @Size(max = 1000, message = "bio deve ter no máximo 1000 caracteres")
-        String bio
+        String bio,
+
+        SpaceCategory category
 ) {
 }

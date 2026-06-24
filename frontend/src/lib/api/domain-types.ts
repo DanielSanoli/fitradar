@@ -143,6 +143,8 @@ export type WorkoutRequest = {
   dayIndex: number;
 };
 
+export type SpaceCategory = "NUTRITION" | "GYM" | "CROSSFIT" | "PILATES" | "OTHER";
+
 export type CreatorSpaceResponse = {
   id: string;
   creatorId: string;
@@ -151,6 +153,7 @@ export type CreatorSpaceResponse = {
   logoUrl: string | null;
   primaryColor: string | null;
   bio: string | null;
+  category: SpaceCategory | null;
   createdAt: string;
 };
 
@@ -160,6 +163,7 @@ export type CreatorSpaceRequest = {
   logoUrl?: string | null;
   primaryColor?: string | null;
   bio?: string | null;
+  category?: SpaceCategory | null;
 };
 
 export type CopilotAskRequest = {

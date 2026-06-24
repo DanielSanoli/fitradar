@@ -15,6 +15,7 @@ import { gamificationApi } from "@/lib/api/gamification-api";
 import { retentionApi } from "@/lib/api/retention-api";
 import { spaceApi } from "@/lib/api/space-api";
 import { studentsApi } from "@/lib/api/students-api";
+import { buildCreatorSpaceUrl, formatCreatorSpaceLinkDisplay } from "@/lib/app/public-url";
 import type {
   ChurnRiskResult,
   EnrollmentResponse,
@@ -120,7 +121,7 @@ export function StudentsPage() {
       const riskMap = new Map(atRisk.map((r) => [r.studentId, r]));
       const checkInsMap = new Map(leaderboardResult.map((e) => [e.studentId, e.totalCheckInsDone]));
 
-      setSpaceLink(space?.slug ? `${window.location.host}/c/${space.slug}` : null);
+      setSpaceLink(space?.slug ? buildCreatorSpaceUrl(space.slug) : null);
 
       const enriched = await Promise.all(
         page.content.map((s) => enrichStudent(s, riskMap, checkInsMap)),
@@ -416,7 +417,7 @@ export function StudentsPage() {
           </div>
           {spaceLink ? (
             <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-[11px] border border-dashed border-border bg-secondary/30 px-4 py-2.5 font-mono text-[12.5px] text-muted-foreground">
-              {spaceLink}
+              {spaceLink ? formatCreatorSpaceLinkDisplay(spaceLink) : null}
               <button
                 type="button"
                 onClick={() => void copySpaceLink()}

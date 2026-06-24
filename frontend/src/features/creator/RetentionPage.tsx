@@ -25,6 +25,7 @@ import { copilotApi } from "@/lib/api/copilot-api";
 import { gamificationApi } from "@/lib/api/gamification-api";
 import { retentionApi } from "@/lib/api/retention-api";
 import { spaceApi } from "@/lib/api/space-api";
+import { buildCreatorSpaceUrl, copyTextToClipboard } from "@/lib/app/public-url";
 import type {
   ChurnRiskResult,
   CreatorAdherenceTrendResult,
@@ -162,7 +163,7 @@ export function RetentionPage() {
   const loadSpace = useCallback(async () => {
     try {
       const space = await spaceApi.get();
-      setSpaceLink(space.slug ? `${window.location.host}/c/${space.slug}` : null);
+      setSpaceLink(space.slug ? buildCreatorSpaceUrl(space.slug) : null);
     } catch {
       setSpaceLink(null);
     }
@@ -223,13 +224,10 @@ export function RetentionPage() {
   };
 
   const copyLink = async () => {
-    const url = spaceLink
-      ? `${window.location.protocol}//${spaceLink}`
-      : `${window.location.origin}/login`;
-    try {
-      await navigator.clipboard.writeText(url);
+    const url = spaceLink ?? `${window.location.origin}/login`;
+    if (await copyTextToClipboard(url)) {
       toast("Link copiado.");
-    } catch {
+    } else {
       toast("Não foi possível copiar o link.", "error");
     }
   };

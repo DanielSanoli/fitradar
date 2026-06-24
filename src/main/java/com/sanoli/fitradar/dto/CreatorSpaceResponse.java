@@ -1,6 +1,7 @@
 package com.sanoli.fitradar.dto;
 
 import com.sanoli.fitradar.domain.CreatorSpace;
+import com.sanoli.fitradar.domain.SpaceCategory;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -13,6 +14,7 @@ public record CreatorSpaceResponse(
         String logoUrl,
         String primaryColor,
         String bio,
+        SpaceCategory category,
         Instant createdAt
 ) {
     public static CreatorSpaceResponse fromEntity(CreatorSpace space) {
@@ -24,6 +26,7 @@ public record CreatorSpaceResponse(
                 space.getLogoUrl(),
                 space.getPrimaryColor(),
                 space.getBio(),
+                space.getCategory() != null ? space.getCategory() : SpaceCategory.OTHER,
                 space.getCreatedAt()
         );
     }

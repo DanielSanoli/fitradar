@@ -15,6 +15,8 @@ public class SpaForwardController {
             "/register",
             "/billing-required",
             "/404",
+            "/c",
+            "/c/**",
             "/app",
             "/app/**",
             "/student",

@@ -10,6 +10,7 @@ import { copilotApi } from "@/lib/api/copilot-api";
 import type { ChurnRiskResult, RiskLevel } from "@/lib/api/domain-types";
 import { riskLevelToUi } from "@/lib/api/domain-types";
 import { attentionSubtitle, type DashboardAttentionState } from "@/lib/creator/dashboard-copy";
+import { copyTextToClipboard, formatCreatorSpaceLinkDisplay } from "@/lib/app/public-url";
 import { ApiError } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
@@ -85,13 +86,10 @@ export function AttentionTodayPanel({
   };
 
   const copyLink = async () => {
-    const url = spaceLink
-      ? `${window.location.protocol}//${spaceLink}`
-      : `${window.location.origin}/login`;
-    try {
-      await navigator.clipboard.writeText(url);
+    const url = spaceLink ?? `${window.location.origin}/login`;
+    if (await copyTextToClipboard(url)) {
       toast("Link copiado.");
-    } catch {
+    } else {
       toast("Não foi possível copiar o link.", "error");
     }
   };
@@ -159,7 +157,9 @@ export function AttentionTodayPanel({
               </div>
               {spaceLink ? (
                 <div className="flex max-w-full flex-wrap items-center justify-center gap-2 rounded-[10px] border border-dashed border-border bg-secondary/40 px-3.5 py-2.5 font-mono text-[12.5px] text-muted-foreground">
-                  <span className="truncate">{spaceLink}</span>
+                  <span className="truncate">
+                    {formatCreatorSpaceLinkDisplay(spaceLink)}
+                  </span>
                   <button
                     type="button"
                     className="shrink-0 font-sans text-[12.5px] font-semibold text-primary hover:underline"

@@ -2,6 +2,8 @@ package com.sanoli.fitradar.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,12 +42,21 @@ public class CreatorSpace {
     @Column(length = 1000)
     private String bio;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 24)
+    private SpaceCategory category = SpaceCategory.OTHER;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
     @PrePersist
     void prePersist() {
-        createdAt = Instant.now();
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+        if (category == null) {
+            category = SpaceCategory.OTHER;
+        }
     }
 
     public UUID getId() {
@@ -102,6 +113,14 @@ public class CreatorSpace {
 
     public void setBio(String bio) {
         this.bio = bio;
+    }
+
+    public SpaceCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(SpaceCategory category) {
+        this.category = category;
     }
 
     public Instant getCreatedAt() {

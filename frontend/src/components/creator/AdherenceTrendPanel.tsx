@@ -24,42 +24,56 @@ function WeeklyBarChart({ series }: { series: AdherenceTrendPoint[] }) {
 
   const values = points.map((p) => parseFloat(p.avgAdherence!));
   const max = Math.max(...values, 1);
+  const scrollable = points.length > 5;
+  const plotMinWidth = scrollable ? points.length * 44 + 48 : undefined;
 
   return (
     <div
-      className="flex items-end gap-2 pt-2"
-      role="img"
-      aria-label="Gráfico de aderência semanal da comunidade"
+      className={cn(
+        "w-full",
+        scrollable &&
+          "overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+      )}
     >
-      {points.map((point) => {
-        const value = parseFloat(point.avgAdherence!);
-        const heightPct = Math.max(8, (value / max) * 100);
-        const color = adherenceBarColor(point.avgAdherence);
-        return (
-          <div key={point.weekStart} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-            <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
-              {Math.round(value)}%
-            </span>
+      <div
+        className="flex items-end justify-between gap-1.5 px-3 pt-2 sm:gap-2 sm:px-5 md:px-6"
+        style={plotMinWidth ? { minWidth: plotMinWidth } : undefined}
+        role="img"
+        aria-label="Gráfico de aderência semanal da comunidade"
+      >
+        {points.map((point) => {
+          const value = parseFloat(point.avgAdherence!);
+          const heightPct = Math.max(8, (value / max) * 100);
+          const color = adherenceBarColor(point.avgAdherence);
+          return (
             <div
-              className="flex w-full max-w-[48px] items-end justify-center"
-              style={{ height: 88 }}
-              aria-hidden
+              key={point.weekStart}
+              className="flex w-9 shrink-0 flex-col items-center gap-1.5 sm:w-10 md:w-11"
             >
+              <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
+                {Math.round(value)}%
+              </span>
               <div
-                className="w-full max-w-[36px] rounded-t-md transition-all"
-                style={{
-                  height: `${heightPct}%`,
-                  background: `linear-gradient(180deg, ${color}, ${color}88)`,
-                  boxShadow: `0 0 12px ${color}44`,
-                }}
-              />
+                className="flex w-full max-w-[48px] items-end justify-center"
+                style={{ height: 88 }}
+                aria-hidden
+              >
+                <div
+                  className="w-full max-w-[36px] rounded-t-md transition-all"
+                  style={{
+                    height: `${heightPct}%`,
+                    background: `linear-gradient(180deg, ${color}, ${color}88)`,
+                    boxShadow: `0 0 12px ${color}44`,
+                  }}
+                />
+              </div>
+              <span className="max-w-full truncate text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {formatWeekLabel(point.weekStart)}
+              </span>
             </div>
-            <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {formatWeekLabel(point.weekStart)}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -112,8 +126,8 @@ export function AdherenceTrendPanel({
         {hasSeries ? (
           <WeeklyBarChart series={trend!.weeklySeries} />
         ) : (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <div className="flex flex-wrap gap-6 sm:gap-8">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Últimos 30 dias

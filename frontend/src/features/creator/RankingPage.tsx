@@ -10,6 +10,7 @@ import { PanelState } from "@/components/ui/PanelState";
 import { useToast } from "@/components/ui/toast";
 import { retentionApi } from "@/lib/api/retention-api";
 import { spaceApi } from "@/lib/api/space-api";
+import { buildCreatorSpaceUrl, copyTextToClipboard } from "@/lib/app/public-url";
 import type { CreatorRankingEntry, CreatorRankingResult, RankingMetric, RankingPeriod } from "@/lib/api/domain-types";
 import { formatRankingValue } from "@/lib/creator/ranking-utils";
 import { ApiError } from "@/lib/api/types";
@@ -55,7 +56,7 @@ export function RankingPage() {
   useEffect(() => {
     void spaceApi
       .get()
-      .then((space) => setSpaceLink(space.slug ? `${window.location.host}/c/${space.slug}` : null))
+      .then((space) => setSpaceLink(space.slug ? buildCreatorSpaceUrl(space.slug) : null))
       .catch(() => setSpaceLink(null));
   }, []);
 
@@ -65,13 +66,10 @@ export function RankingPage() {
   const isFew = state === "content" && entries.length > 0 && entries.length < 3;
 
   const copyLink = async () => {
-    const url = spaceLink
-      ? `${window.location.protocol}//${spaceLink}`
-      : `${window.location.origin}/login`;
-    try {
-      await navigator.clipboard.writeText(url);
+    const url = spaceLink ?? `${window.location.origin}/login`;
+    if (await copyTextToClipboard(url)) {
       toast("Link copiado.");
-    } catch {
+    } else {
       toast("Não foi possível copiar o link.", "error");
     }
   };

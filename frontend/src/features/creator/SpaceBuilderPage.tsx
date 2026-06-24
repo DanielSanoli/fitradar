@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SpaceBuilderStepper } from "@/components/creator/space/SpaceBuilderStepper";
+import { SpaceAreaSelector } from "@/components/creator/space/SpaceAreaSelector";
 import { SpaceFieldLabel } from "@/components/creator/space/SpaceFieldLabel";
 import { SpaceLivePreview } from "@/components/creator/space/SpaceLivePreview";
 import { FitnessEmptyIcon } from "@/components/fitness/FitnessEmptyIcon";
@@ -8,11 +10,17 @@ import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  buildCreatorSpaceUrl,
+  copyTextToClipboard,
+  formatCreatorSpaceLinkDisplay,
+} from "@/lib/app/public-url";
 import { programsApi } from "@/lib/api/programs-api";
 import { spaceApi } from "@/lib/api/space-api";
 import { studentsApi } from "@/lib/api/students-api";
-import type { CreatorSpaceRequest } from "@/lib/api/domain-types";
+import type { CreatorSpaceRequest, SpaceCategory } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
+import { DEFAULT_SPACE_CATEGORY, normalizeSpaceCategory } from "@/lib/creator/space-categories";
 import {
   foregroundOnAccent,
   normalizeAccentColor,
@@ -35,6 +43,62 @@ function persistableLogoUrl(logoUrl: string, logoPreview: string | null): string
   return null;
 }
 
+type SpaceBuilderHeaderProps = {
+  greeting: string;
+  step: number;
+  saving: boolean;
+  showSaveDraft: boolean;
+  onSaveDraft: () => void;
+};
+
+function SpaceBuilderHeader({
+  greeting,
+  step,
+  saving,
+  showSaveDraft,
+  onSaveDraft,
+}: SpaceBuilderHeaderProps) {
+  return (
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-md md:gap-4 md:px-7">
+      <Button variant="outline" size="sm" asChild className="h-9 shrink-0 gap-1.5 rounded-[9px] px-2.5">
+        <Link to="/app">
+          <ChevronLeft className="size-4" aria-hidden />
+          Voltar
+        </Link>
+      </Button>
+      <Link
+        to="/app"
+        className="flex items-center gap-2 text-base font-extrabold tracking-tight"
+        aria-label="FitRadar — voltar ao painel"
+      >
+        <span className="size-3 rounded-full bg-primary shadow-[0_0_16px_hsl(var(--primary))]" aria-hidden />
+        FitRadar
+      </Link>
+      <span className="hidden h-[22px] w-px bg-border sm:block" aria-hidden />
+      <span className="hidden text-[13.5px] text-muted-foreground sm:inline">
+        Bem-vindo(a), {greeting} — vamos montar seu espaço
+      </span>
+      <div className="ml-auto flex items-center gap-3">
+        {showSaveDraft ? (
+          <>
+            <span className="text-[13px] text-muted-foreground">Passo {step} de 3</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-[38px] rounded-[9px]"
+              disabled={saving}
+              onClick={onSaveDraft}
+            >
+              Salvar rascunho
+            </Button>
+          </>
+        ) : null}
+      </div>
+    </header>
+  );
+}
+
 export function SpaceBuilderPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -54,6 +118,7 @@ export function SpaceBuilderPage() {
   const [logoFileName, setLogoFileName] = useState<string | null>(null);
   const [accent, setAccent] = useState<string>(SPACE_SWATCHES[0]);
   const [bio, setBio] = useState("");
+  const [category, setCategory] = useState<SpaceCategory>(DEFAULT_SPACE_CATEGORY);
 
   const [programName, setProgramName] = useState("");
   const [programWeeks, setProgramWeeks] = useState<(typeof PROGRAM_DURATIONS)[number]["weeks"]>("8");
@@ -72,7 +137,8 @@ export function SpaceBuilderPage() {
   } as const;
 
   const slugComputed = slug.trim() || slugifySpaceName(name) || "seu-espaco";
-  const fullLink = `${window.location.host}/c/${slugComputed}`;
+  const spaceUrl = useMemo(() => buildCreatorSpaceUrl(slugComputed), [slugComputed]);
+  const spaceLinkDisplay = useMemo(() => formatCreatorSpaceLinkDisplay(spaceUrl), [spaceUrl]);
 
   const load = useCallback(async () => {
     setLoadState("loading");
@@ -93,6 +159,7 @@ export function SpaceBuilderPage() {
         setLogoPreview(space.logoUrl ?? null);
         setAccent(normalizeAccentColor(space.primaryColor));
         setBio(space.bio ?? "");
+        setCategory(normalizeSpaceCategory(space.category));
         if (space.slug && space.name) setPublished(true);
       }
 
@@ -128,8 +195,9 @@ export function SpaceBuilderPage() {
       logoUrl: persistableLogoUrl(logoUrl, logoPreview),
       primaryColor: accent,
       bio: bio.trim() || null,
+      category,
     };
-  }, [name, slugComputed, logoUrl, logoPreview, accent, bio]);
+  }, [name, slugComputed, logoUrl, logoPreview, accent, bio, category]);
 
   const saveDraft = async () => {
     if (!name.trim()) {
@@ -168,11 +236,10 @@ export function SpaceBuilderPage() {
   };
 
   const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(`https://${fullLink}`);
+    if (await copyTextToClipboard(spaceUrl)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } else {
       toast("Não foi possível copiar o link.", "error");
     }
   };
@@ -282,40 +349,33 @@ export function SpaceBuilderPage() {
 
   if (loadState !== "content") {
     return (
-      <PanelState
-        state={loadState}
-        message={loadError}
-        onRetry={load}
-        className="mx-auto min-h-[50vh] max-w-lg p-8"
-      />
+      <>
+        <SpaceBuilderHeader
+          greeting={greeting}
+          step={step}
+          saving={saving}
+          showSaveDraft={false}
+          onSaveDraft={() => void saveDraft()}
+        />
+        <PanelState
+          state={loadState}
+          message={loadError}
+          onRetry={load}
+          className="mx-auto min-h-[50vh] max-w-lg p-8"
+        />
+      </>
     );
   }
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/85 px-4 backdrop-blur-md md:px-7">
-        <Link to="/app" className="flex items-center gap-2 text-base font-extrabold tracking-tight">
-          <span className="size-3 rounded-full bg-primary shadow-[0_0_16px_hsl(var(--primary))]" />
-          FitRadar
-        </Link>
-        <span className="hidden h-[22px] w-px bg-border sm:block" />
-        <span className="hidden text-[13.5px] text-muted-foreground sm:inline">
-          Bem-vindo(a), {greeting} — vamos montar seu espaço
-        </span>
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-[13px] text-muted-foreground">Passo {step} de 3</span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-[38px] rounded-[9px]"
-            disabled={saving}
-            onClick={() => void saveDraft()}
-          >
-            Salvar rascunho
-          </Button>
-        </div>
-      </header>
+      <SpaceBuilderHeader
+        greeting={greeting}
+        step={step}
+        saving={saving}
+        showSaveDraft
+        onSaveDraft={() => void saveDraft()}
+      />
 
       <div className="grid flex-1 grid-cols-1 items-start lg:grid-cols-2">
         <main
@@ -359,8 +419,23 @@ export function SpaceBuilderPage() {
                   }}
                 />
                 <p className="font-mono text-[11.5px] text-muted-foreground">
-                  Link: {fullLink}
+                  Link: {spaceLinkDisplay}
                 </p>
+              </div>
+
+              <div className="space-y-2.5">
+                <SpaceFieldLabel icon="programs">Área do espaço</SpaceFieldLabel>
+                <p className="text-[13px] text-muted-foreground">
+                  Define o ícone representativo do seu nicho na vitrine e no app dos alunos.
+                </p>
+                <SpaceAreaSelector
+                  value={category}
+                  onChange={(next) => {
+                    setCategory(next);
+                    setPublished(false);
+                  }}
+                  accent={accent}
+                />
               </div>
 
               <div className="flex flex-wrap gap-4">
@@ -567,7 +642,7 @@ export function SpaceBuilderPage() {
                 <SpaceFieldLabel icon="space">Link do espaço</SpaceFieldLabel>
                 <div className="flex gap-2.5">
                   <div className="flex h-[46px] min-w-0 flex-1 items-center overflow-hidden rounded-[11px] border border-border bg-secondary/40 px-3.5 font-mono text-sm text-foreground/85">
-                    <span className="truncate">{fullLink}</span>
+                    <span className="truncate">{spaceLinkDisplay}</span>
                   </div>
                   <Button
                     type="button"
@@ -661,9 +736,10 @@ export function SpaceBuilderPage() {
         <aside className="mx-auto w-full max-w-[640px] px-5 py-8 md:px-10 md:py-9 lg:mx-0" aria-label="Pré-visualização">
           <SpaceLivePreview
             accent={accent}
-            fullLink={fullLink}
+            fullLink={spaceLinkDisplay}
             displayName={displayName}
             displayBio={displayBio}
+            category={category}
             logoPreview={logoPreview}
             programName={programName}
             programDesc={programDesc}

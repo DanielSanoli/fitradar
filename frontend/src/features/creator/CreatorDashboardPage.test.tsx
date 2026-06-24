@@ -81,6 +81,7 @@ describe("CreatorDashboardPage", () => {
       logoUrl: null,
       primaryColor: null,
       bio: null,
+      category: "OTHER",
       createdAt: "2026-01-01",
     });
   });

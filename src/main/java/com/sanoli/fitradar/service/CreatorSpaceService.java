@@ -1,6 +1,7 @@
 package com.sanoli.fitradar.service;
 
 import com.sanoli.fitradar.domain.CreatorSpace;
+import com.sanoli.fitradar.domain.SpaceCategory;
 import com.sanoli.fitradar.dto.CreatorSpaceRequest;
 import com.sanoli.fitradar.exception.ResourceNotFoundException;
 import com.sanoli.fitradar.repository.CreatorSpaceRepository;
@@ -44,6 +45,7 @@ public class CreatorSpaceService {
         space.setLogoUrl(request.logoUrl());
         space.setPrimaryColor(request.primaryColor());
         space.setBio(request.bio());
+        space.setCategory(request.category() != null ? request.category() : SpaceCategory.OTHER);
 
         String desiredSlug = (request.slug() != null && !request.slug().isBlank())
                 ? slugify(request.slug())

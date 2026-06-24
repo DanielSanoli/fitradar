@@ -35,7 +35,9 @@ export function PanelState({
   children,
 }: PanelStateProps) {
   if (state === "content") {
-    return <>{children}</>;
+    if (!className && !children) return null;
+    if (!className) return <>{children}</>;
+    return <div className={className}>{children}</div>;
   }
 
   if (state === "loading") {

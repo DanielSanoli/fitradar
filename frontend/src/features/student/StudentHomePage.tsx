@@ -202,6 +202,7 @@ export function StudentHomePage() {
           name={space?.name ?? "FitRadar"}
           logoUrl={space?.logoUrl}
           primaryColor={space?.primaryColor}
+          category={space?.category}
           className="mb-3"
         />
         <h1 className="text-[23px] font-extrabold tracking-tight">Bom dia, {firstName}!</h1>

@@ -77,8 +77,36 @@ describe("SpaceBuilderPage", () => {
     await waitFor(() => {
       expect(screen.getByText("A identidade do seu espaço")).toBeInTheDocument();
     });
+    expect(screen.getByRole("link", { name: /^Voltar$/i })).toHaveAttribute("href", "/app");
+    expect(screen.getByRole("link", { name: /FitRadar — voltar ao painel/i })).toHaveAttribute(
+      "href",
+      "/app",
+    );
     expect(screen.getByText("Pré-visualização ao vivo")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: /Passos do construtor/i })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /Área do espaço/i })).toBeInTheDocument();
+  });
+
+  it("persists selected area when saving draft", async () => {
+    const user = userEvent.setup();
+    renderBuilder();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Nome do espaço/i)).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/Nome do espaço/i), "Studio Nutri");
+    await user.click(screen.getByRole("button", { name: /Nutrição/i }));
+    await user.click(screen.getByRole("button", { name: /Salvar rascunho/i }));
+
+    await waitFor(() => {
+      expect(spaceApi.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "Studio Nutri",
+          category: "NUTRITION",
+        }),
+      );
+    });
   });
 
   it("updates preview when typing space name", async () => {
@@ -104,6 +132,7 @@ describe("SpaceBuilderPage", () => {
       logoUrl: null,
       primaryColor: "#1ed7a6",
       bio: "Bio",
+      category: "OTHER",
       createdAt: "2026-01-01",
     });
     vi.mocked(spaceApi.update).mockResolvedValue({
@@ -114,6 +143,7 @@ describe("SpaceBuilderPage", () => {
       logoUrl: null,
       primaryColor: "#1ed7a6",
       bio: "Bio",
+      category: "OTHER",
       createdAt: "2026-01-01",
     });
 

@@ -88,6 +88,7 @@ describe("StudentsPage", () => {
       logoUrl: null,
       primaryColor: "#1ed7a6",
       bio: null,
+      category: "OTHER",
       createdAt: "2026-01-01",
     });
   });

@@ -61,6 +61,9 @@ const StudentProgressPage = lazy(() =>
     default: m.StudentProgressPage,
   })),
 );
+const PublicSpacePage = lazy(() =>
+  import("@/features/public/PublicSpacePage").then((m) => ({ default: m.PublicSpacePage })),
+);
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -238,6 +241,14 @@ export const router = createBrowserRouter([
             ],
           },
         ],
+      },
+      {
+        path: "c/:slug",
+        element: (
+          <Lazy>
+            <PublicSpacePage />
+          </Lazy>
+        ),
       },
       { path: "/404", element: <NotFoundPage /> },
       { path: "*", element: <Navigate to="/404" replace /> },

@@ -19,6 +19,7 @@ import {
 } from "@/lib/api/domain-types";
 import { retentionApi } from "@/lib/api/retention-api";
 import { spaceApi } from "@/lib/api/space-api";
+import { buildCreatorSpaceUrl } from "@/lib/app/public-url";
 import {
   dashboardGreeting,
   dashboardSuggestions,
@@ -77,7 +78,7 @@ export function CreatorDashboardPage() {
     try {
       const space = await spaceApi.get();
       if (space.slug) {
-        setSpaceLink(`${window.location.host}/c/${space.slug}`);
+        setSpaceLink(buildCreatorSpaceUrl(space.slug));
       }
     } catch {
       setSpaceLink(null);

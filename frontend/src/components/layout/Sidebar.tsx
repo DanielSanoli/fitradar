@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { CreatorSpaceSidebarBrand } from "@/components/fitness/CreatorSpaceSidebarBrand";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +62,7 @@ export function Sidebar({ variant, className, onNavigate }: SidebarProps) {
       <div className="flex h-16 items-center px-5">
         <BrandLogo />
       </div>
+      <CreatorSpaceSidebarBrand />
       <Separator className="bg-sidebar-border" />
       <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Principal">
         {creatorLinks.map(({ to, label, icon: Icon, end }) => (
