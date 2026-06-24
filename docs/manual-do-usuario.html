@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manual do Usuário — FitRadar</title>
+<style>
+  :root{
+    --ink:#0c1f1a; --ink2:#2c3b37; --muted:#5c726b; --line:#dde7e3;
+    --bg:#f4f9f7; --card:#ffffff; --mint:#1ed7a6; --mint-d:#0f9e78; --teal:#0b6b54;
+    --flame:#ff7a3c; --risk:#e5484d; --violet:#7c5cff;
+    --shadow:0 10px 30px rgba(12,31,26,.08); --shadow-sm:0 2px 8px rgba(12,31,26,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink2);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.65}
+  h1,h2,h3,h4{color:var(--ink);line-height:1.25;margin:0}
+  a{color:var(--mint-d);text-decoration:none}
+  code{background:#eef4f1;border-radius:5px;padding:.1em .4em;font-family:ui-monospace,Consolas,monospace;font-size:.88em;color:#0b5c47}
+
+  .hero{background:linear-gradient(135deg,#06140f 0%,#0b2a20 55%,#0d3a2c 100%);color:#e8f5ef;padding:54px 24px 64px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-120px;top:-90px;width:440px;height:440px;border-radius:50%;
+    background:radial-gradient(circle,rgba(30,215,166,.30),transparent 65%)}
+  .hero-in{max-width:1000px;margin:0 auto;position:relative;z-index:1}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:15px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);padding:7px 14px;border-radius:999px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--mint);box-shadow:0 0 14px var(--mint)}
+  .hero h1{color:#fff;font-size:40px;margin:22px 0 10px;letter-spacing:-.5px}
+  .hero p{color:#a7cabb;font-size:18px;max-width:640px;margin:0}
+  .hero .meta{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:13px;color:#cdeee1}
+
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+  .layout{display:grid;grid-template-columns:236px 1fr;gap:36px;margin-top:-30px;position:relative;z-index:2}
+  nav.toc{position:sticky;top:24px;align-self:start;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:18px;box-shadow:var(--shadow-sm)}
+  nav.toc h4{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:14px 0 8px}
+  nav.toc h4:first-child{margin-top:0}
+  nav.toc a{display:block;color:var(--ink2);font-size:13.5px;padding:6px 10px;border-radius:8px;font-weight:500}
+  nav.toc a:hover{background:#edf6f2;color:var(--mint-d)}
+
+  section.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 30px;
+    margin-bottom:20px;box-shadow:var(--shadow-sm)}
+  section.card>h2{font-size:23px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .ico{width:42px;height:42px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:22px;background:#e3f7f0;flex:none}
+  .lead{color:var(--muted);margin:2px 0 18px;font-size:15.5px}
+
+  .band{display:flex;align-items:center;gap:14px;margin:30px 0 16px;padding:16px 20px;border-radius:16px;color:#fff}
+  .band.creator{background:linear-gradient(135deg,#0b6b54,#0f9e78)}
+  .band.student{background:linear-gradient(135deg,#0b3a52,#1aa0b8)}
+  .band .bi{font-size:26px}
+  .band h2{color:#fff;font-size:22px;margin:0}
+  .band p{margin:2px 0 0;color:rgba(255,255,255,.85);font-size:14px}
+
+  .steps{counter-reset:s;display:flex;flex-direction:column;gap:12px;margin:6px 0}
+  .step{position:relative;padding:15px 18px 15px 58px;background:#f5faf8;border:1px solid var(--line);border-radius:14px}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;left:15px;top:15px;width:30px;height:30px;
+    border-radius:9px;background:linear-gradient(135deg,var(--mint),var(--mint-d));color:#04211a;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:15px}
+  .step h4{font-size:15.5px;margin-bottom:3px}
+  .step p{margin:0;font-size:14.5px}
+
+  .call{border-radius:12px;padding:13px 16px 13px 46px;position:relative;margin:15px 0;font-size:14.5px;border:1px solid}
+  .call::before{position:absolute;left:14px;top:12px;font-size:18px}
+  .call.tip{background:#e9faf3;border-color:#aef0d6;color:#0a5b43}.call.tip::before{content:"💡"}
+  .call.warn{background:#fff5ec;border-color:#ffd6b0;color:#8a4b1e}.call.warn::before{content:"⚠️"}
+  .call.why{background:#f1edff;border-color:#d9cdff;color:#4a32a8}.call.why::before{content:"🎯"}
+  .call b{font-weight:700}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:8px}
+  .feat{background:#f5faf8;border:1px solid var(--line);border-radius:14px;padding:16px}
+  .feat .fi{font-size:22px}.feat h4{font-size:15px;margin:8px 0 4px}.feat p{font-size:13.5px;color:var(--muted);margin:0}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#eef6f2;color:var(--ink);font-size:12.5px;text-transform:uppercase;letter-spacing:.03em}
+
+  details.faq{background:#f5faf8;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  details.faq summary{cursor:pointer;padding:15px 18px;font-weight:600;color:var(--ink);list-style:none;font-size:15px}
+  details.faq summary::-webkit-details-marker{display:none}
+  details.faq summary::before{content:"+";float:right;color:var(--mint-d);font-weight:800;font-size:18px}
+  details.faq[open] summary::before{content:"–"}
+  details.faq .a{padding:0 18px 16px;font-size:14.5px}
+
+  .footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 24px 50px}
+  .badge{display:inline-block;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700}
+  .b-risk{background:#fde8e8;color:#a3282c}.b-ok{background:#dcf6ec;color:#0a6f53}.b-pend{background:#fff0db;color:#8a5a12}
+  @media(max-width:820px){.layout{grid-template-columns:1fr}nav.toc{display:none}.hero h1{font-size:32px}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <span class="brand"><span class="dot"></span> FitRadar</span>
+    <h1>Manual do Usuário</h1>
+    <p>Tudo o que você precisa para montar sua comunidade fitness e usar o <strong>Radar</strong> — o copiloto que avisa quais alunos vão desistir e o que fazer.</p>
+    <div class="meta">
+      <span class="pill">🏋️ Para treinadores</span>
+      <span class="pill">📱 E para alunos</span>
+      <span class="pill">🤖 Com o Radar de retenção</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+    <nav class="toc">
+      <h4>Começo</h4>
+      <a href="#sobre">O que é o FitRadar</a>
+      <h4>Para o treinador</h4>
+      <a href="#c-conta">1. Crie sua conta</a>
+      <a href="#c-espaco">2. Monte seu espaço</a>
+      <a href="#c-alunos">3. Convide alunos</a>
+      <a href="#c-programas">4. Programas e treinos</a>
+      <a href="#c-painel">5. O Painel (Radar)</a>
+      <a href="#c-retencao">6. Retenção</a>
+      <a href="#c-ranking">7. Ranking</a>
+      <a href="#c-radar">8. Pergunte ao Radar</a>
+      <a href="#c-config">9. Configurações</a>
+      <h4>Para o aluno</h4>
+      <a href="#a-entrar">1. Entre pelo link</a>
+      <a href="#a-instalar">2. Instale o app</a>
+      <a href="#a-home">3. Treino + check-in</a>
+      <a href="#a-progresso">4. Meu progresso</a>
+      <h4>Final</h4>
+      <a href="#dicas">Dicas</a>
+      <a href="#faq">Dúvidas (FAQ)</a>
+    </nav>
+
+    <main>
+      <section class="card" id="sobre">
+        <h2><span class="ico">📡</span> O que é o FitRadar</h2>
+        <p class="lead">Sua plataforma fitness com um copiloto que olha para frente.</p>
+        <p>O FitRadar é onde você, treinador, monta a <strong>sua própria comunidade</strong> — com programas, treinos e acompanhamento dos alunos. Mas o diferencial é o <strong>Radar</strong>: em vez de só guardar dados, ele <strong>prevê quem está prestes a desistir</strong>, te avisa e sugere a ação certa.</p>
+        <p>São dois tipos de usuário, e este manual cobre os dois: o <strong>treinador (criador)</strong>, que gerencia tudo no computador, e o <strong>aluno</strong>, que usa no celular para ver o treino e fazer check-in.</p>
+        <div class="grid">
+          <div class="feat"><div class="fi">🏋️</div><h4>Seu espaço</h4><p>Sua marca, seus programas, sua comunidade — sem precisar de código.</p></div>
+          <div class="feat"><div class="fi">🔮</div><h4>Radar de retenção</h4><p>Saiba quem vai sumir antes de sumir, e o que fazer.</p></div>
+          <div class="feat"><div class="fi">🔥</div><h4>Engajamento</h4><p>Check-in, streak e ranking para manter o aluno motivado.</p></div>
+          <div class="feat"><div class="fi">🤖</div><h4>Copiloto</h4><p>Pergunte em linguagem natural e receba a resposta com a ação.</p></div>
+        </div>
+      </section>
+
+      <!-- ===================== CRIADOR ===================== -->
+      <div class="band creator"><span class="bi">🏋️</span><div><h2>Para o treinador (criador)</h2><p>Você gerencia tudo pelo computador, em fitradar no endereço /app.</p></div></div>
+
+      <section class="card" id="c-conta">
+        <h2><span class="ico">🚀</span> 1. Crie sua conta</h2>
+        <div class="steps">
+          <div class="step"><h4>Cadastre-se</h4><p>Na página inicial, clique em <b>Criar conta</b> e informe nome, e-mail e senha.</p></div>
+          <div class="step"><h4>Entre</h4><p>Faça login e você cai no <b>Painel do criador</b>. Seus dados ficam isolados — só você acessa sua comunidade.</p></div>
+        </div>
+        <div class="call tip"><b>Dica:</b> ao criar a conta você ganha um período de testes com acesso completo, incluindo o Radar.</div>
+      </section>
+
+      <section class="card" id="c-espaco">
+        <h2><span class="ico">🎨</span> 2. Monte seu espaço</h2>
+        <p class="lead">Em <strong>Meu espaço</strong>, você dá a cara da sua plataforma — em minutos, sem código.</p>
+        <table>
+          <thead><tr><th>O que personalizar</th><th>Para quê</th></tr></thead>
+          <tbody>
+            <tr><td><b>Nome e bio</b></td><td>Como sua comunidade se apresenta aos alunos.</td></tr>
+            <tr><td><b>Logo e cor</b></td><td>Sua identidade visual no espaço.</td></tr>
+            <tr><td><b>Área</b></td><td>Academia, Nutrição, Crossfit ou Pilates — define o ícone que representa seu espaço.</td></tr>
+            <tr><td><b>Link do espaço</b></td><td>O endereço que você compartilha para os alunos entrarem.</td></tr>
+          </tbody>
+        </table>
+        <p>Enquanto edita, você vê uma <strong>pré-visualização ao vivo</strong>. Ao terminar, copie o <strong>link do seu espaço</strong> para divulgar.</p>
+        <div class="call why"><b>Por quê:</b> um espaço com a sua cara passa profissionalismo e faz o aluno confiar mais — ele entra numa comunidade sua, não num app genérico.</div>
+      </section>
+
+      <section class="card" id="c-alunos">
+        <h2><span class="ico">👥</span> 3. Convide seus alunos</h2>
+        <p class="lead">Os alunos entram na sua comunidade pelo link ou por convite.</p>
+        <div class="steps">
+          <div class="step"><h4>Compartilhe o link</h4><p>Em <b>Meu espaço</b> ou em <b>Alunos</b>, copie o link e envie (WhatsApp, Instagram, etc.). O aluno se cadastra por ali.</p></div>
+          <div class="step"><h4>Acompanhe na lista de Alunos</h4><p>Na aba <b>Alunos</b> você vê todos, com programa atual, aderência, <span class="badge b-risk">risco</span> e última atividade. Use a busca para achar rápido.</p></div>
+          <div class="step"><h4>Abra o detalhe do aluno</h4><p>Veja progresso, histórico de check-ins e o motivo do risco — e envie um lembrete direto por ali.</p></div>
+        </div>
+      </section>
+
+      <section class="card" id="c-programas">
+        <h2><span class="ico">🏋️</span> 4. Crie programas e treinos</h2>
+        <p class="lead">É o conteúdo que seus alunos vão seguir.</p>
+        <p>Na aba <strong>Programas</strong>, crie um programa (ex.: "Hipertrofia — Iniciante") e, dentro dele, os <strong>treinos</strong> com título, descrição e os exercícios. Depois, <strong>matricule</strong> seus alunos no programa certo.</p>
+        <div class="call tip"><b>Dica:</b> quanto mais claro o conteúdo do treino, mais fácil para o aluno seguir — e mais check-ins você recebe, o que deixa o Radar mais preciso.</div>
+      </section>
+
+      <section class="card" id="c-painel">
+        <h2><span class="ico">📊</span> 5. O Painel — Insights do Radar</h2>
+        <p class="lead">A tela <strong>Visão geral</strong>: em um relance, a saúde da comunidade e o que fazer hoje.</p>
+        <p>No topo, os <strong>Insights do Radar</strong>: alunos ativos, aderência média, alunos em risco e check-ins na semana. Logo abaixo, a lista <strong>"Atenção hoje"</strong> — alunos em risco ordenados por gravidade, cada um com o motivo (ex.: "inativo há 9 dias") e um botão <strong>Enviar lembrete</strong>.</p>
+        <div class="call why"><b>Pode confiar nos números:</b> o Radar nunca "inventa" valores. Toda conta vem do sistema, a partir dos check-ins dos seus alunos; a inteligência só explica e sugere.</div>
+      </section>
+
+      <section class="card" id="c-retencao">
+        <h2><span class="ico">🎯</span> 6. Retenção</h2>
+        <p class="lead">A central completa de quem precisa de atenção.</p>
+        <p>Enquanto o Painel mostra o resumo, a aba <strong>Retenção</strong> é o aprofundamento: <strong>todos</strong> os alunos em risco, com filtro por nível (baixo/médio/alto), busca e a <strong>tendência de aderência</strong> ao longo do tempo. De cada aluno você pode <strong>enviar um lembrete</strong> — e o Radar já sugere um texto pronto para você editar e enviar.</p>
+        <div class="call tip"><b>Dica de ouro:</b> comece o dia pela lista de "Atenção hoje" ou pela Retenção. Cobrar quem está sumindo é o que mais segura aluno.</div>
+      </section>
+
+      <section class="card" id="c-ranking">
+        <h2><span class="ico">🏆</span> 7. Ranking</h2>
+        <p class="lead">Motivação saudável para a comunidade.</p>
+        <p>A aba <strong>Ranking</strong> mostra um pódio e a classificação dos alunos por <strong>aderência</strong> ou <strong>streak</strong>, no período de <strong>semana</strong> ou <strong>mês</strong>. Ótimo para reconhecer quem está se dedicando — e fitness adora um ranking. 🔥</p>
+      </section>
+
+      <section class="card" id="c-radar">
+        <h2><span class="ico">🤖</span> 8. Pergunte ao Radar</h2>
+        <p class="lead">Seu copiloto, disponível em qualquer tela.</p>
+        <p>Pelo <strong>botão flutuante</strong> no canto da tela (ou pelo bloco no Painel), abra o chat e pergunte como falaria com uma pessoa. Exemplos:</p>
+        <div class="grid">
+          <div class="feat"><p>"Quais alunos estão em risco de desistir?"</p></div>
+          <div class="feat"><p>"Como está minha comunidade no geral?"</p></div>
+          <div class="feat"><p>"Quem merece um parabéns?"</p></div>
+        </div>
+        <div class="call warn"><b>Atenção:</b> o Radar cuida da retenção e do engajamento dos seus alunos. Ele oferece <b>sugestões</b> a partir dos seus números — não é aconselhamento médico ou profissional.</div>
+      </section>
+
+      <section class="card" id="c-config">
+        <h2><span class="ico">⚙️</span> 9. Configurações</h2>
+        <p class="lead">Sua conta, assinatura e notificações em um só lugar.</p>
+        <table>
+          <thead><tr><th>Seção</th><th>O que você faz</th></tr></thead>
+          <tbody>
+            <tr><td><b>Conta</b></td><td>Atualiza nome, e-mail e senha.</td></tr>
+            <tr><td><b>Assinatura</b></td><td>Vê seu plano e dias de trial, e assina o <b>Pro</b> para manter o acesso completo.</td></tr>
+            <tr><td><b>Notificações</b></td><td>Define a frequência do resumo por e-mail e liga/desliga as notificações.</td></tr>
+          </tbody>
+        </table>
+        <div class="call warn"><b>Acesso bloqueado?</b> Se o trial expirar ou um pagamento ficar pendente, o app fica na tela de conta para você regularizar — seus dados não são perdidos.</div>
+      </section>
+
+      <!-- ===================== ALUNO ===================== -->
+      <div class="band student"><span class="bi">📱</span><div><h2>Para o aluno</h2><p>Você usa no celular, no endereço /student — dá para instalar como app.</p></div></div>
+
+      <section class="card" id="a-entrar">
+        <h2><span class="ico">🔗</span> 1. Entre pelo link do seu treinador</h2>
+        <p>Seu treinador te envia um <strong>link do espaço</strong> dele. Abra o link, <strong>crie sua conta</strong> (ou faça login) e pronto — você já está na comunidade dele, com seus treinos.</p>
+      </section>
+
+      <section class="card" id="a-instalar">
+        <h2><span class="ico">⬇️</span> 2. Instale o app no celular</h2>
+        <p class="lead">O FitRadar funciona como um aplicativo de verdade.</p>
+        <div class="steps">
+          <div class="step"><h4>Android (Chrome)</h4><p>Abra o FitRadar, toque no menu <b>⋮</b> e em <b>Instalar app</b>.</p></div>
+          <div class="step"><h4>iPhone (Safari)</h4><p>Toque em <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p></div>
+        </div>
+        <div class="call tip"><b>Dica:</b> instalando, você recebe <b>lembretes</b> e abre o app com um toque — o que ajuda a manter a constância.</div>
+      </section>
+
+      <section class="card" id="a-home">
+        <h2><span class="ico">✅</span> 3. Seu treino e o check-in</h2>
+        <p class="lead">A tela inicial mostra o treino do dia e o seu streak.</p>
+        <p>No topo, sua <strong>ofensiva (streak) 🔥</strong>. No centro, o <strong>treino do dia</strong> com os exercícios. Fez o treino? Toque em <strong>marcar como feito (check-in)</strong> — opcionalmente conte como se sentiu. A cada check-in, sua ofensiva cresce e o app comemora com você.</p>
+        <div class="call why"><b>Por que fazer check-in:</b> é assim que seu treinador acompanha sua evolução e o app calcula seu progresso. Quanto mais constante, melhor.</div>
+      </section>
+
+      <section class="card" id="a-progresso">
+        <h2><span class="ico">📈</span> 4. Meu progresso</h2>
+        <p>Na aba <strong>Progresso</strong>, veja sua <strong>aderência</strong> (em anel), sua <strong>ofensiva</strong>, treinos concluídos e o próximo treino. É a sua evolução, de forma simples e motivadora — nunca punitiva.</p>
+      </section>
+
+      <!-- ===================== FINAL ===================== -->
+      <section class="card" id="dicas">
+        <h2><span class="ico">✨</span> Dicas para tirar o máximo</h2>
+        <div class="grid">
+          <div class="feat"><div class="fi">🏋️</div><h4>Treinador</h4><p>Comece o dia pela Retenção; envie o lembrete sugerido a quem está sumindo. É o que mais retém.</p></div>
+          <div class="feat"><div class="fi">🤖</div><h4>Treinador</h4><p>Pergunte ao Radar em vez de garimpar telas: "quem vai desistir essa semana?"</p></div>
+          <div class="feat"><div class="fi">🔥</div><h4>Aluno</h4><p>Faça o check-in todo dia de treino — manter a ofensiva é metade da motivação.</p></div>
+          <div class="feat"><div class="fi">📱</div><h4>Aluno</h4><p>Instale o app e deixe os lembretes ligados para não perder o ritmo.</p></div>
+        </div>
+      </section>
+
+      <section class="card" id="faq">
+        <h2><span class="ico">❓</span> Dúvidas frequentes</h2>
+        <details class="faq"><summary>O Radar é um consultor / dá orientação médica?</summary><div class="a">Não. O Radar oferece <b>sugestões</b> de retenção e engajamento a partir dos seus números — é apoio à decisão, não aconselhamento médico ou profissional.</div></details>
+        <details class="faq"><summary>Como o Radar sabe quem vai desistir?</summary><div class="a">Ele cruza frequência de treino, check-ins e o tempo desde a última atividade. Quando os sinais caem, marca o aluno por gravidade — baixo, médio ou alto.</div></details>
+        <details class="faq"><summary>Meus dados (e os dos meus alunos) estão seguros?</summary><div class="a">Sim. Cada treinador acessa só a própria comunidade, e cada aluno só os próprios dados. As senhas são criptografadas. Veja a Política de Privacidade para detalhes.</div></details>
+        <details class="faq"><summary>Sou aluno e não tenho treino. E agora?</summary><div class="a">Seu treinador ainda não te matriculou num programa. Fale com ele — assim que matricular, seu treino aparece na home.</div></details>
+        <details class="faq"><summary>O que acontece quando meu trial (treinador) acaba?</summary><div class="a">O acesso às telas é pausado, mas você continua na área de conta para assinar o Pro. Seus dados continuam guardados.</div></details>
+        <details class="faq"><summary>Posso usar no celular?</summary><div class="a">Sim. A área do aluno é um app instalável (PWA): abra no navegador do celular e escolha "Instalar app" / "Adicionar à Tela de Início".</div></details>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="footer">
+  FitRadar — Manual do Usuário · As respostas do Radar são sugestões, não orientação médica ou profissional.<br/>
+  Dúvidas? Fale com o suporte pelo contato informado na sua conta.
+</div>
+
+</body>
+</html>
