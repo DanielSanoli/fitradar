@@ -17,4 +17,6 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
     List<Program> findByIdIn(Collection<UUID> ids);
 
     Optional<Program> findByIdAndCreatorId(UUID id, UUID creatorId);
+
+    long countByCreatorIdAndActiveTrue(UUID creatorId);
 }

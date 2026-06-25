@@ -22,6 +22,15 @@ export type SubscriptionDetailsResponse = {
   canCancel: boolean;
   canReactivate: boolean;
   hasCpfCnpj: boolean;
+  hasProFeatures: boolean;
+  subjectToFreeLimits: boolean;
+  marketplaceFeePercentCurrent: string;
+  marketplaceFeePercentFree: string;
+  marketplaceFeePercentPro: string;
+  freeMaxStudents: number;
+  freeMaxActivePrograms: number;
+  currentStudentCount: number;
+  currentActiveProgramCount: number;
   message: string | null;
 };
 

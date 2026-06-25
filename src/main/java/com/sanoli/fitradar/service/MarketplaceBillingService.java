@@ -44,6 +44,7 @@ public class MarketplaceBillingService {
     private final EnrollmentRepository enrollmentRepository;
     private final AsaasClient asaasClient;
     private final BillingProperties billingProperties;
+    private final PlanEntitlementService planEntitlementService;
 
     public MarketplaceBillingService(
             CurrentUserService currentUserService,
@@ -52,7 +53,8 @@ public class MarketplaceBillingService {
             ProgramPurchaseRepository purchaseRepository,
             EnrollmentRepository enrollmentRepository,
             AsaasClient asaasClient,
-            BillingProperties billingProperties
+            BillingProperties billingProperties,
+            PlanEntitlementService planEntitlementService
     ) {
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
@@ -61,6 +63,7 @@ public class MarketplaceBillingService {
         this.enrollmentRepository = enrollmentRepository;
         this.asaasClient = asaasClient;
         this.billingProperties = billingProperties;
+        this.planEntitlementService = planEntitlementService;
     }
 
     @Transactional
@@ -143,7 +146,7 @@ public class MarketplaceBillingService {
 
         MarketplaceSplitCalculator.SplitAmounts split = MarketplaceSplitCalculator.calculate(
                 program.getPrice(),
-                billingProperties.getMarketplace().getPlatformFeePercent()
+                resolvePlatformFee(creator)
         );
 
         ProgramPurchase purchase = new ProgramPurchase();
@@ -272,7 +275,13 @@ public class MarketplaceBillingService {
         return new MarketplaceStatusResponse(
                 creator.getAsaasWalletId() != null && !creator.getAsaasWalletId().isBlank(),
                 creator.getAsaasWalletId(),
-                billingProperties.getMarketplace().getPlatformFeePercent()
+                resolvePlatformFee(creator),
+                billingProperties.getMarketplace().getPlatformFeePercentFree(),
+                billingProperties.getMarketplace().getPlatformFeePercentPro()
         );
+    }
+
+    private java.math.BigDecimal resolvePlatformFee(AppUser creator) {
+        return planEntitlementService.resolvePlatformFeePercent(creator);
     }
 }

@@ -291,6 +291,8 @@ export type MarketplaceStatusResponse = {
   connected: boolean;
   walletId: string | null;
   platformFeePercent: string;
+  platformFeePercentFree: string;
+  platformFeePercentPro: string;
 };
 
 export type ProgramPurchaseResponse = {

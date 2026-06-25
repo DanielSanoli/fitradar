@@ -32,7 +32,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            SubscriptionAccessFilter subscriptionAccessFilter
+            SubscriptionAccessFilter subscriptionAccessFilter,
+            ProFeatureAccessFilter proFeatureAccessFilter
     ) throws Exception {
         http
                 .cors(withDefaults())
@@ -107,7 +108,8 @@ public class SecurityConfig {
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(subscriptionAccessFilter, JwtAuthenticationFilter.class);
+                .addFilterAfter(subscriptionAccessFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(proFeatureAccessFilter, SubscriptionAccessFilter.class);
 
         return http.build();
     }

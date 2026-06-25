@@ -1,5 +1,6 @@
 package com.sanoli.fitradar.service;
 
+import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.Program;
 import com.sanoli.fitradar.domain.Workout;
 import com.sanoli.fitradar.dto.ProgramRequest;
@@ -22,10 +23,16 @@ public class ProgramService {
 
     private final ProgramRepository programRepository;
     private final WorkoutRepository workoutRepository;
+    private final PlanEntitlementService planEntitlementService;
 
-    public ProgramService(ProgramRepository programRepository, WorkoutRepository workoutRepository) {
+    public ProgramService(
+            ProgramRepository programRepository,
+            WorkoutRepository workoutRepository,
+            PlanEntitlementService planEntitlementService
+    ) {
         this.programRepository = programRepository;
         this.workoutRepository = workoutRepository;
+        this.planEntitlementService = planEntitlementService;
     }
 
     @Transactional(readOnly = true)
@@ -50,9 +57,13 @@ public class ProgramService {
     }
 
     @Transactional
-    public ProgramResponse create(UUID creatorId, ProgramRequest request) {
+    public ProgramResponse create(AppUser creator, ProgramRequest request) {
+        boolean active = request.active() == null || request.active();
+        if (active) {
+            planEntitlementService.assertCanAddActiveProgram(creator);
+        }
         Program program = new Program();
-        program.setCreatorId(creatorId);
+        program.setCreatorId(creator.getId());
         program.setTitle(request.title().trim());
         program.setDescription(request.description());
         program.setActive(request.active() == null || request.active());
@@ -62,11 +73,14 @@ public class ProgramService {
     }
 
     @Transactional
-    public ProgramResponse update(UUID creatorId, UUID programId, ProgramRequest request) {
-        Program program = requireProgram(creatorId, programId);
+    public ProgramResponse update(AppUser creator, UUID programId, ProgramRequest request) {
+        Program program = requireProgram(creator.getId(), programId);
         program.setTitle(request.title().trim());
         program.setDescription(request.description());
         if (request.active() != null) {
+            if (request.active() && !program.isActive()) {
+                planEntitlementService.assertCanAddActiveProgram(creator);
+            }
             program.setActive(request.active());
         }
         if (request.price() != null) {

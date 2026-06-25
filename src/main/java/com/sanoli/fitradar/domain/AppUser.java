@@ -293,6 +293,32 @@ public class AppUser {
         return false;
     }
 
+    /** Recursos premium (Copilot, retenção avançada): Pro ativo ou trial vigente. */
+    public boolean hasProFeatures() {
+        if (!isCreator()) {
+            return false;
+        }
+        if (plan == SubscriptionPlan.PRO && subscriptionStatus == SubscriptionStatus.ACTIVE) {
+            return true;
+        }
+        if (subscriptionStatus == SubscriptionStatus.TRIALING) {
+            return trialEndsAt != null && trialEndsAt.isAfter(LocalDateTime.now());
+        }
+        return false;
+    }
+
+    /** Criadores mantêm acesso básico (alunos, programas) mesmo após o trial. */
+    public boolean hasBasicCreatorAccess() {
+        if (isStudent()) {
+            return true;
+        }
+        return isCreator();
+    }
+
+    public boolean isSubjectToFreeLimits() {
+        return isCreator() && !hasProFeatures();
+    }
+
     public long getTrialDaysRemaining() {
         if (trialEndsAt == null || !trialEndsAt.isAfter(LocalDateTime.now())) {
             return 0;

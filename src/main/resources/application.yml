@@ -93,6 +93,11 @@ app:
       webhook-token: ${ASAAS_WEBHOOK_TOKEN:}
     marketplace:
       platform-fee-percent: ${MARKETPLACE_PLATFORM_FEE_PERCENT:10.00}
+      platform-fee-percent-free: ${MARKETPLACE_PLATFORM_FEE_PERCENT_FREE:10.00}
+      platform-fee-percent-pro: ${MARKETPLACE_PLATFORM_FEE_PERCENT_PRO:0.00}
+    limits:
+      free-max-students: ${BILLING_FREE_MAX_STUDENTS:30}
+      free-max-active-programs: ${BILLING_FREE_MAX_ACTIVE_PROGRAMS:3}
   email:
     resend:
       api-key: ${RESEND_API_KEY:}

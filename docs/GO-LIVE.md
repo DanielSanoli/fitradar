@@ -84,9 +84,17 @@ O FitRadar cobra a **assinatura Pro do criador** (webhook) e tem **marketplace**
    - Token de autenticação = **mesmo** valor de `ASAAS_WEBHOOK_TOKEN` (vai no header `asaas-access-token`).
    - Eventos: `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`, `PAYMENT_OVERDUE`, `PAYMENT_DELETED`, `SUBSCRIPTION_DELETED`.
 5. **Marketplace/split:** o criador conecta a própria conta Asaas (na tela de Marketplace que já existe) para receber dos alunos; a plataforma retém `MARKETPLACE_PLATFORM_FEE_PERCENT`. Valide esse fluxo em sandbox antes.
-6. **Sandbox primeiro:** rode todo o fluxo com `ASAAS_BASE_URL=https://sandbox.asaas.com/api/v3` + chave sandbox; depois troque para produção.
+6. **Sandbox primeiro:** rode todo o fluxo com `ASAAS_BASE_URL=https://api-sandbox.asaas.com/v3` + chave sandbox (`$aact_hmlg_`); depois troque para produção (`https://api.asaas.com/v3`).
 
-> Gotcha: o `ASAAS_WEBHOOK_TOKEN` no app tem que ser **idêntico** ao do painel, senão o webhook é rejeitado.
+### Gotchas validados em sandbox (não repetir na produção)
+
+> **Host da API (sandbox):** use `https://api-sandbox.asaas.com/v3` — **não** `https://sandbox.asaas.com/api/v3` (esse é o painel web; bater nele com a API devolve HTML/erro e o `RestClient` estoura). Produção é `https://api.asaas.com/v3`.
+
+> **CPF/CNPJ obrigatório:** o checkout Pro exige `cpfCnpj` no customer (cobrança `billingType=UNDEFINED`). Sem ele o Asaas retorna `400 "Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente."`. O checkout coleta, valida (dígito verificador) e persiste o CPF no perfil. Em sandbox, use um **CPF válido de verdade** (passa no validador do backend e o Asaas aceita).
+
+> **Token do webhook:** o `ASAAS_WEBHOOK_TOKEN` no app tem que ser **idêntico** ao cadastrado no painel (vai no header `asaas-access-token`), senão o app responde erro e o evento é rejeitado.
+
+> **Fila interrompida:** o Asaas **pausa a fila do webhook após 15 falhas** consecutivas (token errado, URL errada, app fora do ar ou 5xx). Sintoma: pagamento fica PAGO no Asaas mas o Pro não ativa, e a Situação do webhook vira **"Interrompido"/"Desativado"**. Correção: ajuste token+URL, **reative a fila** no painel e reenvie/refaça o pagamento. Confirme **200** em *Logs de Webhooks*.
 
 ## 6. Push (VAPID)
 
@@ -117,7 +125,7 @@ O FitRadar cobra a **assinatura Pro do criador** (webhook) e tem **marketplace**
 
 - **Criador:** registrar → **verificar e-mail** (link chega) → onboarding → criar espaço/programa → **convidar aluno** (e-mail chega) → abrir a **vitrine `/c/<slug>`** sem login.
 - **Aluno:** entrar pelo link → matricular → **check-in** → receber **push**.
-- **Billing:** pagamento de teste → webhook **ativa o Pro**; **marketplace:** aluno compra um programa → criador recebe (split).
+- **Billing:** checkout Pro (com **CPF/CNPJ**) → cobrança no Asaas → pagamento de teste → **webhook 200** → Pro **ativa**; **marketplace:** aluno compra um programa → criador recebe (split). Se o Pro não ativar, ver os gotchas do §5 (host da API, token e fila interrompida).
 - **Lembrete:** criador clica "enviar lembrete" → aluno **recebe de verdade** (e-mail/push).
 
 ## 11. Distribuição: PWA, Play Store e App Store

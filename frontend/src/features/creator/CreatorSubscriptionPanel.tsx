@@ -25,6 +25,7 @@ import type {
 import { ApiError } from "@/lib/api/types";
 import {
   formatBillingDate,
+  formatFeePercent,
   invoiceStatusClass,
   invoiceStatusLabel,
 } from "@/lib/creator/billing-copy";
@@ -179,6 +180,42 @@ export function CreatorSubscriptionPanel() {
             label="Próxima renovação"
             value={formatBillingDate(details.subscriptionEndsAt)}
           />
+        ) : null}
+
+        {details ? (
+          <FieldRow
+            label="Comissão sobre vendas"
+            value={`${formatFeePercent(details.marketplaceFeePercentFree)}% no Free / ${formatFeePercent(details.marketplaceFeePercentPro)}% no Pro`}
+          />
+        ) : null}
+
+        {details && !details.hasProFeatures ? (
+          <FieldRow
+            label="Sua comissão atual"
+            value={`${formatFeePercent(details.marketplaceFeePercentCurrent)}%`}
+          />
+        ) : null}
+
+        {details?.subjectToFreeLimits ? (
+          <>
+            <FieldRow
+              label="Alunos (plano Free)"
+              value={`${details.currentStudentCount} / ${details.freeMaxStudents}`}
+            />
+            <FieldRow
+              label="Programas ativos (plano Free)"
+              value={`${details.currentActiveProgramCount} / ${details.freeMaxActivePrograms}`}
+            />
+          </>
+        ) : null}
+
+        {details && !details.hasProFeatures ? (
+          <Alert className="mt-3 border-primary/30 bg-primary/10">
+            <AlertDescription className="text-sm">
+              Assine o Pro: comissão {formatFeePercent(details.marketplaceFeePercentPro)}% nas vendas +
+              alunos e programas ilimitados.
+            </AlertDescription>
+          </Alert>
         ) : null}
 
         {user?.accessMessage && !user.accessAllowed ? (

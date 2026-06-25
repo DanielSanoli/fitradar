@@ -39,19 +39,22 @@ public class BillingService {
     private final AsaasClient asaasClient;
     private final BillingProperties billingProperties;
     private final MarketplaceBillingService marketplaceBillingService;
+    private final PlanEntitlementService planEntitlementService;
 
     public BillingService(
             CurrentUserService currentUserService,
             UserRepository userRepository,
             AsaasClient asaasClient,
             BillingProperties billingProperties,
-            MarketplaceBillingService marketplaceBillingService
+            MarketplaceBillingService marketplaceBillingService,
+            PlanEntitlementService planEntitlementService
     ) {
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
         this.asaasClient = asaasClient;
         this.billingProperties = billingProperties;
         this.marketplaceBillingService = marketplaceBillingService;
+        this.planEntitlementService = planEntitlementService;
     }
 
     @Transactional
@@ -134,6 +137,15 @@ public class BillingService {
                 canCancel,
                 canReactivate,
                 hasCpfCnpj(user),
+                user.hasProFeatures(),
+                user.isSubjectToFreeLimits(),
+                planEntitlementService.resolvePlatformFeePercent(user),
+                billingProperties.getMarketplace().getPlatformFeePercentFree(),
+                billingProperties.getMarketplace().getPlatformFeePercentPro(),
+                billingProperties.getLimits().getFreeMaxStudents(),
+                billingProperties.getLimits().getFreeMaxActivePrograms(),
+                planEntitlementService.countStudents(user),
+                planEntitlementService.countActivePrograms(user),
                 message
         );
     }

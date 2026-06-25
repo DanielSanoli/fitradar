@@ -1,7 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchCurrentUser, login as loginRequest, logoutSession, register as registerRequest } from "@/lib/api/auth-api";
-import { setPaymentRequiredHandler, setUnauthorizedHandler } from "@/lib/api/client";
+import { setUnauthorizedHandler } from "@/lib/api/client";
 import type { LoginRequest, RegisterRequest, User } from "@/lib/api/types";
 import { resolvePostLoginRedirect } from "@/lib/auth/post-login-redirect";
 import {
@@ -53,14 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setUnauthorizedHandler(() => logout());
-    setPaymentRequiredHandler((message) => {
-      navigate("/billing-required", { replace: true, state: { message } });
-    });
-    return () => {
-      setUnauthorizedHandler(null);
-      setPaymentRequiredHandler(null);
-    };
-  }, [logout, navigate]);
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   useEffect(() => {
     if (!isAuthenticated()) {

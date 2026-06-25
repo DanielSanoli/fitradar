@@ -30,6 +30,8 @@ describe("CreatorMarketplacePage", () => {
       connected: false,
       walletId: null,
       platformFeePercent: "10.00",
+      platformFeePercentFree: "10.00",
+      platformFeePercentPro: "0.00",
     });
     vi.mocked(marketplaceApi.sales).mockResolvedValue([]);
   });
@@ -49,6 +51,8 @@ describe("CreatorMarketplacePage", () => {
       connected: true,
       walletId: "wal_test1234567890",
       platformFeePercent: "10.00",
+      platformFeePercentFree: "10.00",
+      platformFeePercentPro: "0.00",
     });
 
     const user = userEvent.setup();
@@ -71,6 +75,8 @@ describe("CreatorMarketplacePage", () => {
       connected: true,
       walletId: "wal_abc",
       platformFeePercent: "10.00",
+      platformFeePercentFree: "10.00",
+      platformFeePercentPro: "0.00",
     });
     vi.mocked(marketplaceApi.sales).mockResolvedValue([
       {

@@ -41,3 +41,11 @@ export function formatBillingDate(iso: string | null | undefined): string {
     year: "numeric",
   });
 }
+
+/** Exibe percentual de comissão vindo do backend (BigDecimal). */
+export function formatFeePercent(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const parsed = typeof value === "number" ? value : Number.parseFloat(value);
+  if (Number.isNaN(parsed)) return "—";
+  return Number.isInteger(parsed) ? String(parsed) : parsed.toFixed(2).replace(/\.?0+$/, "");
+}

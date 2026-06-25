@@ -46,6 +46,7 @@ public class StudentService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final PaginationProperties paginationProperties;
+    private final PlanEntitlementService planEntitlementService;
     private final String publicBaseUrl;
 
     public StudentService(
@@ -55,6 +56,7 @@ public class StudentService {
             PasswordEncoder passwordEncoder,
             EmailService emailService,
             PaginationProperties paginationProperties,
+            PlanEntitlementService planEntitlementService,
             @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl
     ) {
         this.userRepository = userRepository;
@@ -63,11 +65,13 @@ public class StudentService {
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.paginationProperties = paginationProperties;
+        this.planEntitlementService = planEntitlementService;
         this.publicBaseUrl = publicBaseUrl;
     }
 
     @Transactional
     public StudentInviteResponse invite(AppUser creator, StudentInviteRequest request) {
+        planEntitlementService.assertCanAddStudent(creator);
         String email = request.email().trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new BusinessException("Já existe um usuário com este email");
