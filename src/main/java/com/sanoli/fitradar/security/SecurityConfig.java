@@ -52,17 +52,21 @@ public class SecurityConfig {
                         (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
                 ))
                 .authorizeHttpRequests(auth -> {
+                    // Keep in sync with SpaForwardController (SPA deep links without JWT).
                     auth.requestMatchers(
                             "/",
                             "/index.html",
                             "/login",
                             "/login/**",
+                            "/forgot-password",
                             "/register",
                             "/register/**",
                             "/billing-required",
                             "/change-password",
                             "/accept-terms",
                             "/404",
+                            "/c",
+                            "/c/**",
                             "/app",
                             "/app/**",
                             "/student",

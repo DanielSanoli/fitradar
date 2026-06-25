@@ -29,7 +29,8 @@ export function ForceChangePasswordPage() {
       }
       await refreshUser();
       const from = (location.state as { from?: string } | null)?.from;
-      navigate(resolvePostLoginRedirect(from, user?.role ?? "STUDENT"), { replace: true });    } catch (err) {
+      navigate(resolvePostLoginRedirect(from, user?.role ?? "STUDENT"), { replace: true });
+    } catch (err) {
       setError(err instanceof ApiError ? err.message : "Não foi possível continuar.");
     }
   };

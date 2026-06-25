@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  Dumbbell,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -15,18 +15,40 @@ import { CreatorSpaceSidebarBrand } from "@/components/fitness/CreatorSpaceSideb
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import type { SpaceVocabulary } from "@/lib/space/vocabulary";
 import { cn } from "@/lib/utils";
 
-const creatorLinks = [
+type StaticCreatorLink = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+};
+
+type VocabCreatorLink = {
+  to: string;
+  labelKey: "programsNav";
+  iconKey: "programIcon";
+};
+
+const creatorLinkDefs: Array<StaticCreatorLink | VocabCreatorLink> = [
   { to: "/app", label: "Visão geral", icon: LayoutDashboard, end: true },
   { to: "/app/retention", label: "Retenção", icon: Activity },
   { to: "/app/students", label: "Alunos", icon: Users },
-  { to: "/app/programs", label: "Programas", icon: Dumbbell },
+  { to: "/app/programs", labelKey: "programsNav" as const, iconKey: "programIcon" as const },
   { to: "/app/marketplace", label: "Vendas", icon: ShoppingBag },
   { to: "/app/space", label: "Meu espaço", icon: Sparkles },
   { to: "/app/ranking", label: "Ranking", icon: Trophy },
   { to: "/app/settings", label: "Configurações", icon: Settings },
 ];
+
+function resolveCreatorLinkIcon(
+  link: StaticCreatorLink | VocabCreatorLink,
+  vocabulary: SpaceVocabulary,
+): LucideIcon {
+  return "iconKey" in link ? vocabulary[link.iconKey] : link.icon;
+}
 
 function userInitials(name: string): string {
   return name
@@ -49,6 +71,13 @@ type SidebarProps = {
 
 export function Sidebar({ variant, className, onNavigate }: SidebarProps) {
   const { logout, user } = useAuth();
+  const { vocabulary } = useSpaceVocabulary();
+  const creatorLinks = creatorLinkDefs.map((link) => ({
+    to: link.to,
+    icon: resolveCreatorLinkIcon(link, vocabulary),
+    end: "end" in link ? link.end : undefined,
+    label: "labelKey" in link ? vocabulary.programsNav : link.label,
+  }));
 
   if (variant === "student") {
     return null;

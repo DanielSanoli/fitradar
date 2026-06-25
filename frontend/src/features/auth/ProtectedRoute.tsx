@@ -27,11 +27,15 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (user.mustChangePassword && location.pathname !== "/change-password") {
-    return <Navigate to="/change-password" replace />;
+    return <Navigate to="/change-password" replace state={{ from: location.pathname }} />;
   }
 
-  if (user.termsAccepted === false && location.pathname !== "/accept-terms") {
-    return <Navigate to="/accept-terms" replace />;
+  if (
+    !user.mustChangePassword &&
+    user.termsAccepted === false &&
+    location.pathname !== "/accept-terms"
+  ) {
+    return <Navigate to="/accept-terms" replace state={{ from: location.pathname }} />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
@@ -72,6 +76,12 @@ export function PublicOnlyRoute() {
   }
 
   if (isAuthenticated && user) {
+    if (user.mustChangePassword) {
+      return <Navigate to="/change-password" replace />;
+    }
+    if (user.termsAccepted === false) {
+      return <Navigate to="/accept-terms" replace />;
+    }
     const from = (location.state as { from?: string } | null)?.from;
     const target = from ?? (user.role === "STUDENT" ? "/student" : "/app");
     return <Navigate to={target} replace />;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ClipboardList, Clock, GripVertical, Plus, Users } from "lucide-react";
+import { ChevronLeft, Clock, GripVertical, Plus, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { EnrollStudentsModal } from "@/components/creator/EnrollStudentsModal";
 import { WorkoutThumbnail } from "@/components/fitness/WorkoutThumbnail";
@@ -16,9 +16,18 @@ import { ApiError } from "@/lib/api/types";
 import { exercisePreview } from "@/lib/creator/workout-exercises";
 import { countExercises } from "@/lib/student/workout-content";
 import { cn } from "@/lib/utils";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import {
+  capitalizeLabel,
+  formatCountLabel,
+  formatItemContentCount,
+} from "@/lib/space/vocabulary";
 
 export function ProgramDetailPage() {
   const { toast } = useToast();
+  const { vocabulary: v, category } = useSpaceVocabulary();
+  const ProgramIcon = v.programIcon;
+  const ItemIcon = v.itemIcon;
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { id = "" } = useParams();
   const navigate = useNavigate();
@@ -99,7 +108,7 @@ export function ProgramDetailPage() {
       );
       setWorkouts(ordered.map((w, i) => ({ ...w, dayIndex: i + 1 })));
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Erro ao reordenar treinos.", "error");
+      toast(e instanceof ApiError ? e.message : v.reorderItemsError, "error");
       await load();
     }
   };
@@ -122,18 +131,18 @@ export function ProgramDetailPage() {
 
   const deleteWorkout = async (workout: WorkoutResponse) => {
     const ok = await confirm({
-      title: "Excluir treino?",
-      description: `“${workout.title}” será removido permanentemente do programa. Esta ação não pode ser desfeita.`,
-      confirmLabel: "Excluir treino",
+      title: v.deleteItemConfirmTitle,
+      description: `“${workout.title}” será removido permanentemente do ${v.program.singular}. Esta ação não pode ser desfeita.`,
+      confirmLabel: v.deleteItemConfirmLabel,
       destructive: true,
     });
     if (!ok) return;
     try {
       await programsApi.removeWorkout(id, workout.id);
-      toast("Treino excluído.");
+      toast(v.itemDeleted);
       await load();
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Erro ao excluir treino.", "error");
+      toast(e instanceof ApiError ? e.message : `Erro ao excluir ${v.item.singular}.`, "error");
     }
   };
 
@@ -174,7 +183,7 @@ export function ProgramDetailPage() {
       <Button variant="outline" size="sm" asChild className="h-9 w-fit gap-2 rounded-[9px]">
         <Link to="/app/programs">
           <ChevronLeft className="size-4" aria-hidden />
-          Programas
+          {capitalizeLabel(v.program.plural)}
         </Link>
       </Button>
 
@@ -190,7 +199,7 @@ export function ProgramDetailPage() {
             <div className="flex flex-wrap items-start justify-between gap-5 rounded-[14px] border border-border bg-card p-5 shadow-[0_6px_24px_rgba(0,0,0,0.28)] md:p-6">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="flex size-[52px] shrink-0 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10">
-                  <ClipboardList className="size-6 text-primary" strokeWidth={2} aria-hidden />
+                  <ProgramIcon className="size-6 text-primary" strokeWidth={2} aria-hidden />
                 </div>
                 <div>
                   <h1 className="text-[21px] font-extrabold tracking-tight">{program.title}</h1>
@@ -203,7 +212,7 @@ export function ProgramDetailPage() {
                       Contínuo
                     </span>
                     <span aria-hidden>·</span>
-                    <span>{workouts.length} treinos</span>
+                    <span>{formatCountLabel(workouts.length, v.item.singular, v.item.plural)}</span>
                     <span aria-hidden>·</span>
                     <span className="inline-flex items-center gap-1.5">
                       <Users className="size-3.5" aria-hidden />
@@ -214,7 +223,7 @@ export function ProgramDetailPage() {
               </div>
               <div className="flex flex-wrap gap-2.5">
                 <Button variant="outline" className="h-10 rounded-[10px]" asChild>
-                  <Link to={`/app/programs/${id}/edit`}>Editar programa</Link>
+                  <Link to={`/app/programs/${id}/edit`}>Editar {v.program.singular}</Link>
                 </Button>
                 <Button variant="outline" className="h-10 rounded-[10px]" onClick={() => setShowEnroll(true)}>
                   Matricular aluno
@@ -224,7 +233,7 @@ export function ProgramDetailPage() {
                   onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
                 >
                   <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-                  Adicionar treino
+                  {v.addItem}
                 </Button>
               </div>
             </div>
@@ -232,29 +241,29 @@ export function ProgramDetailPage() {
             {workouts.length === 0 ? (
               <div className="flex flex-col items-center gap-4 rounded-[14px] border border-dashed border-border bg-secondary/20 px-6 py-14 text-center">
                 <div className="flex size-[52px] items-center justify-center rounded-[14px] border border-dashed border-border">
-                  <ClipboardList className="size-6 text-muted-foreground" strokeWidth={1.8} aria-hidden />
+                  <ItemIcon className="size-6 text-muted-foreground" strokeWidth={1.8} aria-hidden />
                 </div>
                 <div>
-                  <p className="text-lg font-bold">Nenhum treino ainda</p>
+                  <p className="text-lg font-bold">{v.noItemYet}</p>
                   <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
-                    Adicione o primeiro treino para estruturar a semana dos seus alunos.
+                    {v.programDetailEmptyHint}
                   </p>
                 </div>
                 <Button onClick={() => navigate(`/app/programs/${id}/workouts/new`)}>
-                  Adicionar primeiro treino
+                  {v.addFirstItem}
                 </Button>
               </div>
             ) : (
               <div>
                 <div className="mb-3 flex items-center gap-2.5">
-                  <span className="text-[13px] font-bold">Treinos</span>
+                  <span className="text-[13px] font-bold">{v.itemList}</span>
                   <span className="text-[12.5px] text-muted-foreground">arraste para reordenar</span>
                   <GripVertical className="size-3.5 text-muted-foreground/70" aria-hidden />
                 </div>
                 <div
                   className="overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_6px_24px_rgba(0,0,0,0.28)]"
                   role="list"
-                  aria-label="Lista de treinos do programa"
+                  aria-label={`Lista de ${v.item.plural} do ${v.program.singular}`}
                 >
                   {workouts.map((w, index) => (
                     <div
@@ -301,11 +310,11 @@ export function ProgramDetailPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-[15px] font-semibold">{w.title}</p>
                         <p className="truncate text-[12.5px] text-muted-foreground">
-                          {w.description || exercisePreview(w.contentMarkdown)}
+                          {w.description || exercisePreview(w.contentMarkdown, category)}
                         </p>
                       </div>
                       <span className="hidden shrink-0 rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground sm:inline">
-                        {countExercises(w.contentMarkdown)} exercícios
+                        {formatItemContentCount(countExercises(w.contentMarkdown), v)}
                       </span>
                       <div className="flex shrink-0 gap-1.5">
                         <Button variant="outline" size="sm" className="h-[34px] rounded-[9px]" asChild>

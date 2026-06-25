@@ -1,6 +1,7 @@
 import { CalendarCheck, Check, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 import { celebrationMessage } from "@/lib/student/student-copy";
 
 export type CheckInCelebrationOverlayProps = {
@@ -14,6 +15,7 @@ export function CheckInCelebrationOverlay({
   streak,
   onClose,
 }: CheckInCelebrationOverlayProps) {
+  const { vocabulary: v } = useSpaceVocabulary();
   const containerRef = useModalA11y(show, onClose);
 
   if (!show) return null;
@@ -37,7 +39,7 @@ export function CheckInCelebrationOverlay({
       </div>
 
       <h2 id="celebration-title" className="text-center text-[30px] font-extrabold tracking-tight">
-        Treino feito!
+        {v.checkInCelebration}
       </h2>
       <p className="mb-6 mt-1.5 text-center text-sm text-muted-foreground">
         Sequência mantida · bom trabalho

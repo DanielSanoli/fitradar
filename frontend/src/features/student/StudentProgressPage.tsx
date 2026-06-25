@@ -20,12 +20,17 @@ import type {
 } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import {
+  getProgressMilestones,
+  weekSummaryLabel,
+} from "@/lib/space/vocabulary";
 import { deriveProgressViewMode } from "@/lib/student/student-view-state";
 import {
   adherenceLabelFromDto,
   adherenceRingColor,
 } from "@/lib/student/student-copy";
-import { buildWeekBars, weekSummaryFromDto } from "@/lib/student/weekly-activity";
+import { buildWeekBars } from "@/lib/student/weekly-activity";
 import { countExercises } from "@/lib/student/workout-content";
 import { cn } from "@/lib/utils";
 
@@ -33,15 +38,9 @@ function blockErrorMessage(reason: unknown): string {
   return reason instanceof ApiError ? reason.message : "Indisponível no momento.";
 }
 
-const MILESTONES = [
-  { id: "first", title: "Primeiro treino", sub: "O mais difícil já passou", thresh: 1, streak: false },
-  { id: "five", title: "5 treinos feitos", sub: "Hábito começando a se formar", thresh: 5, streak: false },
-  { id: "week", title: "7 dias seguidos", sub: "Uma semana completa!", thresh: 7, streak: true },
-  { id: "ten", title: "10 treinos feitos", sub: "Você está comprometido", thresh: 10, streak: false },
-] as const;
-
 export function StudentProgressPage() {
   const { user } = useAuth();
+  const { vocabulary: v } = useSpaceVocabulary();
   const { openWidget, ask, suggestions } = useRadarCopilot();
   const [progress, setProgress] = useState<StudentProgressResult | null>(null);
   const [gamification, setGamification] = useState<GamificationProfileResponse | null>(null);
@@ -109,7 +108,11 @@ export function StudentProgressPage() {
   }, [load]);
 
   const bars = useMemo(() => buildWeekBars(checkIns), [checkIns]);
-  const summary = weekSummaryFromDto(progress?.weeklyDone);
+  const summary = useMemo(
+    () => weekSummaryLabel(progress?.weeklyDone, v),
+    [progress?.weeklyDone, v],
+  );
+  const milestonesSource = useMemo(() => getProgressMilestones(v), [v]);
 
   const enrolledProgram = programs.find((p) => p.enrolled);
   const totalDoneFromGamification = gamification?.totalCheckInsDone ?? null;
@@ -136,11 +139,11 @@ export function StudentProgressPage() {
         ? `${Math.min(100, Math.round((totalDone / programWorkoutCount) * 100))}%`
         : "0%";
 
-  const milestones = MILESTONES.map((m) => {
+  const milestones = milestonesSource.map((m) => {
     const done = m.streak ? streak >= m.thresh : totalDone >= m.thresh;
     const remaining = m.streak
       ? `${Math.max(0, m.thresh - streak)} dias restantes`
-      : `${Math.max(0, m.thresh - totalDone)} treinos restantes`;
+      : `${Math.max(0, m.thresh - totalDone)} ${v.itemsRemaining}`;
     return { ...m, done, remaining };
   });
 

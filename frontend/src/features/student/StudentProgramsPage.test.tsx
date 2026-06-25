@@ -4,6 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "@/components/ui/toast";
 import { StudentProgramsPage } from "@/features/student/StudentProgramsPage";
+import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
+import { StudentSpaceProvider } from "@/hooks/useStudentSpace";
+import { SpaceVocabularyProvider } from "@/hooks/useSpaceVocabulary";
 import { memberApi } from "@/lib/api/member-api";
 
 const navigateMock = vi.fn();
@@ -20,6 +23,7 @@ vi.mock("@/lib/api/member-api", () => ({
   memberApi: {
     myPrograms: vi.fn(),
     mySpace: vi.fn(),
+    myWorkouts: vi.fn(),
     enrollProgram: vi.fn(),
   },
 }));
@@ -30,12 +34,42 @@ vi.mock("@/lib/billing/start-program-checkout", () => ({
 
 import { startProgramCheckout } from "@/lib/billing/start-program-checkout";
 
+const authValue: AuthContextValue = {
+  user: {
+    id: "1",
+    name: "Ana",
+    email: "a@test.com",
+    role: "STUDENT",
+    creatorId: "c1",
+    plan: "FREE",
+    subscriptionStatus: "ACTIVE",
+    trialEndsAt: null,
+    subscriptionEndsAt: null,
+    emailVerified: true,
+    accessAllowed: true,
+    accessMessage: null,
+    trialDaysRemaining: 0,
+  },
+  isLoading: false,
+  isAuthenticated: true,
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+  refreshUser: vi.fn(),
+};
+
 function renderPage() {
   return render(
     <ToastProvider>
-      <MemoryRouter>
-        <StudentProgramsPage />
-      </MemoryRouter>
+      <AuthContext.Provider value={authValue}>
+        <MemoryRouter initialEntries={["/student/programs"]}>
+          <SpaceVocabularyProvider>
+            <StudentSpaceProvider>
+              <StudentProgramsPage />
+            </StudentSpaceProvider>
+          </SpaceVocabularyProvider>
+        </MemoryRouter>
+      </AuthContext.Provider>
     </ToastProvider>,
   );
 }
@@ -54,6 +88,7 @@ describe("StudentProgramsPage", () => {
       category: "OTHER",
       createdAt: "2024-01-01T00:00:00Z",
     });
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue([]);
   });
 
   it("lists programs from the catalog API", async () => {
@@ -152,7 +187,7 @@ describe("StudentProgramsPage", () => {
     });
   });
 
-  it("shows enrolled badge for active programs", async () => {
+  it("expands workouts inline for enrolled programs", async () => {
     vi.mocked(memberApi.myPrograms).mockResolvedValue([
       {
         id: "p1",
@@ -164,12 +199,32 @@ describe("StudentProgramsPage", () => {
         purchasePending: false,
       },
     ]);
+    vi.mocked(memberApi.myWorkouts).mockResolvedValue([
+      {
+        id: "w1",
+        programId: "p1",
+        title: "Lower Body A",
+        description: "Foco em pernas",
+        contentMarkdown: "- Agachamento 4x10",
+        dayIndex: 0,
+        createdAt: "2024-01-01T00:00:00Z",
+      },
+    ]);
 
+    const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => {
       expect(screen.getByText("Matriculado")).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /ver treinos/i })).toHaveAttribute("href", "/student");
+      expect(screen.getByRole("button", { name: /ver treinos/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /ver treinos/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Lower Body A")).toBeInTheDocument();
+      expect(screen.getByText("Agachamento")).toBeInTheDocument();
+      expect(screen.getByText(/check-in do treino do dia na aba/i)).toBeInTheDocument();
     });
   });
 });

@@ -5,6 +5,7 @@ import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { PageTitleProvider } from "@/hooks/usePageTitle";
+import { SpaceVocabularyProvider } from "@/hooks/useSpaceVocabulary";
 
 export function RootLayout() {
   return (
@@ -12,10 +13,12 @@ export function RootLayout() {
       <ErrorBoundary>
         <PageTitleProvider>
           <AuthProvider>
-            <AuthenticatedRadarShell>
-              <Outlet />
-              <InstallBanner />
-            </AuthenticatedRadarShell>
+            <SpaceVocabularyProvider>
+              <AuthenticatedRadarShell>
+                <Outlet />
+                <InstallBanner />
+              </AuthenticatedRadarShell>
+            </SpaceVocabularyProvider>
           </AuthProvider>
         </PageTitleProvider>
       </ErrorBoundary>

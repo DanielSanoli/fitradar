@@ -122,6 +122,20 @@ describe("SpaceBuilderPage", () => {
     expect(screen.getAllByText("Studio Teste").length).toBeGreaterThan(0);
   });
 
+  it("keeps full slug in sync while typing space name", async () => {
+    const user = userEvent.setup();
+    renderBuilder();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Nome do espaço/i)).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/Nome do espaço/i), "teste");
+
+    expect(screen.getByLabelText(/Endereço do link/i)).toHaveValue("teste");
+    expect(screen.getByText(/Link completo:/i).textContent).toContain("/c/teste");
+  });
+
   it("shows invite step with copy link", async () => {
     const user = userEvent.setup();
     vi.mocked(spaceApi.get).mockResolvedValue({

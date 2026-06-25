@@ -1,6 +1,7 @@
 import { CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 import { cn } from "@/lib/utils";
 
 const RATING_LABELS = ["Esgotante", "Pesado", "Normal", "Bem", "Ótimo!"] as const;
@@ -42,6 +43,7 @@ export function CheckInSheet({
   onConfirm,
   onSkip,
 }: CheckInSheetProps) {
+  const { vocabulary: v } = useSpaceVocabulary();
   const containerRef = useModalA11y(open, () => onOpenChange(false));
 
   if (!open) return null;
@@ -67,7 +69,7 @@ export function CheckInSheet({
 
         <div className="text-center">
           <h2 id="checkin-sheet-title" className="text-lg font-extrabold tracking-tight">
-            Como foi o treino?
+            {v.checkInSheetTitle}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{workoutTitle}</p>
           <p className="text-xs text-muted-foreground">
@@ -125,7 +127,7 @@ export function CheckInSheet({
             id="checkin-notes"
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
-            placeholder="Como foi o treino hoje?"
+            placeholder={v.checkInSheetNotesPlaceholder}
             className="min-h-[70px] w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
@@ -153,7 +155,7 @@ export function CheckInSheet({
           Confirmar check-in
         </Button>
         <Button variant="ghost" disabled={submitting} onClick={onSkip}>
-          Pulei o treino
+          {v.checkInSkipButton}
         </Button>
       </div>
     </div>

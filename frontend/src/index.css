@@ -68,6 +68,7 @@
   --glow-accent: 165 76% 48%;
   --glow-danger: 0 72% 67%;
   --flame: 24 95% 58%;
+  --student-glow: 165 40% 12%;
 }
 
 @layer base {
@@ -79,6 +80,16 @@
     @apply bg-background text-foreground font-sans antialiased;
     background-image: radial-gradient(1200px 600px at 80% -10%, hsl(165 40% 12%) 0%, hsl(var(--background)) 55%);
     min-height: 100vh;
+  }
+
+  .student-branded {
+    min-height: 100vh;
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(
+      1200px 600px at 80% -10%,
+      hsl(var(--student-glow)) 0%,
+      hsl(var(--background)) 55%
+    );
   }
 
   button,

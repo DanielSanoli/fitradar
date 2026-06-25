@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 /**
  * SPA fallback: deep links do React (refresh / bookmark) recebem {@code index.html}.
  * Arquivos estáticos reais (JS, CSS, SW, ícones) continuam servidos pelo handler padrão.
+ * <p>Rotas públicas aqui devem estar também em {@code SecurityConfig} (permitAll).
  */
 @Controller
 public class SpaForwardController {
@@ -16,6 +17,7 @@ public class SpaForwardController {
             "/register",
             "/billing-required",
             "/change-password",
+            "/accept-terms",
             "/404",
             "/c",
             "/c/**",

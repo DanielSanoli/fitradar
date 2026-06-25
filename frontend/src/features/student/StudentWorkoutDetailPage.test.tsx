@@ -80,7 +80,7 @@ describe("StudentWorkoutDetailPage", () => {
       expect(screen.getByText(/Agachamento/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /registrar check-in/i }));
+    await user.click(screen.getByRole("button", { name: /marcar treino como feito/i }));
 
     await waitFor(() => {
       expect(memberApi.createCheckIn).toHaveBeenCalledWith({

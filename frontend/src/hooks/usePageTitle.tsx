@@ -7,7 +7,8 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { resolveStaticPageTitle } from "@/lib/navigation/page-titles";
+import { resolvePageTitle } from "@/lib/navigation/page-titles";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 
 type PageTitleContextValue = {
   override: string | null;
@@ -42,10 +43,11 @@ export function usePageTitle(title: string | null | undefined) {
 export function useResolvedPageTitle(): string {
   const { pathname } = useLocation();
   const ctx = useContext(PageTitleContext);
+  const { vocabulary } = useSpaceVocabulary();
 
   if (ctx?.override) {
     return ctx.override;
   }
 
-  return resolveStaticPageTitle(pathname) ?? "FitRadar";
+  return resolvePageTitle(pathname, vocabulary) ?? "FitRadar";
 }

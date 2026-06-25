@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BedDouble, CalendarCheck, Check, ChevronRight, Dumbbell, Flame } from "lucide-react";
+import { BedDouble, CalendarCheck, Check, ChevronRight, Flame } from "lucide-react";
 import { CheckInCelebrationOverlay } from "@/components/student/CheckInCelebrationOverlay";
 import { CheckInSheet } from "@/components/student/CheckInSheet";
 import { WorkoutExerciseList } from "@/components/student/WorkoutExerciseList";
-import { CreatorSpaceBrand } from "@/components/fitness/CreatorSpaceBrand";
+import { StudentSpaceHero } from "@/components/student/StudentSpaceHero";
+import { PoweredByFitRadar } from "@/components/student/PoweredByFitRadar";
 import { PushOptInBanner } from "@/components/pwa/PushPrompt";
 import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
@@ -12,13 +13,15 @@ import { useToast } from "@/components/ui/toast";
 import { memberApi } from "@/lib/api/member-api";
 import type {
   CheckInResponse,
-  CreatorSpaceResponse,
   StudentProgressResult,
   StudentProgramResponse,
   WorkoutResponse,
 } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useStudentSpace } from "@/hooks/useStudentSpace";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import { formatItemContentCount } from "@/lib/space/vocabulary";
 import { formatGreetingDate, localDateKey } from "@/lib/student/date-utils";
 import { streakSubtitle } from "@/lib/student/student-copy";
 import { deriveHomeViewMode } from "@/lib/student/student-view-state";
@@ -29,11 +32,13 @@ const UPCOMING_LABELS = ["Amanhã", "Depois", "Em breve"] as const;
 
 export function StudentHomePage() {
   const { user } = useAuth();
+  const { vocabulary: v } = useSpaceVocabulary();
+  const ItemIcon = v.itemIcon;
+  const { space } = useStudentSpace();
   const [progress, setProgress] = useState<StudentProgressResult | null>(null);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [programs, setPrograms] = useState<StudentProgramResponse[]>([]);
   const [checkIns, setCheckIns] = useState<CheckInResponse[]>([]);
-  const [space, setSpace] = useState<CreatorSpaceResponse | null>(null);
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -59,26 +64,32 @@ export function StudentHomePage() {
     [checkIns, today],
   );
 
-  const load = useCallback(async () => {
-    setState("loading");
+  const load = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setState("loading");
+      setError(undefined);
+    }
     try {
-      const [p, w, ci, spaceData, prog] = await Promise.all([
+      const [p, w, ci, prog] = await Promise.all([
         memberApi.myProgress(),
         memberApi.myWorkouts(),
         memberApi.myCheckIns().then((r) => r.content),
-        memberApi.mySpace().catch(() => null),
         memberApi.myPrograms().catch(() => [] as StudentProgramResponse[]),
       ]);
       setProgress(p);
       setWorkouts(w);
       setCheckIns(ci);
-      setSpace(spaceData);
       setPrograms(prog);
-      setState("content");
+      if (!silent) {
+        setState("content");
+      }
       return p;
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar.");
-      setState("error");
+      if (!silent) {
+        setError(e instanceof ApiError ? e.message : "Erro ao carregar.");
+        setState("error");
+      }
       return null;
     }
   }, []);
@@ -104,17 +115,28 @@ export function StudentHomePage() {
     }));
   }, [workouts, displayWorkout]);
 
-  const finishCheckIn = async (skipped: boolean) => {
-    if (!activeWorkout) return;
+  const mergeCheckIn = (created: CheckInResponse) => {
+    setCheckIns((prev) => [
+      ...prev.filter((c) => !(c.date === created.date && c.workoutId === created.workoutId)),
+      created,
+    ]);
+  };
+
+  const finishCheckIn = async (skipped: boolean, created: CheckInResponse) => {
     setSheetOpen(false);
+    mergeCheckIn(created);
     setCheckInSuccess(true);
     if (!skipped) {
-      const updated = await load();
-      const newStreak = updated?.currentStreak ?? 0;
+      toast(v.checkInRegistered);
+      const updated = await load({ silent: true });
+      mergeCheckIn(created);
+      const newStreak = updated?.currentStreak ?? progress?.currentStreak ?? 0;
       setCelebrateStreak(newStreak);
       setCelebrate(true);
     } else {
-      await load();
+      toast("Check-in registrado.");
+      await load({ silent: true });
+      mergeCheckIn(created);
     }
   };
 
@@ -127,13 +149,13 @@ export function StudentHomePage() {
     }
     setSubmitting(true);
     try {
-      await memberApi.createCheckIn({
+      const created = await memberApi.createCheckIn({
         workoutId: activeWorkout.id,
         skipped,
         feeling: skipped || rating == null ? null : rating,
         notes: notes.trim() || null,
       });
-      await finishCheckIn(skipped);
+      await finishCheckIn(skipped, created);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "Erro no check-in.", "error");
     } finally {
@@ -147,13 +169,13 @@ export function StudentHomePage() {
     setActiveWorkout(nextWorkout);
     setSubmitting(true);
     try {
-      await memberApi.createCheckIn({
+      const created = await memberApi.createCheckIn({
         workoutId: nextWorkout.id,
         skipped: false,
         feeling: null,
         notes: null,
       });
-      await finishCheckIn(false);
+      await finishCheckIn(false, created);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "Erro no check-in.", "error");
     } finally {
@@ -184,16 +206,12 @@ export function StudentHomePage() {
         onClose={() => setCelebrate(false)}
       />
 
-      <header className="px-1 pt-1">
-        <CreatorSpaceBrand
-          name={space?.name ?? "FitRadar"}
-          logoUrl={space?.logoUrl}
-          primaryColor={space?.primaryColor}
-          category={space?.category}
-          className="mb-3"
-        />
-        <h1 className="text-[23px] font-extrabold tracking-tight">Bom dia, {firstName}!</h1>
-        <p className="text-sm capitalize text-muted-foreground">{formatGreetingDate()}</p>
+      <header className="flex flex-col gap-3 px-1 pt-1">
+        {space ? <StudentSpaceHero space={space} /> : null}
+        <div>
+          <h2 className="text-[23px] font-extrabold tracking-tight">Bom dia, {firstName}!</h2>
+          <p className="text-sm capitalize text-muted-foreground">{formatGreetingDate()}</p>
+        </div>
       </header>
 
       <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
@@ -258,12 +276,12 @@ export function StudentHomePage() {
                       />
                     ) : (
                       <p className="text-sm italic text-muted-foreground">
-                        Seu criador ainda não publicou o conteúdo deste treino.
+                        {v.noItemContent}
                       </p>
                     )}
 
                     <div className="flex items-center gap-3 border-t border-border/80 pt-2.5 text-xs text-muted-foreground">
-                      <span>{exTotal > 0 ? `${exTotal} exercícios` : "Treino do dia"}</span>
+                      <span>{exTotal > 0 ? formatItemContentCount(exTotal, v) : v.itemOfDay}</span>
                     </div>
                   </div>
                 </div>
@@ -283,7 +301,7 @@ export function StudentHomePage() {
                   ) : (
                     <CalendarCheck className="size-5" strokeWidth={2.5} aria-hidden />
                   )}
-                  {todayDoneFlag ? "Treino concluído hoje" : "Treino feito!"}
+                  {todayDoneFlag ? v.checkInDoneToday : v.checkInButton}
                 </Button>
 
                 {!todayDoneFlag && nextWorkout ? (
@@ -299,7 +317,7 @@ export function StudentHomePage() {
               </div>
             ) : viewMode === "workout" ? (
               <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-                Nenhum treino disponível para exibir neste estado.
+                {v.noItemAvailable}
               </p>
             ) : null}
 
@@ -342,26 +360,25 @@ export function StudentHomePage() {
                     />
                   </div>
                   <div>
-                    <h2 className="text-xl font-extrabold">Nenhum programa ainda</h2>
+                    <h2 className="text-xl font-extrabold">{v.noProgramYet}</h2>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {progress.message ??
                         "Escolha um programa gratuito do seu coach para começar a treinar."}
                     </p>
                   </div>
                   <Button asChild size="lg" className="h-12 w-full rounded-[12px] font-bold">
-                    <Link to="/student/programs">Ver programas disponíveis</Link>
+                    <Link to="/student/programs">{v.viewProgramsLink}</Link>
                   </Button>
                   <p className="w-full rounded-[11px] border border-dashed border-border bg-muted/30 px-3.5 py-3 text-left text-xs leading-relaxed text-muted-foreground">
-                    Programas gratuitos podem ser matriculados na hora; pagos ficam disponíveis em
-                    breve.
+                    {v.freeProgramsHint}
                   </p>
                 </div>
               </div>
             ) : null}
 
             {(viewMode === "workout" || viewMode === "rest") && upcoming.length > 0 ? (
-              <section className="space-y-2.5" aria-label="Próximos treinos">
-                <h2 className="text-sm font-bold text-foreground/90">Próximos treinos</h2>
+              <section className="space-y-2.5" aria-label={v.upcomingItems}>
+                <h2 className="text-sm font-bold text-foreground/90">{v.upcomingItems}</h2>
                 <ul className="space-y-2">
                   {upcoming.map(({ workout, dayLabel, exCount }) => (
                     <li key={workout.id}>
@@ -372,11 +389,11 @@ export function StudentHomePage() {
                         <span className="inline-flex min-w-[52px] items-center justify-center rounded-lg border border-border bg-secondary px-2 py-1 text-[11.5px] font-bold text-muted-foreground">
                           {dayLabel}
                         </span>
-                        <Dumbbell className="size-4 shrink-0 text-primary/70" aria-hidden />
+                        <ItemIcon className="size-4 shrink-0 text-primary/70" aria-hidden />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold">{workout.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {exCount > 0 ? `${exCount} exercícios` : "Treino programado"}
+                            {exCount > 0 ? formatItemContentCount(exCount, v) : v.itemScheduled}
                           </p>
                         </div>
                         <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
@@ -388,6 +405,8 @@ export function StudentHomePage() {
             ) : null}
 
             <PushOptInBanner show={checkInSuccess} />
+
+            <PoweredByFitRadar className="hidden md:block" />
 
             <p className="text-center text-[11px] text-muted-foreground">
               Sugestão, não orientação médica/profissional.

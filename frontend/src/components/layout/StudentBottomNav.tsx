@@ -1,9 +1,13 @@
 import { NavLink } from "react-router-dom";
-import { STUDENT_NAV_ITEMS } from "@/lib/student/student-nav";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import { getStudentNavItems } from "@/lib/student/student-nav";
 import { cn } from "@/lib/utils";
 
 /** Mobile bottom navigation — always renders every item; active route is highlighted only. */
 export function StudentBottomNav() {
+  const { vocabulary } = useSpaceVocabulary();
+  const navItems = getStudentNavItems(vocabulary);
+
   return (
     <nav
       data-testid="student-bottom-nav"
@@ -11,7 +15,7 @@ export function StudentBottomNav() {
       aria-label="Navegação inferior do aluno"
     >
       <ul className="mx-auto flex w-full max-w-lg list-none divide-x divide-border p-0">
-        {STUDENT_NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+        {navItems.map(({ to, label, icon: Icon, end }) => (
           <li key={to} className="min-w-0 flex-1">
             <NavLink
               to={to}

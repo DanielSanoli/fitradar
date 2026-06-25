@@ -6,6 +6,9 @@ import { ToastProvider } from "@/components/ui/toast";
 import { StudentHomePage } from "@/features/student/StudentHomePage";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
 import { memberApi } from "@/lib/api/member-api";
+import { StudentSpaceProvider } from "@/hooks/useStudentSpace";
+import { SpaceVocabularyProvider } from "@/hooks/useSpaceVocabulary";
+import { localDateKey } from "@/lib/student/date-utils";
 
 vi.mock("@/lib/api/member-api", () => ({
   memberApi: {
@@ -80,8 +83,12 @@ function renderHome() {
   return render(
     <ToastProvider>
       <AuthContext.Provider value={authValue}>
-        <MemoryRouter>
-          <StudentHomePage />
+        <MemoryRouter initialEntries={["/student"]}>
+          <SpaceVocabularyProvider>
+            <StudentSpaceProvider>
+              <StudentHomePage />
+            </StudentSpaceProvider>
+          </SpaceVocabularyProvider>
         </MemoryRouter>
       </AuthContext.Provider>
     </ToastProvider>,
@@ -113,7 +120,7 @@ describe("StudentHomePage", () => {
       id: "ci1",
       studentId: "1",
       workoutId: "w1",
-      date: "2026-06-19",
+      date: localDateKey(),
       status: "DONE",
       feeling: null,
       notes: null,
@@ -166,8 +173,33 @@ describe("StudentHomePage", () => {
   });
 
   it("quick check-in in one tap", async () => {
+    const doneCheckIn = {
+      id: "ci1",
+      studentId: "1",
+      workoutId: "w1",
+      date: localDateKey(),
+      status: "DONE" as const,
+      feeling: null,
+      notes: null,
+    };
     vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
     vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
+    vi.mocked(memberApi.createCheckIn).mockResolvedValue(doneCheckIn);
+    vi.mocked(memberApi.myCheckIns)
+      .mockResolvedValueOnce({
+        content: [],
+        page: 0,
+        size: 100,
+        totalElements: 0,
+        totalPages: 0,
+      })
+      .mockResolvedValue({
+        content: [doneCheckIn],
+        page: 0,
+        size: 100,
+        totalElements: 1,
+        totalPages: 1,
+      });
 
     const user = userEvent.setup();
     renderHome();
@@ -185,6 +217,8 @@ describe("StudentHomePage", () => {
         feeling: null,
         notes: null,
       });
+      expect(screen.getByRole("button", { name: /treino concluído hoje/i })).toBeDisabled();
+      expect(screen.getByText("Concluído")).toBeInTheDocument();
     });
   });
 

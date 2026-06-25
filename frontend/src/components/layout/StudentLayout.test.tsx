@@ -1,8 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { STUDENT_NAV_ITEMS } from "@/lib/student/student-nav";
+import { memberApi } from "@/lib/api/member-api";
+
+vi.mock("@/lib/api/member-api", () => ({
+  memberApi: {
+    mySpace: vi.fn(),
+  },
+}));
 
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
@@ -31,6 +38,20 @@ function bottomNav() {
 }
 
 describe("StudentLayout bottom nav", () => {
+  beforeEach(() => {
+    vi.mocked(memberApi.mySpace).mockResolvedValue({
+      id: "1",
+      creatorId: "c1",
+      name: "Studio Fit",
+      slug: "studio",
+      logoUrl: null,
+      primaryColor: "#5b8cff",
+      bio: "Treinos sob medida.",
+      category: "GYM",
+      createdAt: "2024-01-01T00:00:00Z",
+    });
+  });
+
   it("renders all nav items on /student", () => {
     renderAt("/student");
 

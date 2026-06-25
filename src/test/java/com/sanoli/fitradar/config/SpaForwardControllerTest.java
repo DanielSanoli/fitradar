@@ -38,4 +38,28 @@ class SpaForwardControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(forwardedUrl("/index.html"));
     }
+
+    @Test
+    void onboardingRoutesForwardToIndex() throws Exception {
+        mockMvc.perform(get("/change-password"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
+        mockMvc.perform(get("/accept-terms"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
+    }
+
+    @Test
+    void publicSpaceRouteForwardsToIndex() throws Exception {
+        mockMvc.perform(get("/c/studio-teste"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
+    }
+
+    @Test
+    void forgotPasswordRouteForwardsToIndex() throws Exception {
+        mockMvc.perform(get("/forgot-password"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
+    }
 }

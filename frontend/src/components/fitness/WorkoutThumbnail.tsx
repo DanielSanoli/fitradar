@@ -4,6 +4,8 @@ import {
   workoutVisualIcon,
 } from "@/lib/creator/workout-visual";
 import { fitnessIconMap } from "@/lib/icons/fitness-icons";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import { capitalizeLabel } from "@/lib/space/vocabulary";
 
 export type WorkoutThumbnailProps = {
   title: string;
@@ -23,6 +25,7 @@ export function WorkoutThumbnail({
   size = "md",
   className,
 }: WorkoutThumbnailProps) {
+  const { vocabulary: v } = useSpaceVocabulary();
   const sm = size === "sm";
   const kind = detectWorkoutVisualKind(title, description, contentMarkdown);
   const Icon = fitnessIconMap[workoutVisualIcon(kind)];
@@ -42,7 +45,9 @@ export function WorkoutThumbnail({
           strokeWidth={1.75}
         />
       </div>
-      <span className="sr-only">Treino: {title}</span>
+      <span className="sr-only">
+        {capitalizeLabel(v.item.singular)}: {title} · {v.mediaLabel}
+      </span>
     </div>
   );
 }

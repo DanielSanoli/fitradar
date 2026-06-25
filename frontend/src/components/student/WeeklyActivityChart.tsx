@@ -1,3 +1,4 @@
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 import { cn } from "@/lib/utils";
 import type { WeekBar } from "@/lib/student/weekly-activity";
 
@@ -15,6 +16,8 @@ type WeeklyActivityChartProps = {
 };
 
 export function WeeklyActivityChart({ bars, summary, className }: WeeklyActivityChartProps) {
+  const { vocabulary: v } = useSpaceVocabulary();
+
   return (
     <div
       className={cn(
@@ -40,7 +43,7 @@ export function WeeklyActivityChart({ bars, summary, className }: WeeklyActivity
                   height: bar.height,
                   animationDelay: `${index * 60}ms`,
                 }}
-                aria-label={`${bar.label}: ${bar.state === "done" ? "treino feito" : bar.state === "rest" ? "descanso" : "sem dados"}`}
+                aria-label={`${bar.label}: ${bar.state === "done" ? v.checkInChartDone : bar.state === "rest" ? "descanso" : "sem dados"}`}
                 role="img"
               />
             </div>
@@ -59,7 +62,7 @@ export function WeeklyActivityChart({ bars, summary, className }: WeeklyActivity
       <div className="mt-3.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block size-2.5 rounded-sm bg-primary" aria-hidden />
-          Treino feito
+          {v.checkInChartDone}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block size-2.5 rounded-sm bg-violet-500/70" aria-hidden />

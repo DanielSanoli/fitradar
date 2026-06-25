@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
 import { useToast } from "@/components/ui/toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import { formatItemContentCount, capitalizeLabel } from "@/lib/space/vocabulary";
 import { memberApi } from "@/lib/api/member-api";
 import type { CheckInResponse, WorkoutResponse } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
@@ -19,6 +21,7 @@ export function StudentWorkoutDetailPage() {
   const { workoutId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { vocabulary: v } = useSpaceVocabulary();
 
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [checkIns, setCheckIns] = useState<CheckInResponse[]>([]);
@@ -50,7 +53,7 @@ export function StudentWorkoutDetailPage() {
       setState("content");
       return progress;
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar treino.");
+      setError(e instanceof ApiError ? e.message : v.itemLoadError);
       setState("error");
       return null;
     }
@@ -95,7 +98,7 @@ export function StudentWorkoutDetailPage() {
         feeling: skipped || rating == null ? null : rating,
         notes: notes.trim() || null,
       });
-      toast(skipped ? "Treino marcado como pulado." : "Check-in registrado!");
+      toast(skipped ? v.checkInSkipped : v.checkInRegistered);
       await finishCheckIn(skipped);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "Erro no check-in.", "error");
@@ -114,7 +117,7 @@ export function StudentWorkoutDetailPage() {
         feeling: null,
         notes: null,
       });
-      toast("Check-in registrado!");
+      toast(v.checkInRegistered);
       await finishCheckIn(false);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "Erro no check-in.", "error");
@@ -152,7 +155,7 @@ export function StudentWorkoutDetailPage() {
 
       <PanelState
         state={notFound ? "empty" : state}
-        message={notFound ? "Treino não encontrado ou você não está matriculado." : error}
+        message={notFound ? v.itemNotFound : error}
         onRetry={load}
         emptyVariant="student"
       >
@@ -163,7 +166,7 @@ export function StudentWorkoutDetailPage() {
               <div className="space-y-3 p-[18px]">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                    Treino
+                    {capitalizeLabel(v.item.singular)}
                   </span>
                   {doneToday ? (
                     <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold text-primary">
@@ -189,12 +192,16 @@ export function StudentWorkoutDetailPage() {
                   />
                 ) : (
                   <p className="text-sm italic text-muted-foreground">
-                    Seu criador ainda não publicou o conteúdo deste treino.
+                    {v.noItemContent}
                   </p>
                 )}
 
                 <div className="flex items-center gap-3 border-t border-border/80 pt-2.5 text-xs text-muted-foreground">
-                  <span>{exTotal > 0 ? `${exTotal} exercícios` : "Conteúdo do treino"}</span>
+                  <span>
+                    {exTotal > 0
+                      ? formatItemContentCount(exTotal, v)
+                      : `Conteúdo da ${v.item.singular}`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -214,7 +221,7 @@ export function StudentWorkoutDetailPage() {
               ) : (
                 <CalendarCheck className="size-5" strokeWidth={2.5} aria-hidden />
               )}
-              {doneToday ? "Treino concluído hoje" : "Registrar check-in"}
+              {doneToday ? v.checkInDoneToday : v.checkInAction}
             </Button>
 
             {!doneToday ? (

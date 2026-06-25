@@ -115,6 +115,7 @@ export function SpaceBuilderPage() {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugManual, setSlugManual] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFileName, setLogoFileName] = useState<string | null>(null);
@@ -156,8 +157,13 @@ export function SpaceBuilderPage() {
       ]);
 
       if (space) {
-        setName(space.name ?? "");
-        setSlug(space.slug ?? "");
+        const loadedName = space.name ?? "";
+        const loadedSlug = space.slug ?? "";
+        setName(loadedName);
+        setSlug(loadedSlug);
+        setSlugManual(
+          Boolean(loadedSlug && loadedSlug !== slugifySpaceName(loadedName)),
+        );
         setLogoUrl(space.logoUrl ?? "");
         setLogoPreview(space.logoUrl ?? null);
         setAccent(normalizeAccentColor(space.primaryColor));
@@ -186,10 +192,10 @@ export function SpaceBuilderPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!slug && name.trim()) {
+    if (!slugManual) {
       setSlug(slugifySpaceName(name));
     }
-  }, [name, slug]);
+  }, [name, slugManual]);
 
   const spaceBody = useMemo((): CreatorSpaceRequest => {
     return {
@@ -432,8 +438,36 @@ export function SpaceBuilderPage() {
                     e.target.style.boxShadow = "";
                   }}
                 />
-                <p className="font-mono text-[11.5px] text-muted-foreground">
-                  Link: {spaceLinkDisplay}
+              </div>
+
+              <div className="space-y-2">
+                <SpaceFieldLabel htmlFor="space-slug" icon="overview">
+                  Endereço do link
+                </SpaceFieldLabel>
+                <div className="flex h-[46px] items-center overflow-hidden rounded-[11px] border border-border bg-secondary/40">
+                  <span className="shrink-0 border-r border-border px-3 font-mono text-[13px] text-muted-foreground">
+                    /c/
+                  </span>
+                  <input
+                    id="space-slug"
+                    className="h-full min-w-0 flex-1 bg-transparent px-3 font-mono text-[14px] focus:outline-none"
+                    value={slug}
+                    onChange={(e) => {
+                      setSlugManual(true);
+                      setSlug(slugifySpaceName(e.target.value));
+                      setPublished(false);
+                    }}
+                    placeholder="seu-espaco"
+                    aria-describedby="space-slug-hint"
+                    onFocus={(e) => Object.assign(e.target.style, focusStyle)}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "";
+                      e.target.style.boxShadow = "";
+                    }}
+                  />
+                </div>
+                <p id="space-slug-hint" className="font-mono text-[11.5px] text-muted-foreground">
+                  Link completo: {spaceLinkDisplay}
                 </p>
               </div>
 

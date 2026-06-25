@@ -9,12 +9,14 @@ import { PanelState } from "@/components/ui/PanelState";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 import { programsApi } from "@/lib/api/programs-api";
 import type { ProgramRequest } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
 
 export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
   const { toast } = useToast();
+  const { vocabulary: v } = useSpaceVocabulary();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -28,7 +30,7 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
   );
   const [loadError, setLoadError] = useState<string>();
 
-  usePageTitle(mode === "create" ? "Novo programa" : title || "Editar programa");
+  usePageTitle(mode === "create" ? v.newProgram : title || v.editProgram);
 
   useEffect(() => {
     if (mode !== "edit" || !id) return;

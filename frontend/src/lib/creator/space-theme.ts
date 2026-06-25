@@ -60,3 +60,64 @@ export function normalizeAccentColor(color: string | null | undefined): string {
   if (c.startsWith("#")) return c;
   return SPACE_SWATCHES[0];
 }
+
+/** HSL components for CSS vars: `165 76% 48%` (no hsl() wrapper). */
+export function hexToHslComponents(hex: string): string {
+  const [r, g, b] = hexToRgb(hex);
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rNorm:
+        h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) / 6;
+        break;
+      case gNorm:
+        h = ((bNorm - rNorm) / d + 2) / 6;
+        break;
+      default:
+        h = ((rNorm - gNorm) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+export type StudentThemeCssVars = {
+  "--primary": string;
+  "--primary-foreground": string;
+  "--accent": string;
+  "--accent-foreground": string;
+  "--ring": string;
+  "--glow-accent": string;
+  "--student-glow": string;
+};
+
+/** Theme tokens for the student app shell — inherits to all bg-primary / hsl(var(--primary)). */
+export function buildStudentThemeCssVars(
+  primaryColor: string | null | undefined,
+): StudentThemeCssVars {
+  const accent = normalizeAccentColor(primaryColor);
+  const primary = hexToHslComponents(accent);
+  const primaryForeground = hexToHslComponents(foregroundOnAccent(accent));
+  const hue = primary.split(" ")[0] ?? "165";
+
+  return {
+    "--primary": primary,
+    "--primary-foreground": primaryForeground,
+    "--accent": primary,
+    "--accent-foreground": primaryForeground,
+    "--ring": primary,
+    "--glow-accent": primary,
+    "--student-glow": `${hue} 40% 12%`,
+  };
+}

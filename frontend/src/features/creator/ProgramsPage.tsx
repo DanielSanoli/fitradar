@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, Clock, Dumbbell, Plus, Users } from "lucide-react";
+import { Clock, Plus, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { CreatorEmptyRings } from "@/components/creator/CreatorEmptyRings";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,6 +10,11 @@ import { studentsApi } from "@/lib/api/students-api";
 import type { ProgramResponse } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
 import { PROGRAM_ACCENT_BARS } from "@/lib/creator/display-utils";
+import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import {
+  formatCountLabel,
+  formatProgramItemSummary,
+} from "@/lib/space/vocabulary";
 
 type ProgramWithMeta = ProgramResponse & { enrolledCount: number };
 
@@ -48,6 +53,9 @@ async function loadProgramsWithEnrollment(): Promise<{
 
 export function ProgramsListPage() {
   const navigate = useNavigate();
+  const { vocabulary: v } = useSpaceVocabulary();
+  const ProgramIcon = v.programIcon;
+  const ItemIcon = v.itemIcon;
   const [programs, setPrograms] = useState<ProgramWithMeta[]>([]);
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
@@ -74,14 +82,14 @@ export function ProgramsListPage() {
   const totalWorkouts = programs.reduce((a, p) => a + p.workoutCount, 0);
   const subtitle =
     programs.length === 0
-      ? "Nenhum programa ainda — crie o primeiro"
-      : `${programs.length} programas · ${totalWorkouts} treinos`;
+      ? v.programsPageSubtitleEmpty
+      : formatProgramItemSummary(programs.length, totalWorkouts, v);
 
   return (
     <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-5 animate-in fade-in duration-300">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-extrabold tracking-tight">Programas & Treinos</h1>
+          <h1 className="text-[26px] font-extrabold tracking-tight">{v.programsAndItems}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>
         </div>
         <Button
@@ -89,7 +97,7 @@ export function ProgramsListPage() {
           className="h-11 gap-2 rounded-[11px] px-5 shadow-[0_4px_18px_hsl(var(--primary)/0.28)]"
         >
           <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-          Criar programa
+          Criar {v.program.singular}
         </Button>
       </div>
 
@@ -120,7 +128,7 @@ export function ProgramsListPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-start gap-3">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-[11px] border border-primary/25 bg-primary/10">
-                      <Dumbbell className="size-5 text-primary" strokeWidth={2} aria-hidden />
+                      <ProgramIcon className="size-5 text-primary" strokeWidth={2} aria-hidden />
                     </div>
                     <h2 className="text-[17px] font-bold tracking-tight">{p.title}</h2>
                   </div>
@@ -139,8 +147,8 @@ export function ProgramsListPage() {
                     Contínuo
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <ClipboardList className="size-3.5" aria-hidden />
-                    {p.workoutCount} treinos
+                    <ItemIcon className="size-3.5" aria-hidden />
+                    {formatCountLabel(p.workoutCount, v.item.singular, v.item.plural)}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <Users className="size-3.5" aria-hidden />
@@ -160,9 +168,11 @@ export function ProgramsListPage() {
         <div className="flex flex-col items-center gap-5 py-20 text-center">
           <CreatorEmptyRings size="lg" />
           <div>
-            <p className="text-[22px] font-extrabold tracking-tight">Crie seu primeiro programa</p>
+            <p className="text-[22px] font-extrabold tracking-tight">
+              Crie seu primeiro {v.program.singular}
+            </p>
             <p className="mx-auto mt-2.5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-              Estruture seus treinos, organize o conteúdo por dia e acompanhe a progressão dos alunos.
+              {v.programsListEmptyDescription}
             </p>
           </div>
           <Button
@@ -171,7 +181,7 @@ export function ProgramsListPage() {
             onClick={() => navigate("/app/programs/new")}
           >
             <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-            Criar primeiro programa
+            Criar primeiro {v.program.singular}
           </Button>
         </div>
       ) : null}

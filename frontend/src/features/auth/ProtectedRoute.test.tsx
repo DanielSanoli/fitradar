@@ -44,11 +44,13 @@ function renderProtected(
           <Route element={<ProtectedRoute allowedRoles={["CREATOR"]} />}>
             <Route path="/app" element={<div>Protected area</div>} />
           </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/change-password" element={<div>Change password</div>} />
+            <Route path="/accept-terms" element={<div>Accept terms</div>} />
+          </Route>
           <Route path="/login" element={<div>Login page</div>} />
           <Route path="/student" element={<div>Student home</div>} />
           <Route path="/billing-required" element={<div>Billing required</div>} />
-          <Route path="/change-password" element={<div>Change password</div>} />
-          <Route path="/accept-terms" element={<div>Accept terms</div>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
@@ -71,20 +73,41 @@ describe("ProtectedRoute", () => {
   });
 
   it("redirects users with temporary password to change-password", () => {
-    renderProtected({
-      ...creatorBase,
-      role: "STUDENT",
-      creatorId: "c1",
-      mustChangePassword: true,
-    });
+    renderProtected(
+      {
+        ...creatorBase,
+        role: "STUDENT",
+        creatorId: "c1",
+        mustChangePassword: true,
+      },
+      "/app",
+    );
     expect(screen.getByText("Change password")).toBeInTheDocument();
   });
 
+  it("keeps invited students on change-password when terms are pending", () => {
+    renderProtected(
+      {
+        ...creatorBase,
+        role: "STUDENT",
+        creatorId: "c1",
+        mustChangePassword: true,
+        termsAccepted: false,
+      },
+      "/change-password",
+    );
+    expect(screen.getByText("Change password")).toBeInTheDocument();
+    expect(screen.queryByText("Accept terms")).not.toBeInTheDocument();
+  });
+
   it("redirects users without terms acceptance to accept-terms", () => {
-    renderProtected({
-      ...creatorBase,
-      termsAccepted: false,
-    });
+    renderProtected(
+      {
+        ...creatorBase,
+        termsAccepted: false,
+      },
+      "/app",
+    );
     expect(screen.getByText("Accept terms")).toBeInTheDocument();
   });
 
