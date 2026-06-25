@@ -10,6 +10,15 @@ public class BillingProperties {
     private int trialDays = 14;
     private Asaas asaas = new Asaas();
     private Marketplace marketplace = new Marketplace();
+    private Limits limits = new Limits();
+
+    public Limits getLimits() {
+        return limits;
+    }
+
+    public void setLimits(Limits limits) {
+        this.limits = limits;
+    }
 
     public int getTrialDays() {
         return trialDays;
@@ -100,8 +109,10 @@ public class BillingProperties {
      * Cobrança aluno→criador com split: a taxa da plataforma fica na conta raiz (FitRadar).
      */
     public static class Marketplace {
-        /** Percentual retido pela plataforma em cada venda (ex.: 10 = 10%). */
+        /** @deprecated use {@link #platformFeePercentFree} — fallback quando as novas chaves não estão definidas. */
         private BigDecimal platformFeePercent = new BigDecimal("10.00");
+        private BigDecimal platformFeePercentFree = new BigDecimal("10.00");
+        private BigDecimal platformFeePercentPro = BigDecimal.ZERO;
 
         public BigDecimal getPlatformFeePercent() {
             return platformFeePercent;
@@ -109,6 +120,43 @@ public class BillingProperties {
 
         public void setPlatformFeePercent(BigDecimal platformFeePercent) {
             this.platformFeePercent = platformFeePercent;
+        }
+
+        public BigDecimal getPlatformFeePercentFree() {
+            return platformFeePercentFree != null ? platformFeePercentFree : platformFeePercent;
+        }
+
+        public void setPlatformFeePercentFree(BigDecimal platformFeePercentFree) {
+            this.platformFeePercentFree = platformFeePercentFree;
+        }
+
+        public BigDecimal getPlatformFeePercentPro() {
+            return platformFeePercentPro != null ? platformFeePercentPro : BigDecimal.ZERO;
+        }
+
+        public void setPlatformFeePercentPro(BigDecimal platformFeePercentPro) {
+            this.platformFeePercentPro = platformFeePercentPro;
+        }
+    }
+
+    public static class Limits {
+        private int freeMaxStudents = 30;
+        private int freeMaxActivePrograms = 3;
+
+        public int getFreeMaxStudents() {
+            return freeMaxStudents;
+        }
+
+        public void setFreeMaxStudents(int freeMaxStudents) {
+            this.freeMaxStudents = freeMaxStudents;
+        }
+
+        public int getFreeMaxActivePrograms() {
+            return freeMaxActivePrograms;
+        }
+
+        public void setFreeMaxActivePrograms(int freeMaxActivePrograms) {
+            this.freeMaxActivePrograms = freeMaxActivePrograms;
         }
     }
 }

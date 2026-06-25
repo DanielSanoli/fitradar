@@ -118,12 +118,13 @@ describe("ProtectedRoute", () => {
     expect(screen.getByText("Protected area")).toBeInTheDocument();
   });
 
-  it("redirects creator without access to billing-required", () => {
+  it("allows creator with expired trial when basic access is granted", () => {
     renderProtected({
       ...creatorBase,
-      accessAllowed: false,
+      accessAllowed: true,
       accessMessage: "Trial expirado",
+      hasProFeatures: false,
     });
-    expect(screen.getByText("Billing required")).toBeInTheDocument();
+    expect(screen.getByText("Protected area")).toBeInTheDocument();
   });
 });

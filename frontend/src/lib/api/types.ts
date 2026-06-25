@@ -16,6 +16,7 @@ export interface User {
   subscriptionEndsAt: string | null;
   emailVerified: boolean;
   accessAllowed: boolean;
+  hasProFeatures?: boolean;
   accessMessage: string | null;
   trialDaysRemaining: number;
   /** true após convite com senha temporária — exige troca antes de continuar. */

@@ -16,6 +16,7 @@ import {
   purchaseStatusClass,
   purchaseStatusLabel,
 } from "@/lib/creator/marketplace-copy";
+import { formatFeePercent } from "@/lib/creator/billing-copy";
 import { cn } from "@/lib/utils";
 
 function formatPurchaseDate(iso: string | null | undefined): string {
@@ -115,8 +116,17 @@ export function CreatorMarketplacePage() {
                   {status?.platformFeePercent ? (
                     <>
                       {" "}
-                      · taxa plataforma{" "}
-                      <span className="font-semibold">{status.platformFeePercent}%</span>
+                      · sua taxa{" "}
+                      <span className="font-semibold">
+                        {formatFeePercent(status.platformFeePercent)}%
+                      </span>
+                      {status.platformFeePercentFree && status.platformFeePercentPro ? (
+                        <>
+                          {" "}
+                          (Free {formatFeePercent(status.platformFeePercentFree)}% / Pro{" "}
+                          {formatFeePercent(status.platformFeePercentPro)}%)
+                        </>
+                      ) : null}
                     </>
                   ) : null}
                 </AlertDescription>

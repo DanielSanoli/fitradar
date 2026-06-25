@@ -94,6 +94,15 @@ describe("CreatorSettingsPage", () => {
       canCancel: false,
       canReactivate: true,
       hasCpfCnpj: false,
+      hasProFeatures: true,
+      subjectToFreeLimits: false,
+      marketplaceFeePercentCurrent: "10.00",
+      marketplaceFeePercentFree: "10.00",
+      marketplaceFeePercentPro: "0.00",
+      freeMaxStudents: 30,
+      freeMaxActivePrograms: 3,
+      currentStudentCount: 0,
+      currentActiveProgramCount: 0,
       message: null,
     });
     vi.mocked(billingApi.subscriptionInvoices).mockResolvedValue([]);
@@ -134,13 +143,15 @@ describe("CreatorSettingsPage", () => {
     });
   });
 
-  it("shows billing section with trial days", async () => {
+  it("shows billing section with trial days and marketplace fees", async () => {
     const user = userEvent.setup();
     renderSettings();
     await user.click(screen.getByRole("button", { name: "Assinatura" }));
     await waitFor(() => {
       expect(billingApi.subscriptionDetails).toHaveBeenCalled();
       expect(screen.getByText("12 dias")).toBeInTheDocument();
+      expect(screen.getByText(/Comissão sobre vendas/i)).toBeInTheDocument();
+      expect(screen.getByText(/10% no Free \/ 0% no Pro/i)).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: /Assinar Pro/i })).toBeInTheDocument();
   });
@@ -156,6 +167,15 @@ describe("CreatorSettingsPage", () => {
       canCancel: true,
       canReactivate: false,
       hasCpfCnpj: true,
+      hasProFeatures: true,
+      subjectToFreeLimits: false,
+      marketplaceFeePercentCurrent: "0.00",
+      marketplaceFeePercentFree: "10.00",
+      marketplaceFeePercentPro: "0.00",
+      freeMaxStudents: 30,
+      freeMaxActivePrograms: 3,
+      currentStudentCount: 5,
+      currentActiveProgramCount: 2,
       message: "Cancelamento via Asaas — o acesso Pro encerra conforme o ciclo da assinatura.",
     });
     vi.mocked(billingApi.subscriptionInvoices).mockResolvedValue([

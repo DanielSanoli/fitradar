@@ -6,10 +6,6 @@ type ProtectedRouteProps = {
   allowedRoles?: UserRole[];
 };
 
-function isCreatorRole(role: UserRole): boolean {
-  return role === "CREATOR" || role === "ADMIN";
-}
-
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
@@ -41,23 +37,6 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const fallback = user.role === "STUDENT" ? "/student" : "/app";
     return <Navigate to={fallback} replace />;
-  }
-
-  const creatorRoute =
-    allowedRoles?.some((r) => r === "CREATOR" || r === "ADMIN") ?? false;
-  if (
-    creatorRoute &&
-    isCreatorRole(user.role) &&
-    !user.accessAllowed &&
-    location.pathname !== "/billing-required"
-  ) {
-    return (
-      <Navigate
-        to="/billing-required"
-        replace
-        state={{ message: user.accessMessage ?? undefined }}
-      />
-    );
   }
 
   return <Outlet />;

@@ -47,7 +47,8 @@ public class ProgramController {
     @PostMapping
     @Operation(summary = "Cria um programa")
     public ResponseEntity<ProgramResponse> create(@Valid @RequestBody ProgramRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(programService.create(creatorId(), request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                programService.create(currentUserService.requireCreator(), request));
     }
 
     @GetMapping("/{id}")
@@ -59,7 +60,7 @@ public class ProgramController {
     @PutMapping("/{id}")
     @Operation(summary = "Atualiza um programa")
     public ResponseEntity<ProgramResponse> update(@PathVariable UUID id, @Valid @RequestBody ProgramRequest request) {
-        return ResponseEntity.ok(programService.update(creatorId(), id, request));
+        return ResponseEntity.ok(programService.update(currentUserService.requireCreator(), id, request));
     }
 
     @DeleteMapping("/{id}")

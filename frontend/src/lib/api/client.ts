@@ -1,4 +1,5 @@
 import { API_PREFIX } from "@/lib/auth/constants";
+import { FREE_LIMIT_MESSAGE_SNIPPET } from "@/lib/billing/pro-upgrade-prompt";
 import {
   clearAuthStorage,
   persistAuth,
@@ -105,9 +106,14 @@ function handleAuthFailure() {
   onUnauthorized?.();
 }
 
-function handlePaymentRequired(data: unknown) {
-  const message = errorMessage(data, "Sua assinatura precisa de atenção.");
-  onPaymentRequired?.(message);
+function maybePromptProUpgrade(data: unknown) {
+  const message = errorMessage(data, "");
+  if (
+    message.includes("Recurso disponível no plano Pro")
+    || message.includes(FREE_LIMIT_MESSAGE_SNIPPET)
+  ) {
+    onPaymentRequired?.(message);
+  }
 }
 
 export async function apiUpload<T>(path: string, formData: FormData, withAuth = true): Promise<T> {
@@ -145,11 +151,12 @@ export async function apiUpload<T>(path: string, formData: FormData, withAuth = 
   const data = await parseBody(res);
 
   if (res.status === 402) {
-    handlePaymentRequired(data);
+    maybePromptProUpgrade(data);
     throw new ApiError(402, errorMessage(data, "Assinatura necessária."), data as ApiErrorBody);
   }
 
   if (!res.ok) {
+    maybePromptProUpgrade(data);
     throw new ApiError(res.status, errorMessage(data, `Erro ${res.status}`), data as ApiErrorBody);
   }
 
@@ -178,11 +185,12 @@ export async function apiRequest<T>(
   const data = await parseBody(res);
 
   if (res.status === 402) {
-    handlePaymentRequired(data);
+    maybePromptProUpgrade(data);
     throw new ApiError(402, errorMessage(data, "Assinatura necessária."), data as ApiErrorBody);
   }
 
   if (!res.ok) {
+    maybePromptProUpgrade(data);
     throw new ApiError(res.status, errorMessage(data, `Erro ${res.status}`), data as ApiErrorBody);
   }
 

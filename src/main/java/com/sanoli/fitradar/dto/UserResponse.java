@@ -22,6 +22,7 @@ public record UserResponse(
         boolean mustChangePassword,
         boolean termsAccepted,
         boolean accessAllowed,
+        boolean hasProFeatures,
         String accessMessage,
         long trialDaysRemaining
 ) {
@@ -39,7 +40,8 @@ public record UserResponse(
                 user.isEmailVerified(),
                 user.isMustChangePassword(),
                 user.hasAcceptedTerms(),
-                user.hasActiveAccess(),
+                user.hasBasicCreatorAccess(),
+                user.hasProFeatures(),
                 user.getAccessMessage(),
                 user.getTrialDaysRemaining()
         );

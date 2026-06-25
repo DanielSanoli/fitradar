@@ -78,11 +78,36 @@ describe("api client", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: "Assine o Pro" }), { status: 402 }),
+        new Response(JSON.stringify({ message: "Recurso disponível no plano Pro" }), { status: 402 }),
       ),
     );
 
-    await expect(apiRequest("GET", "/api/v1/programs")).rejects.toMatchObject({ status: 402 });
-    expect(onPaymentRequired).toHaveBeenCalledWith("Assine o Pro");
+    await expect(apiRequest("GET", "/api/v1/copilot/ask")).rejects.toMatchObject({ status: 402 });
+    expect(onPaymentRequired).toHaveBeenCalledWith("Recurso disponível no plano Pro");
+  });
+
+  it("prompts pro upgrade on free plan limit error", async () => {
+    persistAuth(authFixture);
+    const onPaymentRequired = vi.fn();
+    setPaymentRequiredHandler(onPaymentRequired);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            message:
+              "Limite do plano Free atingido — assine o Pro para liberar alunos/programas ilimitados",
+          }),
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await expect(apiRequest("POST", "/api/v1/students/invite", {})).rejects.toMatchObject({
+      status: 400,
+    });
+    expect(onPaymentRequired).toHaveBeenCalledWith(
+      "Limite do plano Free atingido — assine o Pro para liberar alunos/programas ilimitados",
+    );
   });
 });

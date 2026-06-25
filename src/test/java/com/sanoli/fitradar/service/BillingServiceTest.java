@@ -36,6 +36,7 @@ class BillingServiceTest {
 
     private UserRepository userRepository;
     private BillingProperties billingProperties;
+    private PlanEntitlementService planEntitlementService;
     private BillingService billingService;
     private ObjectMapper objectMapper;
     private CurrentUserService currentUserService;
@@ -50,13 +51,24 @@ class BillingServiceTest {
         billingProperties.getAsaas().setEnabled(true);
         billingProperties.getAsaas().setApiKey("asaas-test-key");
         billingProperties.getAsaas().setWebhookToken(WEBHOOK_TOKEN);
+        billingProperties.getMarketplace().setPlatformFeePercentFree(new BigDecimal("10.00"));
+        billingProperties.getMarketplace().setPlatformFeePercentPro(BigDecimal.ZERO);
+        billingProperties.getLimits().setFreeMaxStudents(30);
+        billingProperties.getLimits().setFreeMaxActivePrograms(3);
+
+        planEntitlementService = new PlanEntitlementService(
+                billingProperties,
+                userRepository,
+                mock(com.sanoli.fitradar.repository.ProgramRepository.class)
+        );
 
         billingService = new BillingService(
                 currentUserService,
                 userRepository,
                 asaasClient,
                 billingProperties,
-                mock(MarketplaceBillingService.class)
+                mock(MarketplaceBillingService.class),
+                planEntitlementService
         );
         objectMapper = new ObjectMapper();
     }
