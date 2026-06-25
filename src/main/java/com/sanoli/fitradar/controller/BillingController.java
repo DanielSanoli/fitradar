@@ -3,6 +3,7 @@ package com.sanoli.fitradar.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sanoli.fitradar.dto.CheckoutResponse;
 import com.sanoli.fitradar.dto.MessageResponse;
+import com.sanoli.fitradar.dto.ProCheckoutRequest;
 import com.sanoli.fitradar.dto.SubscriptionDetailsResponse;
 import com.sanoli.fitradar.dto.SubscriptionInvoiceResponse;
 import com.sanoli.fitradar.service.BillingService;
@@ -30,8 +31,10 @@ public class BillingController {
 
     @PostMapping("/checkout/pro")
     @Operation(summary = "Inicia checkout do plano Pro via Asaas")
-    public ResponseEntity<CheckoutResponse> checkoutPro() {
-        return ResponseEntity.ok(billingService.createProCheckout());
+    public ResponseEntity<CheckoutResponse> checkoutPro(
+            @RequestBody(required = false) ProCheckoutRequest request
+    ) {
+        return ResponseEntity.ok(billingService.createProCheckout(request));
     }
 
     @GetMapping("/subscription")

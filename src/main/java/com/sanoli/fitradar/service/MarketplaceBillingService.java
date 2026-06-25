@@ -168,7 +168,7 @@ public class MarketplaceBillingService {
         }
 
         if (student.getAsaasCustomerId() == null) {
-            student.setAsaasCustomerId(asaasClient.createCustomer(student.getName(), student.getEmail()));
+            student.setAsaasCustomerId(asaasClient.createCustomer(student.getName(), student.getEmail(), null));
             userRepository.save(student);
         }
 

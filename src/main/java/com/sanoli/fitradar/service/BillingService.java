@@ -8,6 +8,7 @@ import com.sanoli.fitradar.domain.SubscriptionPlan;
 import com.sanoli.fitradar.domain.SubscriptionStatus;
 import com.sanoli.fitradar.dto.CheckoutResponse;
 import com.sanoli.fitradar.dto.MessageResponse;
+import com.sanoli.fitradar.dto.ProCheckoutRequest;
 import com.sanoli.fitradar.dto.SubscriptionDetailsResponse;
 import com.sanoli.fitradar.dto.SubscriptionInvoiceResponse;
 import com.sanoli.fitradar.exception.BusinessException;
@@ -15,6 +16,7 @@ import com.sanoli.fitradar.exception.WebhookUnauthorizedException;
 import com.sanoli.fitradar.observability.LoggingSanitizer;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.CurrentUserService;
+import com.sanoli.fitradar.util.CpfCnpjValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -53,7 +55,7 @@ public class BillingService {
     }
 
     @Transactional
-    public CheckoutResponse createProCheckout() {
+    public CheckoutResponse createProCheckout(ProCheckoutRequest request) {
         AppUser user = currentUserService.requireCreator();
         if (user.getPlan() == SubscriptionPlan.PRO && user.getSubscriptionStatus() == SubscriptionStatus.ACTIVE) {
             throw new BusinessException("Plano Pro já está ativo");
@@ -67,8 +69,11 @@ public class BillingService {
             );
         }
 
+        String cpfCnpj = resolveCpfCnpj(request, user);
+        user.setCpfCnpj(cpfCnpj);
+
         if (user.getAsaasCustomerId() == null) {
-            user.setAsaasCustomerId(asaasClient.createCustomer(user.getName(), user.getEmail()));
+            user.setAsaasCustomerId(asaasClient.createCustomer(user.getName(), user.getEmail(), cpfCnpj));
         }
 
         AsaasClient.AsaasSubscriptionResult subscription = asaasClient.createSubscription(
@@ -83,6 +88,20 @@ public class BillingService {
                 subscription.checkoutUrl(),
                 "Assinatura criada. Conclua o pagamento para ativar o plano Pro."
         );
+    }
+
+    private String resolveCpfCnpj(ProCheckoutRequest request, AppUser user) {
+        String raw = request != null && request.cpfCnpj() != null && !request.cpfCnpj().isBlank()
+                ? request.cpfCnpj()
+                : user.getCpfCnpj();
+        if (raw == null || raw.isBlank()) {
+            throw new BusinessException("Informe seu CPF ou CNPJ para assinar o plano Pro");
+        }
+        String digits = CpfCnpjValidator.sanitize(raw);
+        if (!CpfCnpjValidator.isValid(digits)) {
+            throw new BusinessException("CPF ou CNPJ inválido");
+        }
+        return digits;
     }
 
     @Transactional(readOnly = true)
@@ -114,6 +133,7 @@ public class BillingService {
                 asaasConfigured,
                 canCancel,
                 canReactivate,
+                hasCpfCnpj(user),
                 message
         );
     }
@@ -173,7 +193,11 @@ public class BillingService {
 
     @Transactional
     public CheckoutResponse reactivateSubscription() {
-        return createProCheckout();
+        return createProCheckout(null);
+    }
+
+    private static boolean hasCpfCnpj(AppUser user) {
+        return user.getCpfCnpj() != null && !user.getCpfCnpj().isBlank();
     }
 
     @Transactional

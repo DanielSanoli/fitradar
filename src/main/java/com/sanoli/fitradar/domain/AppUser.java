@@ -70,6 +70,10 @@ public class AppUser {
     @Column(name = "asaas_wallet_id", length = 64)
     private String asaasWalletId;
 
+    /** CPF ou CNPJ (somente dígitos) — obrigatório para checkout Pro do criador. */
+    @Column(name = "cpf_cnpj", length = 14)
+    private String cpfCnpj;
+
     @Column(nullable = false)
     private boolean emailVerified = false;
 
@@ -206,6 +210,14 @@ public class AppUser {
 
     public void setAsaasWalletId(String asaasWalletId) {
         this.asaasWalletId = asaasWalletId;
+    }
+
+    public String getCpfCnpj() {
+        return cpfCnpj;
+    }
+
+    public void setCpfCnpj(String cpfCnpj) {
+        this.cpfCnpj = cpfCnpj;
     }
 
     public boolean isEmailVerified() {

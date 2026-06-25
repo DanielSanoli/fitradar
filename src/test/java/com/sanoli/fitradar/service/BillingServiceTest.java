@@ -8,6 +8,7 @@ import com.sanoli.fitradar.config.BillingProperties;
 import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.SubscriptionPlan;
 import com.sanoli.fitradar.domain.SubscriptionStatus;
+import com.sanoli.fitradar.dto.ProCheckoutRequest;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.WebhookUnauthorizedException;
 import com.sanoli.fitradar.repository.UserRepository;
@@ -22,6 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -57,6 +59,75 @@ class BillingServiceTest {
                 mock(MarketplaceBillingService.class)
         );
         objectMapper = new ObjectMapper();
+    }
+
+    @Test
+    void createProCheckout_requiresCpfCnpjWhenMissing() {
+        AppUser user = creatorWithSubscription();
+        user.setAsaasSubscriptionId(null);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        assertThatThrownBy(() -> billingService.createProCheckout(null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("CPF ou CNPJ");
+    }
+
+    @Test
+    void createProCheckout_rejectsInvalidCpfCnpj() {
+        AppUser user = creatorWithSubscription();
+        user.setAsaasSubscriptionId(null);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        assertThatThrownBy(() -> billingService.createProCheckout(new ProCheckoutRequest("11111111111")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("CPF ou CNPJ inválido");
+    }
+
+    @Test
+    void createProCheckout_persistsCpfAndCreatesAsaasCustomer() {
+        AppUser user = creatorWithSubscription();
+        user.setAsaasSubscriptionId(null);
+        user.setName("Ana Costa");
+        user.setEmail("ana@test.com");
+        when(currentUserService.requireCreator()).thenReturn(user);
+        when(asaasClient.createCustomer(eq("Ana Costa"), eq("ana@test.com"), eq("52998224725")))
+                .thenReturn("cus_1");
+        when(asaasClient.createSubscription(eq("cus_1"), any()))
+                .thenReturn(new AsaasClient.AsaasSubscriptionResult("sub_new", "https://pay.example"));
+
+        var result = billingService.createProCheckout(new ProCheckoutRequest("529.982.247-25"));
+
+        assertThat(user.getCpfCnpj()).isEqualTo("52998224725");
+        assertThat(user.getAsaasCustomerId()).isEqualTo("cus_1");
+        assertThat(result.checkoutUrl()).isEqualTo("https://pay.example");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void createProCheckout_reusesSavedCpfOnReactivate() {
+        AppUser user = creatorWithSubscription();
+        user.setAsaasSubscriptionId(null);
+        user.setCpfCnpj("52998224725");
+        user.setAsaasCustomerId("cus_existing");
+        when(currentUserService.requireCreator()).thenReturn(user);
+        when(asaasClient.createSubscription(eq("cus_existing"), any()))
+                .thenReturn(new AsaasClient.AsaasSubscriptionResult("sub_new", "https://pay.example"));
+
+        billingService.reactivateSubscription();
+
+        verify(asaasClient, never()).createCustomer(any(), any(), any());
+        assertThat(user.getCpfCnpj()).isEqualTo("52998224725");
+    }
+
+    @Test
+    void subscriptionDetails_reportsHasCpfCnpj() {
+        AppUser user = creatorWithSubscription();
+        user.setCpfCnpj("52998224725");
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        var details = billingService.subscriptionDetails();
+
+        assertThat(details.hasCpfCnpj()).isTrue();
     }
 
     @Test

@@ -14,6 +14,7 @@ public record SubscriptionDetailsResponse(
         boolean asaasConfigured,
         boolean canCancel,
         boolean canReactivate,
+        boolean hasCpfCnpj,
         String message
 ) {
 }

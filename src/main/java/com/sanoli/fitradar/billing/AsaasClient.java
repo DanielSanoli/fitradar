@@ -29,11 +29,14 @@ public class AsaasClient {
                 .build();
     }
 
-    public String createCustomer(String name, String email) {
+    public String createCustomer(String name, String email, String cpfCnpj) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("name", name);
         payload.put("email", email);
         payload.put("notificationDisabled", true);
+        if (cpfCnpj != null && !cpfCnpj.isBlank()) {
+            payload.put("cpfCnpj", cpfCnpj);
+        }
 
         JsonNode response = post("/customers", payload);
         return requiredText(response, "id");
