@@ -2,6 +2,10 @@ import { api } from "@/lib/api/client";
 import type { SubscriptionPlan, SubscriptionStatus } from "@/lib/api/types";
 import { API_PREFIX } from "@/lib/auth/constants";
 
+export type ProCheckoutRequest = {
+  cpfCnpj?: string | null;
+};
+
 export type CheckoutResponse = {
   plan?: SubscriptionPlan;
   checkoutUrl?: string | null;
@@ -17,6 +21,7 @@ export type SubscriptionDetailsResponse = {
   asaasConfigured: boolean;
   canCancel: boolean;
   canReactivate: boolean;
+  hasCpfCnpj: boolean;
   message: string | null;
 };
 
@@ -34,7 +39,8 @@ export type MessageResponse = {
 };
 
 export const billingApi = {
-  checkoutPro: () => api.post<CheckoutResponse>(`${API_PREFIX}/billing/checkout/pro`),
+  checkoutPro: (body?: ProCheckoutRequest) =>
+    api.post<CheckoutResponse>(`${API_PREFIX}/billing/checkout/pro`, body),
 
   subscriptionDetails: () =>
     api.get<SubscriptionDetailsResponse>(`${API_PREFIX}/billing/subscription`),
@@ -45,6 +51,6 @@ export const billingApi = {
   cancelSubscription: () =>
     api.delete<MessageResponse>(`${API_PREFIX}/billing/subscription`),
 
-  reactivateSubscription: () =>
-    api.post<CheckoutResponse>(`${API_PREFIX}/billing/subscription/reactivate`),
+  reactivateSubscription: (body?: ProCheckoutRequest) =>
+    api.post<CheckoutResponse>(`${API_PREFIX}/billing/subscription/reactivate`, body),
 };

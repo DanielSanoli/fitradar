@@ -93,6 +93,7 @@ describe("CreatorSettingsPage", () => {
       asaasConfigured: true,
       canCancel: false,
       canReactivate: true,
+      hasCpfCnpj: false,
       message: null,
     });
     vi.mocked(billingApi.subscriptionInvoices).mockResolvedValue([]);
@@ -154,6 +155,7 @@ describe("CreatorSettingsPage", () => {
       asaasConfigured: true,
       canCancel: true,
       canReactivate: false,
+      hasCpfCnpj: true,
       message: "Cancelamento via Asaas — o acesso Pro encerra conforme o ciclo da assinatura.",
     });
     vi.mocked(billingApi.subscriptionInvoices).mockResolvedValue([

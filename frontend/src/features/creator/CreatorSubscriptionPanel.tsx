@@ -4,6 +4,16 @@ import { Link } from "react-router-dom";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PanelState } from "@/components/ui/PanelState";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,6 +33,7 @@ import {
   planLabel,
   subscriptionStatusLabel,
 } from "@/lib/creator/settings-copy";
+import { digitsOnly, maskCpfCnpj } from "@/lib/billing/cpf-cnpj";
 import { startProCheckout } from "@/lib/billing/start-pro-checkout";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +58,9 @@ export function CreatorSubscriptionPanel() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [actionError, setActionError] = useState<string>();
+  const [cpfDialogOpen, setCpfDialogOpen] = useState(false);
+  const [cpfCnpjInput, setCpfCnpjInput] = useState("");
+  const [cpfDialogError, setCpfDialogError] = useState<string>();
 
   const load = useCallback(async () => {
     setLoadState("loading");
@@ -69,14 +83,37 @@ export function CreatorSubscriptionPanel() {
     void load();
   }, [load]);
 
-  const handleCheckout = async () => {
+  const runCheckout = async (cpfCnpj?: string) => {
     setCheckoutLoading(true);
     setActionError(undefined);
-    const result = await startProCheckout();
+    const result = await startProCheckout(cpfCnpj ? { cpfCnpj } : undefined);
     if (!result.ok) {
       setActionError(result.error);
+    } else {
+      setCpfDialogOpen(false);
+      setCpfCnpjInput("");
+      setCpfDialogError(undefined);
     }
     setCheckoutLoading(false);
+  };
+
+  const handleCheckout = async () => {
+    if (details?.hasCpfCnpj) {
+      await runCheckout();
+      return;
+    }
+    setCpfDialogError(undefined);
+    setCpfDialogOpen(true);
+  };
+
+  const handleCpfDialogConfirm = async () => {
+    const digits = digitsOnly(cpfCnpjInput);
+    if (digits.length !== 11 && digits.length !== 14) {
+      setCpfDialogError("Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.");
+      return;
+    }
+    setCpfDialogError(undefined);
+    await runCheckout(digits);
   };
 
   const handleCancel = async () => {
@@ -250,6 +287,52 @@ export function CreatorSubscriptionPanel() {
           </div>
         ) : null}
       </PanelState>
+
+      <Dialog open={cpfDialogOpen} onOpenChange={setCpfDialogOpen}>
+        <DialogContent aria-describedby="pro-cpf-desc">
+          <DialogHeader>
+            <DialogTitle>CPF ou CNPJ para assinatura</DialogTitle>
+            <DialogDescription id="pro-cpf-desc">
+              O Asaas exige CPF ou CNPJ para gerar a cobrança do plano Pro. Salvamos no seu perfil
+              para as próximas assinaturas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="pro-cpf-cnpj">CPF ou CNPJ</Label>
+            <Input
+              id="pro-cpf-cnpj"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="000.000.000-00 ou 00.000.000/0000-00"
+              value={cpfCnpjInput}
+              onChange={(e) => setCpfCnpjInput(maskCpfCnpj(e.target.value))}
+              className="h-11 rounded-[11px] font-mono"
+            />
+            {cpfDialogError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {cpfDialogError}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={checkoutLoading}
+              onClick={() => setCpfDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={checkoutLoading}
+              onClick={() => void handleCpfDialogConfirm()}
+            >
+              {checkoutLoading ? "Redirecionando…" : "Continuar para pagamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
