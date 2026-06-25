@@ -3,12 +3,14 @@ import { BrandLogo } from "@/components/layout/BrandLogo";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { StudentBottomNav } from "@/components/layout/StudentBottomNav";
 import { Button } from "@/components/ui/button";
+import { useResolvedPageTitle } from "@/hooks/usePageTitle";
 import { useAuth } from "@/hooks/useAuth";
 import { STUDENT_NAV_ITEMS } from "@/lib/student/student-nav";
 import { cn } from "@/lib/utils";
 
 export function StudentLayout() {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
+  const title = useResolvedPageTitle();
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -47,7 +49,7 @@ export function StudentLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur-md md:hidden">
           <BrandLogo />
-          <span className="max-w-[10rem] truncate text-sm text-muted-foreground">{user?.name}</span>
+          <span className="max-w-[10rem] truncate text-sm font-semibold text-foreground">{title}</span>
         </header>
 
         <main

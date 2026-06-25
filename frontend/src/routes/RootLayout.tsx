@@ -4,17 +4,20 @@ import { Outlet } from "react-router-dom";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/features/auth/AuthProvider";
+import { PageTitleProvider } from "@/hooks/usePageTitle";
 
 export function RootLayout() {
   return (
     <ToastProvider>
       <ErrorBoundary>
-        <AuthProvider>
-          <AuthenticatedRadarShell>
-            <Outlet />
-            <InstallBanner />
-          </AuthenticatedRadarShell>
-        </AuthProvider>
+        <PageTitleProvider>
+          <AuthProvider>
+            <AuthenticatedRadarShell>
+              <Outlet />
+              <InstallBanner />
+            </AuthenticatedRadarShell>
+          </AuthProvider>
+        </PageTitleProvider>
       </ErrorBoundary>
     </ToastProvider>
   );

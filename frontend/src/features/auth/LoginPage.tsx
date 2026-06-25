@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { RESET_PASSWORD_SUCCESS } from "@/lib/auth/password-reset-copy";
+import { VERIFY_EMAIL_SUCCESS } from "@/lib/auth/email-verification-copy";
 import { ApiError } from "@/lib/api/types";
 
 export function LoginPage() {
@@ -16,6 +17,11 @@ export function LoginPage() {
     (location.state as { resetSuccess?: boolean; message?: string } | null)?.resetSuccess === true
       ? ((location.state as { message?: string }).message ?? RESET_PASSWORD_SUCCESS)
       : null;
+  const verifyNotice =
+    (location.state as { verifySuccess?: boolean; message?: string } | null)?.verifySuccess === true
+      ? ((location.state as { message?: string }).message ?? VERIFY_EMAIL_SUCCESS)
+      : null;
+  const bannerNotice = resetNotice ?? verifyNotice;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,9 +57,9 @@ export function LoginPage() {
           <CardDescription>Use o e-mail cadastrado na plataforma.</CardDescription>
         </CardHeader>
         <CardContent>
-          {resetNotice ? (
+          {bannerNotice ? (
             <Alert className="mb-4" role="status" aria-live="polite">
-              <AlertDescription>{resetNotice}</AlertDescription>
+              <AlertDescription>{bannerNotice}</AlertDescription>
             </Alert>
           ) : null}
           <form className="space-y-4" onSubmit={onSubmit} noValidate>

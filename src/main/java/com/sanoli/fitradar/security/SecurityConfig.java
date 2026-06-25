@@ -1,5 +1,6 @@
 package com.sanoli.fitradar.security;
 
+import com.sanoli.fitradar.config.AppRuntimeProperties;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,13 +22,19 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final AppRuntimeProperties appRuntimeProperties;
+
+    public SecurityConfig(AppRuntimeProperties appRuntimeProperties) {
+        this.appRuntimeProperties = appRuntimeProperties;
+    }
+
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             SubscriptionAccessFilter subscriptionAccessFilter
     ) throws Exception {
-        return http
+        http
                 .cors(withDefaults())
                 .headers(headers -> {
                     headers.contentTypeOptions(withDefaults());
@@ -44,52 +51,61 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
                 ))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/login",
-                                "/login/**",
-                                "/register",
-                                "/register/**",
-                                "/billing-required",
-                                "/404",
-                                "/app",
-                                "/app/**",
-                                "/student",
-                                "/student/**",
-                                "/offline.html",
-                                "/privacy.html",
-                                "/manifest.webmanifest",
-                                "/sw.js",
-                                "/registerSW.js",
-                                "/push-sw.js",
-                                "/assets/**",
-                                "/icons/**",
-                                "/favicon.svg",
-                                "/favicon.ico"
-                        ).permitAll()
-                        .requestMatchers(new RegexRequestMatcher("/workbox-.*\\.js", null)).permitAll()
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/reset-password",
-                                "/api/v1/auth/accept-invite"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/verify-email").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/push/config").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/billing/webhook").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/actuator/prometheus", "/actuator/metrics", "/actuator/metrics/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(
+                            "/",
+                            "/index.html",
+                            "/login",
+                            "/login/**",
+                            "/register",
+                            "/register/**",
+                            "/billing-required",
+                            "/change-password",
+                            "/accept-terms",
+                            "/404",
+                            "/app",
+                            "/app/**",
+                            "/student",
+                            "/student/**",
+                            "/offline.html",
+                            "/privacy.html",
+                            "/terms.html",
+                            "/manifest.webmanifest",
+                            "/sw.js",
+                            "/registerSW.js",
+                            "/push-sw.js",
+                            "/assets/**",
+                            "/icons/**",
+                            "/uploads/logos/**",
+                            "/favicon.svg",
+                            "/favicon.ico"
+                    ).permitAll();
+                    auth.requestMatchers(new RegexRequestMatcher("/workbox-.*\\.js", null)).permitAll();
+                    if (!appRuntimeProperties.isProduction()) {
+                        auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
+                    }
+                    auth.requestMatchers(HttpMethod.POST,
+                            "/api/v1/auth/register",
+                            "/api/v1/auth/login",
+                            "/api/v1/auth/refresh",
+                            "/api/v1/auth/forgot-password",
+                            "/api/v1/auth/reset-password",
+                            "/api/v1/auth/logout",
+                            "/api/v1/auth/accept-invite"
+                    ).permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/auth/verify-email").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/push/config").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/billing/webhook").permitAll();
+                    auth.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
+                    auth.requestMatchers("/actuator/prometheus", "/actuator/metrics", "/actuator/metrics/**")
+                            .permitAll();
+                    auth.anyRequest().authenticated();
+                })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(subscriptionAccessFilter, JwtAuthenticationFilter.class)
-                .build();
+                .addFilterAfter(subscriptionAccessFilter, JwtAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean

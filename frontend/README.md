@@ -18,7 +18,11 @@ Design system: Tailwind + shadcn, tokens mint, componentes compartilhados (`Insi
 | | `/app/ranking` | Ranking |
 | | `/app/settings` | Configurações |
 | **Aluno** (PWA) | `/student` | Home (treino, check-in) |
+| | `/student/programs` | Programas matriculados |
 | | `/student/progress` | Progresso |
+| | `/student/history` | Histórico de check-ins |
+| | `/student/workouts/:id` | Treino + check-in |
+| | `/student/settings` | Perfil, push, sessões e privacidade |
 | Privacidade | `/privacy.html` | Política (estático em `public/`) |
 
 ## Pré-requisitos
@@ -87,7 +91,8 @@ mvn package -Dskip.frontend.build=false -DskipTests
 ## PWA & push
 
 - Manifest + service worker via `vite-plugin-pwa` (Workbox).
-- `start_url`: `/student` — instalável na área do aluno.
+- `start_url`: `/student` — PWA abre na área do aluno (treino do dia).
+- Banner de instalação: só em `/student/*`, cópia focada em check-in e progresso.
 - Cache do shell: estratégia network-first para atualizações; `/api/**` sempre na rede.
 - Push: `public/push-sw.js` importado pelo Workbox; opt-in após check-in.
 

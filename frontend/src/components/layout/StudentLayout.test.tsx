@@ -17,6 +17,7 @@ function renderAt(path: string) {
       <Routes>
         <Route element={<StudentLayout />}>
           <Route path="/student" element={<div data-testid="page-home">Home</div>} />
+          <Route path="/student/programs" element={<div data-testid="page-programs">Programs</div>} />
           <Route path="/student/progress" element={<div data-testid="page-progress">Progress</div>} />
           <Route path="/student/settings" element={<div data-testid="page-settings">Settings</div>} />
         </Route>
@@ -36,6 +37,7 @@ describe("StudentLayout bottom nav", () => {
     const nav = bottomNav();
     expect(nav.getAllByRole("link")).toHaveLength(STUDENT_NAV_ITEMS.length);
     expect(nav.getByRole("link", { name: "Início" })).toBeVisible();
+    expect(nav.getByRole("link", { name: "Programas" })).toBeVisible();
     expect(nav.getByRole("link", { name: "Progresso" })).toBeVisible();
     expect(nav.getByRole("link", { name: "Perfil" })).toBeVisible();
   });
@@ -46,6 +48,7 @@ describe("StudentLayout bottom nav", () => {
     const nav = bottomNav();
     expect(nav.getAllByRole("link")).toHaveLength(STUDENT_NAV_ITEMS.length);
     expect(nav.getByRole("link", { name: "Início" })).toBeVisible();
+    expect(nav.getByRole("link", { name: "Programas" })).toBeVisible();
     expect(nav.getByRole("link", { name: "Progresso" })).toBeVisible();
     expect(nav.getByRole("link", { name: "Perfil" })).toBeVisible();
   });

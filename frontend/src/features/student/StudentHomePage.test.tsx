@@ -134,6 +134,10 @@ describe("StudentHomePage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Nenhum programa ainda")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /ver programas disponíveis/i })).toHaveAttribute(
+        "href",
+        "/student/programs",
+      );
     });
   });
 
@@ -217,20 +221,17 @@ describe("StudentHomePage", () => {
     });
   });
 
-  it("preview toggle switches home layout without enabling check-in", async () => {
+  it("does not render dev preview toggle", async () => {
     vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
     vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
 
-    const user = userEvent.setup();
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Treino" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: /treino feito!/i })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: "Descanso" }));
-
-    expect(screen.getByText("Dia de descanso")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /treino feito!/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/pré-visualizar/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Descanso" })).not.toBeInTheDocument();
   });
 });

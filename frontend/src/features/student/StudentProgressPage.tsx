@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ClipboardList, Flame, Trophy, Zap } from "lucide-react";
+import { Check, ClipboardList, Flame, History, Trophy, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import { AdherenceRing } from "@/components/fitness/AdherenceRing";
+import { StudentCommunityRanking } from "@/components/student/StudentCommunityRanking";
 import { WeeklyActivityChart } from "@/components/student/WeeklyActivityChart";
-import {
-  PROGRESS_VIEW_OPTIONS,
-  StudentStatePreviewToggle,
-  type StudentProgressViewMode,
-} from "@/components/student/StudentStatePreviewToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PushSettingsCard } from "@/components/pwa/PushPrompt";
@@ -16,11 +13,13 @@ import { memberApi } from "@/lib/api/member-api";
 import type {
   CheckInResponse,
   GamificationProfileResponse,
+  LeaderboardEntryResponse,
   StudentProgramResponse,
   StudentProgressResult,
   WorkoutResponse,
 } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
+import { useAuth } from "@/hooks/useAuth";
 import { deriveProgressViewMode } from "@/lib/student/student-view-state";
 import {
   adherenceLabelFromDto,
@@ -42,27 +41,30 @@ const MILESTONES = [
 ] as const;
 
 export function StudentProgressPage() {
+  const { user } = useAuth();
   const { openWidget, ask, suggestions } = useRadarCopilot();
   const [progress, setProgress] = useState<StudentProgressResult | null>(null);
   const [gamification, setGamification] = useState<GamificationProfileResponse | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntryResponse[]>([]);
+  const [leaderboardState, setLeaderboardState] = useState<"loading" | "error" | "content">("loading");
+  const [leaderboardError, setLeaderboardError] = useState<string>();
   const [checkIns, setCheckIns] = useState<CheckInResponse[]>([]);
   const [programs, setPrograms] = useState<StudentProgramResponse[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [state, setState] = useState<"loading" | "error" | "content">("loading");
   const [error, setError] = useState<string>();
   const [gamificationWarning, setGamificationWarning] = useState<string>();
-  const [viewMode, setViewMode] = useState<StudentProgressViewMode>("active");
-  const [viewModeTouched, setViewModeTouched] = useState(false);
 
   const load = useCallback(async () => {
     setState("loading");
     setGamificationWarning(undefined);
-    const [pResult, gResult, ciResult, progResult, wResult] = await Promise.allSettled([
+    const [pResult, gResult, ciResult, progResult, wResult, lbResult] = await Promise.allSettled([
       memberApi.myProgress(),
       memberApi.myGamification(),
       memberApi.myCheckIns().then((r) => r.content),
       memberApi.myPrograms(),
       memberApi.myWorkouts(),
+      memberApi.myLeaderboard(20),
     ]);
 
     if (pResult.status === "rejected") {
@@ -81,6 +83,16 @@ export function StudentProgressPage() {
     } else {
       setGamification(null);
       setGamificationWarning(blockErrorMessage(gResult.reason));
+    }
+
+    if (lbResult.status === "fulfilled") {
+      setLeaderboard(lbResult.value);
+      setLeaderboardState("content");
+      setLeaderboardError(undefined);
+    } else {
+      setLeaderboard([]);
+      setLeaderboardState("error");
+      setLeaderboardError(blockErrorMessage(lbResult.reason));
     }
 
     setState("content");
@@ -104,13 +116,13 @@ export function StudentProgressPage() {
   const totalDoneFallback = checkIns.filter((c) => c.status === "DONE").length;
   const totalDone = totalDoneFromGamification ?? totalDoneFallback;
   const streak = progress?.currentStreak ?? 0;
-  const showEarly = viewMode === "early";
-
-  useEffect(() => {
-    if (progress && !viewModeTouched) {
-      setViewMode(deriveProgressViewMode(totalDoneFromGamification, progress.adherence));
-    }
-  }, [progress, totalDoneFromGamification, viewModeTouched]);
+  const showEarly = useMemo(
+    () =>
+      progress
+        ? deriveProgressViewMode(totalDoneFromGamification, progress.adherence) === "early"
+        : false,
+    [progress, totalDoneFromGamification],
+  );
   const ringColor = adherenceRingColor(progress?.adherence ?? null);
   const statusLabel = adherenceLabelFromDto(progress?.adherence ?? null);
 
@@ -162,18 +174,6 @@ export function StudentProgressPage() {
             : "Veja sua evolução no programa."}
         </p>
       </header>
-
-      {state === "content" && progress ? (
-        <StudentStatePreviewToggle
-          value={viewMode}
-          options={PROGRESS_VIEW_OPTIONS}
-          onChange={(next) => {
-            setViewModeTouched(true);
-            setViewMode(next);
-          }}
-          className="px-1"
-        />
-      ) : null}
 
       <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
         {progress ? (
@@ -310,6 +310,51 @@ export function StudentProgressPage() {
                     </div>
                   </div>
                 ) : null}
+
+                <StudentCommunityRanking
+                  gamification={gamification}
+                  leaderboard={leaderboard}
+                  state={leaderboardState}
+                  error={leaderboardError}
+                  onRetry={load}
+                  currentStudentId={user?.id}
+                />
+
+                {workouts.length > 0 ? (
+                  <section className="rounded-[18px] border border-border bg-card p-[18px] shadow-[0_6px_20px_rgba(0,0,0,0.28)]">
+                    <h2 className="text-sm font-bold">Todos os treinos</h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Abra qualquer treino do programa e registre check-in.
+                    </p>
+                    <ul className="mt-3 space-y-2">
+                      {workouts.map((workout) => (
+                        <li key={workout.id}>
+                          <Link
+                            to={`/student/workouts/${workout.id}`}
+                            className="flex items-center gap-3 rounded-[13px] border border-border bg-muted/20 px-3.5 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+                          >
+                            <ClipboardList className="size-4 shrink-0 text-primary/70" aria-hidden />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">{workout.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {countExercises(workout.contentMarkdown) > 0
+                                  ? `${countExercises(workout.contentMarkdown)} exercícios`
+                                  : "Ver detalhes"}
+                              </p>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                <Button variant="outline" className="w-full rounded-[12px]" asChild>
+                  <Link to="/student/history">
+                    <History className="size-4" aria-hidden />
+                    Ver histórico de check-ins
+                  </Link>
+                </Button>
               </>
             ) : (
               <>
@@ -393,7 +438,12 @@ export function StudentProgressPage() {
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Próximo treino
                       </p>
-                      <p className="font-bold">{nextWorkout.title}</p>
+                      <Link
+                        to={`/student/workouts/${nextWorkout.id}`}
+                        className="font-bold text-primary underline-offset-4 hover:underline"
+                      >
+                        {nextWorkout.title}
+                      </Link>
                       <p className="text-xs text-muted-foreground">
                         {nextExCount > 0 ? `${nextExCount} exercícios` : "Treino programado"}
                       </p>
@@ -403,6 +453,41 @@ export function StudentProgressPage() {
                     </span>
                   </div>
                 ) : null}
+
+                <StudentCommunityRanking
+                  gamification={gamification}
+                  leaderboard={leaderboard}
+                  state={leaderboardState}
+                  error={leaderboardError}
+                  onRetry={load}
+                  currentStudentId={user?.id}
+                />
+
+                {workouts.length > 0 ? (
+                  <section className="rounded-[18px] border border-border bg-card p-[18px] shadow-[0_6px_20px_rgba(0,0,0,0.28)]">
+                    <h2 className="text-sm font-bold">Todos os treinos</h2>
+                    <ul className="mt-3 space-y-2">
+                      {workouts.map((workout) => (
+                        <li key={workout.id}>
+                          <Link
+                            to={`/student/workouts/${workout.id}`}
+                            className="flex items-center gap-3 rounded-[13px] border border-border bg-muted/20 px-3.5 py-3"
+                          >
+                            <ClipboardList className="size-4 shrink-0 text-primary/70" aria-hidden />
+                            <span className="truncate text-sm font-semibold">{workout.title}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                <Button variant="outline" className="w-full rounded-[12px]" asChild>
+                  <Link to="/student/history">
+                    <History className="size-4" aria-hidden />
+                    Ver histórico de check-ins
+                  </Link>
+                </Button>
               </>
             )}
 

@@ -26,6 +26,14 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
+  if (user.mustChangePassword && location.pathname !== "/change-password") {
+    return <Navigate to="/change-password" replace />;
+  }
+
+  if (user.termsAccepted === false && location.pathname !== "/accept-terms") {
+    return <Navigate to="/accept-terms" replace />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const fallback = user.role === "STUDENT" ? "/student" : "/app";
     return <Navigate to={fallback} replace />;

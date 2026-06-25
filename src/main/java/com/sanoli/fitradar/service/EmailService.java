@@ -10,5 +10,6 @@ public interface EmailService {
 
     void sendWeeklyDigest(String email, String subject, String body);
 
-    void sendStudentNudge(String email, String subject, String body);
+    /** @return true se o provedor aceitou o envio (ou modo dev/log). */
+    boolean sendStudentNudge(String email, String subject, String body);
 }

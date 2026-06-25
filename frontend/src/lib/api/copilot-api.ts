@@ -1,6 +1,6 @@
 import { API_PREFIX } from "@/lib/auth/constants";
 import { api } from "@/lib/api/client";
-import type { CopilotAskRequest, CopilotAskResponse, NudgeSuggestion } from "@/lib/api/domain-types";
+import type { CopilotAskRequest, CopilotAskResponse, NudgeSuggestion, SendNudgeResponse } from "@/lib/api/domain-types";
 
 export const copilotApi = {
   ask: (body: CopilotAskRequest) =>
@@ -8,4 +8,7 @@ export const copilotApi = {
 
   nudge: (studentId: string) =>
     api.post<NudgeSuggestion>(`${API_PREFIX}/copilot/nudge/${studentId}`),
+
+  sendNudge: (studentId: string, message: string) =>
+    api.post<SendNudgeResponse>(`${API_PREFIX}/copilot/nudge/${studentId}/send`, { message }),
 };

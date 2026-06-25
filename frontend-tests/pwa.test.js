@@ -23,9 +23,19 @@ describe("React PWA assets (frontend/public)", () => {
     expect(html).toContain("Política de Privacidade");
   });
 
+  it("terms of use is served as static HTML", () => {
+    const html = fs.readFileSync(path.join(publicRoot, "terms.html"), "utf8");
+    expect(html).toContain('lang="pt-BR"');
+    expect(html).toContain("Termos de Uso");
+  });
+
   it("vite PWA manifest targets student area on same origin", () => {
     const config = fs.readFileSync(viteConfigPath, "utf8");
     expect(config).toContain('start_url: "/student"');
+    expect(config).toContain("App do aluno");
+    expect(config).toContain('url: "/student/progress"');
+    expect(config).toContain("privacy.html");
+    expect(config).toContain("terms.html");
     expect(config).toContain("navigateFallbackDenylist: [/^\\/api/]");
   });
 });

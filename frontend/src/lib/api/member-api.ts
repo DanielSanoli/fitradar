@@ -4,7 +4,9 @@ import type {
   CheckInRequest,
   CheckInResponse,
   CreatorSpaceResponse,
+  EnrollmentResponse,
   GamificationProfileResponse,
+  LeaderboardEntryResponse,
   PageResponse,
   ProgramCheckoutResponse,
   StudentProgramResponse,
@@ -17,10 +19,13 @@ export const memberApi = {
 
   myGamification: () => api.get<GamificationProfileResponse>(`${API_PREFIX}/my/gamification`),
 
+  myLeaderboard: (limit = 20) =>
+    api.get<LeaderboardEntryResponse[]>(`${API_PREFIX}/my/leaderboard?limit=${limit}`),
+
   myPrograms: () => api.get<StudentProgramResponse[]>(`${API_PREFIX}/my/programs`),
 
   enrollProgram: (programId: string) =>
-    api.post<void>(`${API_PREFIX}/my/programs/${programId}/enroll`),
+    api.post<EnrollmentResponse>(`${API_PREFIX}/my/programs/${programId}/enroll`),
 
   checkoutProgram: (programId: string) =>
     api.post<ProgramCheckoutResponse>(`${API_PREFIX}/my/programs/${programId}/checkout`),

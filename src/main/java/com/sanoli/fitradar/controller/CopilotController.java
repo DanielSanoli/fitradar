@@ -2,9 +2,12 @@ package com.sanoli.fitradar.controller;
 
 import com.sanoli.fitradar.dto.CopilotAskRequest;
 import com.sanoli.fitradar.dto.CopilotAskResponse;
+import com.sanoli.fitradar.dto.SendNudgeRequest;
+import com.sanoli.fitradar.dto.SendNudgeResponse;
 import com.sanoli.fitradar.retention.ai.NudgeService;
 import com.sanoli.fitradar.retention.ai.NudgeSuggestion;
 import com.sanoli.fitradar.retention.ai.RetentionCopilotService;
+import com.sanoli.fitradar.retention.ai.StudentNudgeDeliveryService;
 import com.sanoli.fitradar.security.CurrentUserService;
 import com.sanoli.fitradar.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,17 +27,20 @@ public class CopilotController {
 
     private final RetentionCopilotService copilotService;
     private final NudgeService nudgeService;
+    private final StudentNudgeDeliveryService nudgeDeliveryService;
     private final StudentService studentService;
     private final CurrentUserService currentUserService;
 
     public CopilotController(
             RetentionCopilotService copilotService,
             NudgeService nudgeService,
+            StudentNudgeDeliveryService nudgeDeliveryService,
             StudentService studentService,
             CurrentUserService currentUserService
     ) {
         this.copilotService = copilotService;
         this.nudgeService = nudgeService;
+        this.nudgeDeliveryService = nudgeDeliveryService;
         this.studentService = studentService;
         this.currentUserService = currentUserService;
     }
@@ -51,5 +57,15 @@ public class CopilotController {
         UUID creatorId = currentUserService.requireCreator().getId();
         studentService.requireStudent(creatorId, studentId);
         return ResponseEntity.ok(nudgeService.buildNudge(studentId));
+    }
+
+    @PostMapping("/nudge/{studentId}/send")
+    @Operation(summary = "Envia lembrete (nudge) ao aluno por e-mail e/ou push")
+    public ResponseEntity<SendNudgeResponse> sendNudge(
+            @PathVariable UUID studentId,
+            @Valid @RequestBody SendNudgeRequest request
+    ) {
+        UUID creatorId = currentUserService.requireCreator().getId();
+        return ResponseEntity.ok(nudgeDeliveryService.send(creatorId, studentId, request.message()));
     }
 }

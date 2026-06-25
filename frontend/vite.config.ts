@@ -10,11 +10,11 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "icons/icon.svg", "icons/icon-maskable.svg", "offline.html", "privacy.html"],
+      includeAssets: ["favicon.svg", "icons/icon.svg", "icons/icon-maskable.svg", "offline.html", "privacy.html", "terms.html"],
       manifest: {
         name: "FitRadar — Meus treinos",
-        short_name: "FitRadar",
-        description: "Check-in, progresso e programas do seu criador fitness.",
+        short_name: "Treinos",
+        description: "App do aluno: check-in diário, streak, programas e progresso do seu criador.",
         lang: "pt-BR",
         start_url: "/student",
         scope: "/",
@@ -51,9 +51,16 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: "Meus treinos",
+            name: "Treino de hoje",
+            short_name: "Treino",
             url: "/student",
-            description: "Check-in e progresso",
+            description: "Check-in e treino do dia",
+          },
+          {
+            name: "Meu progresso",
+            short_name: "Progresso",
+            url: "/student/progress",
+            description: "Aderência e streak",
           },
         ],
       },

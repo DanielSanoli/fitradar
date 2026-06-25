@@ -1,8 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { LoginRoute } from "@/features/auth/LoginRoute";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
+import { verifyEmail } from "@/lib/api/auth-api";
+
+vi.mock("@/lib/api/auth-api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api/auth-api")>();
+  return {
+    ...actual,
+    verifyEmail: vi.fn(),
+  };
+});
 
 const authValue: AuthContextValue = {
   user: null,
@@ -27,6 +36,10 @@ function renderLoginRoute(initialEntry = "/login") {
 }
 
 describe("LoginRoute", () => {
+  beforeEach(() => {
+    vi.mocked(verifyEmail).mockResolvedValue({ message: "Email verificado com sucesso." });
+  });
+
   it("shows forgot password link on login", () => {
     renderLoginRoute();
     expect(screen.getByRole("link", { name: /Esqueci minha senha/i })).toHaveAttribute(
@@ -39,5 +52,10 @@ describe("LoginRoute", () => {
     renderLoginRoute("/login?reset=token-xyz");
     expect(screen.getByRole("heading", { name: /Nova senha/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^Nova senha$/i)).toBeInTheDocument();
+  });
+
+  it("shows verify page when verify query param is present", () => {
+    renderLoginRoute("/login?verify=token-xyz");
+    expect(screen.getByRole("heading", { name: /Verificar e-mail/i })).toBeInTheDocument();
   });
 });

@@ -6,12 +6,15 @@ import com.sanoli.fitradar.domain.TokenPurpose;
 import com.sanoli.fitradar.domain.UserActionToken;
 import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.dto.AuthResponse;
+import com.sanoli.fitradar.dto.ChangePasswordRequest;
+import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.dto.ForgotPasswordRequest;
 import com.sanoli.fitradar.dto.LoginRequest;
 import com.sanoli.fitradar.dto.MessageResponse;
 import com.sanoli.fitradar.dto.RefreshTokenRequest;
 import com.sanoli.fitradar.dto.RegisterRequest;
 import com.sanoli.fitradar.dto.ResetPasswordRequest;
+import com.sanoli.fitradar.dto.UpdateProfileRequest;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
@@ -68,7 +71,7 @@ class AuthServiceTest {
         );
 
         when(jwtService.generateToken(any(AppUser.class))).thenReturn("jwt-token");
-        when(tokenService.createRefreshToken(any(AppUser.class))).thenReturn("refresh-token");
+        when(tokenService.createRefreshToken(any(AppUser.class), any(ClientSessionInfo.class))).thenReturn("refresh-token");
         when(tokenService.createEmailVerificationToken(any(AppUser.class))).thenReturn("verify-token");
         when(tokenService.createPasswordResetToken(any(AppUser.class))).thenReturn("reset-token");
     }
@@ -82,19 +85,31 @@ class AuthServiceTest {
             return user;
         });
 
-        AuthResponse response = authService.register(new RegisterRequest("Creator", EMAIL, PASSWORD));
+        AuthResponse response = authService.register(
+                new RegisterRequest("Creator", EMAIL, PASSWORD, true),
+                ClientSessionInfo.UNKNOWN);
 
         assertThat(response.token()).isEqualTo("jwt-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
         assertThat(response.user().email()).isEqualTo(EMAIL);
         assertThat(response.user().role()).isEqualTo(UserRole.CREATOR);
+        assertThat(response.user().termsAccepted()).isTrue();
+    }
+
+    @Test
+    void register_rejectsWithoutTermsAcceptance() {
+        assertThatThrownBy(() -> authService.register(
+                new RegisterRequest("Creator", EMAIL, PASSWORD, false), ClientSessionInfo.UNKNOWN))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Termos");
     }
 
     @Test
     void register_rejectsDuplicateEmail() {
         when(userRepository.existsByEmailIgnoreCase(EMAIL)).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.register(new RegisterRequest("Creator", EMAIL, PASSWORD)))
+        assertThatThrownBy(() -> authService.register(
+                new RegisterRequest("Creator", EMAIL, PASSWORD, true), ClientSessionInfo.UNKNOWN))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Já existe");
     }
@@ -104,7 +119,7 @@ class AuthServiceTest {
         AppUser user = savedCreator();
         when(userRepository.findByEmailIgnoreCase(EMAIL)).thenReturn(Optional.of(user));
 
-        AuthResponse response = authService.login(new LoginRequest(EMAIL, PASSWORD));
+        AuthResponse response = authService.login(new LoginRequest(EMAIL, PASSWORD), ClientSessionInfo.UNKNOWN);
 
         assertThat(response.token()).isEqualTo("jwt-token");
         assertThat(response.user().email()).isEqualTo(EMAIL);
@@ -115,7 +130,7 @@ class AuthServiceTest {
         AppUser user = savedCreator();
         when(userRepository.findByEmailIgnoreCase(EMAIL)).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "wrong")))
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "wrong"), ClientSessionInfo.UNKNOWN))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -131,7 +146,8 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByTokenAndRevokedFalse("old-refresh")).thenReturn(Optional.of(refreshToken));
         when(refreshTokenRepository.save(refreshToken)).thenReturn(refreshToken);
 
-        AuthResponse response = authService.refresh(new RefreshTokenRequest("old-refresh"));
+        AuthResponse response = authService.refresh(
+                new RefreshTokenRequest("old-refresh"), ClientSessionInfo.UNKNOWN);
 
         assertThat(refreshToken.isRevoked()).isTrue();
         assertThat(response.token()).isEqualTo("jwt-token");
@@ -142,7 +158,8 @@ class AuthServiceTest {
     void refresh_rejectsUnknownToken() {
         when(refreshTokenRepository.findByTokenAndRevokedFalse("bad")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequest("bad")))
+        assertThatThrownBy(() -> authService.refresh(
+                new RefreshTokenRequest("bad"), ClientSessionInfo.UNKNOWN))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("inválido");
     }
@@ -188,6 +205,109 @@ class AuthServiceTest {
         assertThat(response.message()).contains("atualizada");
         assertThat(token.isUsed()).isTrue();
         assertThat(passwordEncoder.matches("novaSenha12345", user.getPasswordHash())).isTrue();
+        verify(tokenService).revokeAllRefreshTokensForUser(user.getId());
+    }
+
+    @Test
+    void verifyEmail_marksUserVerified() {
+        AppUser user = savedCreator();
+        UserActionToken token = new UserActionToken();
+        token.setUser(user);
+        token.setToken("verify-token");
+        token.setPurpose(TokenPurpose.EMAIL_VERIFICATION);
+        token.setExpiresAt(LocalDateTime.now().plusHours(1));
+
+        when(userActionTokenRepository.findByTokenAndPurposeAndUsedFalse(
+                "verify-token", TokenPurpose.EMAIL_VERIFICATION))
+                .thenReturn(Optional.of(token));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userActionTokenRepository.save(token)).thenReturn(token);
+
+        MessageResponse response = authService.verifyEmail("verify-token");
+
+        assertThat(response.message()).contains("verificado");
+        assertThat(user.isEmailVerified()).isTrue();
+        assertThat(token.isUsed()).isTrue();
+    }
+
+    @Test
+    void resendVerification_sendsWhenPending() {
+        AppUser user = savedCreator();
+        user.setEmailVerified(false);
+        when(tokenService.createEmailVerificationToken(user)).thenReturn("new-verify-token");
+
+        MessageResponse response = authService.resendVerification(user);
+
+        assertThat(response.message()).contains("link de verificação");
+        verify(tokenService).createEmailVerificationToken(user);
+    }
+
+    @Test
+    void resendVerification_skipsWhenAlreadyVerified() {
+        AppUser user = savedCreator();
+        user.setEmailVerified(true);
+
+        MessageResponse response = authService.resendVerification(user);
+
+        assertThat(response.message()).contains("já está verificado");
+    }
+
+    @Test
+    void updateProfile_changesName() {
+        AppUser user = savedCreator();
+        when(userRepository.save(user)).thenReturn(user);
+
+        var response = authService.updateProfile(user, new UpdateProfileRequest("Novo Nome", EMAIL));
+
+        assertThat(response.name()).isEqualTo("Novo Nome");
+        assertThat(user.getName()).isEqualTo("Novo Nome");
+    }
+
+    @Test
+    void updateProfile_emailChangeRequiresReverification() {
+        AppUser user = savedCreator();
+        user.setEmailVerified(true);
+        when(userRepository.existsByEmailIgnoreCase("novo@test.local")).thenReturn(false);
+        when(userRepository.save(user)).thenReturn(user);
+
+        var response = authService.updateProfile(user, new UpdateProfileRequest("Creator", "novo@test.local"));
+
+        assertThat(response.email()).isEqualTo("novo@test.local");
+        assertThat(user.isEmailVerified()).isFalse();
+    }
+
+    @Test
+    void changePassword_requiresCurrentWhenNotForced() {
+        AppUser user = savedCreator();
+
+        assertThatThrownBy(() -> authService.changePassword(user, new ChangePasswordRequest(null, "novaSenha12345")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("senha atual");
+    }
+
+    @Test
+    void changePassword_succeedsAndClearsMustChangeFlag() {
+        AppUser user = savedCreator();
+        user.setMustChangePassword(true);
+        when(userRepository.save(user)).thenReturn(user);
+
+        MessageResponse response = authService.changePassword(
+                user, new ChangePasswordRequest(null, "novaSenha12345"));
+
+        assertThat(response.message()).contains("atualizada");
+        assertThat(user.isMustChangePassword()).isFalse();
+        assertThat(passwordEncoder.matches("novaSenha12345", user.getPasswordHash())).isTrue();
+        verify(tokenService).revokeAllRefreshTokensForUser(user.getId());
+    }
+
+    @Test
+    void changePassword_validatesCurrentPassword() {
+        AppUser user = savedCreator();
+
+        assertThatThrownBy(() -> authService.changePassword(
+                user, new ChangePasswordRequest("wrong", "novaSenha12345")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("incorreta");
     }
 
     private AppUser savedCreator() {

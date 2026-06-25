@@ -73,6 +73,16 @@ public class AppUser {
     @Column(nullable = false)
     private boolean emailVerified = false;
 
+    /** Convite com senha temporária exige troca no primeiro acesso. */
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = false;
+
+    @Column(name = "terms_accepted_at")
+    private LocalDateTime termsAcceptedAt;
+
+    @Column(name = "terms_version", length = 16)
+    private String termsVersion;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -204,6 +214,34 @@ public class AppUser {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
+    }
+
+    public LocalDateTime getTermsAcceptedAt() {
+        return termsAcceptedAt;
+    }
+
+    public void setTermsAcceptedAt(LocalDateTime termsAcceptedAt) {
+        this.termsAcceptedAt = termsAcceptedAt;
+    }
+
+    public String getTermsVersion() {
+        return termsVersion;
+    }
+
+    public void setTermsVersion(String termsVersion) {
+        this.termsVersion = termsVersion;
+    }
+
+    public boolean hasAcceptedTerms() {
+        return termsAcceptedAt != null;
     }
 
     public LocalDateTime getCreatedAt() {

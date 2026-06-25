@@ -5,6 +5,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { LoginRoute } from "@/features/auth/LoginRoute";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
+import { ForceChangePasswordPage } from "@/features/auth/ForceChangePasswordPage";
+import { AcceptTermsPage } from "@/features/auth/AcceptTermsPage";
 import { ProtectedRoute, PublicOnlyRoute } from "@/features/auth/ProtectedRoute";
 import { RegisterPage } from "@/features/auth/RegisterPage";
 import { BillingRequiredPage } from "@/pages/BillingRequiredPage";
@@ -51,6 +53,11 @@ const CreatorSettingsPage = lazy(() =>
     default: m.CreatorSettingsPage,
   })),
 );
+const CreatorMarketplacePage = lazy(() =>
+  import("@/features/creator/CreatorMarketplacePage").then((m) => ({
+    default: m.CreatorMarketplacePage,
+  })),
+);
 const RetentionPage = lazy(() =>
   import("@/features/creator/RetentionPage").then((m) => ({ default: m.RetentionPage })),
 );
@@ -65,6 +72,21 @@ const StudentSettingsPage = lazy(() =>
 const StudentProgressPage = lazy(() =>
   import("@/features/student/StudentProgressPage").then((m) => ({
     default: m.StudentProgressPage,
+  })),
+);
+const StudentProgramsPage = lazy(() =>
+  import("@/features/student/StudentProgramsPage").then((m) => ({
+    default: m.StudentProgramsPage,
+  })),
+);
+const StudentCheckInHistoryPage = lazy(() =>
+  import("@/features/student/StudentCheckInHistoryPage").then((m) => ({
+    default: m.StudentCheckInHistoryPage,
+  })),
+);
+const StudentWorkoutDetailPage = lazy(() =>
+  import("@/features/student/StudentWorkoutDetailPage").then((m) => ({
+    default: m.StudentWorkoutDetailPage,
   })),
 );
 const PublicSpacePage = lazy(() =>
@@ -93,7 +115,11 @@ export const router = createBrowserRouter([
           },
           {
             element: <ProtectedRoute />,
-            children: [{ path: "billing-required", element: <BillingRequiredPage /> }],
+            children: [
+              { path: "billing-required", element: <BillingRequiredPage /> },
+              { path: "change-password", element: <ForceChangePasswordPage /> },
+              { path: "accept-terms", element: <AcceptTermsPage /> },
+            ],
           },
         ],
       },
@@ -193,6 +219,14 @@ export const router = createBrowserRouter([
                 ),
               },
               {
+                path: "marketplace",
+                element: (
+                  <Lazy>
+                    <CreatorMarketplacePage />
+                  </Lazy>
+                ),
+              },
+              {
                 path: "settings",
                 element: (
                   <Lazy>
@@ -242,6 +276,30 @@ export const router = createBrowserRouter([
                 element: (
                   <Lazy>
                     <StudentProgressPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs",
+                element: (
+                  <Lazy>
+                    <StudentProgramsPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "history",
+                element: (
+                  <Lazy>
+                    <StudentCheckInHistoryPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "workouts/:workoutId",
+                element: (
+                  <Lazy>
+                    <StudentWorkoutDetailPage />
                   </Lazy>
                 ),
               },

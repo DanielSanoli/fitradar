@@ -80,6 +80,7 @@ public class StudentService {
         student.setPasswordHash(passwordEncoder.encode(tempPassword));
         student.setRole(UserRole.STUDENT);
         student.setCreatorId(creator.getId());
+        student.setMustChangePassword(true);
         AppUser saved = userRepository.save(student);
 
         try {

@@ -2,6 +2,26 @@
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
 
+export type AlertType =
+  | "STUDENT_INACTIVE"
+  | "CHURN_RISK_HIGH"
+  | "ADHERENCE_DROP"
+  | "POSITIVE_STREAK";
+
+export type AlertSeverity = "INFO" | "WARNING" | "CRITICAL";
+
+export type AlertResponse = {
+  id: string;
+  subjectStudentId: string | null;
+  type: AlertType;
+  severity: AlertSeverity;
+  message: string;
+  actionSuggestion: string | null;
+  dataSnapshot: string | null;
+  createdAt: string;
+  read: boolean;
+};
+
 export type UiRiskLevel = "baixo" | "medio" | "alto";
 
 export type CheckInStatus = "DONE" | "SKIPPED";
@@ -183,6 +203,16 @@ export type NudgeSuggestion = {
   assumptions: string[];
 };
 
+export type SendNudgeResponse = {
+  deliveryId: string;
+  studentId: string;
+  emailSent: boolean;
+  pushSent: boolean;
+  emailDetail: string | null;
+  pushDetail: string | null;
+  summary: string;
+};
+
 export type StudentProgramResponse = {
   id: string;
   title: string;
@@ -191,6 +221,18 @@ export type StudentProgramResponse = {
   paid: boolean;
   enrolled: boolean;
   purchasePending: boolean;
+};
+
+export type OnboardingStatusResponse = {
+  hasSpace: boolean;
+  hasProgram: boolean;
+  hasStudent: boolean;
+  demoSeedAvailable: boolean;
+  onboardingComplete: boolean;
+};
+
+export type LogoUploadResponse = {
+  logoUrl: string;
 };
 
 export type CheckInResponse = {
@@ -226,9 +268,43 @@ export type GamificationProfileResponse = {
   rank: number;
 };
 
+export type LeaderboardEntryResponse = {
+  rank: number;
+  studentId: string;
+  studentName: string;
+  currentStreak: number;
+  totalCheckInsDone: number;
+};
+
 export type ProgramCheckoutResponse = {
+  purchaseId: string;
   checkoutUrl: string | null;
+  amount: string;
+  platformFee: string;
+  creatorNet: string;
   message: string | null;
+};
+
+export type PurchaseStatus = "PENDING" | "CONFIRMED" | "CANCELED" | "FAILED";
+
+export type MarketplaceStatusResponse = {
+  connected: boolean;
+  walletId: string | null;
+  platformFeePercent: string;
+};
+
+export type ProgramPurchaseResponse = {
+  id: string;
+  programId: string;
+  programTitle: string;
+  studentId: string;
+  studentName: string;
+  amount: string;
+  platformFee: string;
+  creatorNet: string;
+  status: PurchaseStatus;
+  createdAt: string;
+  confirmedAt: string | null;
 };
 
 /** Maps API RiskLevel to UI badge level. */

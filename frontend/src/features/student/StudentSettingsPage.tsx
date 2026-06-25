@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, ExternalLink, LogOut, Shield, User } from "lucide-react";
+import { Bell, LogOut, MonitorSmartphone, Shield, User } from "lucide-react";
+import { AccountPrivacyPanel } from "@/components/legal/AccountPrivacyPanel";
+import { EmailVerificationSection } from "@/components/auth/EmailVerificationSection";
+import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
+import { SessionsPanel } from "@/components/auth/SessionsPanel";
+import { ProfileEditForm } from "@/components/auth/ProfileEditForm";
 import { PushNotificationSwitch } from "@/components/pwa/PushPrompt";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
-import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/hooks/useAuth";
-import { requestPasswordReset } from "@/lib/api/auth-api";
 import { ApiError } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
@@ -51,23 +53,11 @@ function SettingsSectionCard({
   );
 }
 
-function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 border-b border-border/80 py-3 last:border-0">
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
-    </div>
-  );
-}
-
 export function StudentSettingsPage() {
   const { user, logout, refreshUser } = useAuth();
-  const { toast } = useToast();
 
   const [accountState, setAccountState] = useState<"loading" | "error" | "content">("loading");
   const [accountError, setAccountError] = useState<string>();
-  const [passwordSending, setPasswordSending] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<string>();
 
   const loadAccount = useCallback(async () => {
     setAccountState("loading");
@@ -85,19 +75,8 @@ export function StudentSettingsPage() {
     void loadAccount();
   }, [loadAccount]);
 
-  const sendPasswordReset = async () => {
-    if (!user?.email) return;
-    setPasswordSending(true);
-    setPasswordMessage(undefined);
-    try {
-      const res = await requestPasswordReset(user.email);
-      setPasswordMessage(res.message);
-      toast("Link de redefinição enviado para seu e-mail.");
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : "Falha ao solicitar redefinição.", "error");
-    } finally {
-      setPasswordSending(false);
-    }
+  const handleProfileUpdated = async () => {
+    await refreshUser();
   };
 
   return (
@@ -112,36 +91,37 @@ export function StudentSettingsPage() {
       <PanelState state={accountState} message={accountError} onRetry={loadAccount}>
         <SettingsSectionCard
           title="Conta"
-          description="Seus dados de acesso na plataforma."
+          description="Edite nome, e-mail e senha."
           icon={User}
         >
-          <FieldRow label="Nome" value={user?.name ?? "—"} />
-          <FieldRow label="E-mail" value={user?.email ?? "—"} />
+          {user ? (
+            <ProfileEditForm user={user} onUpdated={() => void handleProfileUpdated()} />
+          ) : null}
+
+          <EmailVerificationSection
+            className="mt-4"
+            emailVerified={user?.emailVerified ?? false}
+            email={user?.email}
+            onVerified={() => void refreshUser()}
+          />
 
           <div className="mt-4 rounded-[11px] border border-border bg-secondary/30 px-4 py-3.5">
             <p className="text-sm font-semibold">Trocar senha</p>
             <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-              Enviaremos um link de redefinição para{" "}
-              <span className="font-medium text-foreground">{user?.email ?? "seu e-mail"}</span>.
+              Informe a senha atual para definir uma nova.
             </p>
-            {passwordMessage ? (
-              <Alert className="mt-3" role="status" aria-live="polite">
-                <AlertDescription>{passwordMessage}</AlertDescription>
-              </Alert>
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              disabled={passwordSending || !user?.email}
-              onClick={() => void sendPasswordReset()}
-            >
-              {passwordSending ? "Enviando…" : "Enviar link por e-mail"}
-            </Button>
+            <ChangePasswordForm className="mt-3" onSuccess={() => void logout()} />
           </div>
         </SettingsSectionCard>
       </PanelState>
+
+      <SettingsSectionCard
+        title="Sessões e dispositivos"
+        description="Veja onde sua conta está conectada e encerre acessos."
+        icon={MonitorSmartphone}
+      >
+        <SessionsPanel />
+      </SettingsSectionCard>
 
       <SettingsSectionCard
         title="Notificações"
@@ -156,7 +136,7 @@ export function StudentSettingsPage() {
           type="button"
           variant="outline"
           className="w-full gap-2"
-          onClick={() => logout()}
+          onClick={() => void logout()}
         >
           <LogOut className="size-4" aria-hidden />
           Sair
@@ -164,20 +144,11 @@ export function StudentSettingsPage() {
       </SettingsSectionCard>
 
       <SettingsSectionCard
-        title="Privacidade"
-        description="Como tratamos seus dados no FitRadar."
+        title="Privacidade e dados"
+        description="Termos, exportação LGPD e exclusão de conta."
         icon={Shield}
       >
-        <a
-          href="/privacy.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          Política de Privacidade
-          <ExternalLink className="size-3.5" aria-hidden />
-          <span className="sr-only">(abre em nova aba)</span>
-        </a>
+        <AccountPrivacyPanel />
       </SettingsSectionCard>
     </div>
   );

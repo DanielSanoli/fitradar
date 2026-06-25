@@ -34,7 +34,7 @@ class IntegrationTestSupport {
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Creator","email":"%s","password":"senha12345"}
+                                {"name":"Creator","email":"%s","password":"senha12345","acceptedTerms":true}
                                 """.formatted(email)))
                 .andExpect(status().isCreated())
                 .andReturn();

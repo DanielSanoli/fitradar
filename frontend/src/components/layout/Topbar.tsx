@@ -1,5 +1,6 @@
 import { Menu } from "lucide-react";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { RetentionAlertsInbox } from "@/components/creator/RetentionAlertsInbox";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -37,6 +38,7 @@ export function Topbar({ title, onMenuClick, showMenu = false }: TopbarProps) {
         </span>
       )}
       <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+        <RetentionAlertsInbox />
         {user ? <span className="max-w-[12rem] truncate">{user.name}</span> : null}
       </div>
     </header>

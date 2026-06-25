@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { BedDouble, CalendarCheck, Check, ChevronRight, Dumbbell, Flame } from "lucide-react";
 import { CheckInCelebrationOverlay } from "@/components/student/CheckInCelebrationOverlay";
 import { CheckInSheet } from "@/components/student/CheckInSheet";
-import {
-  HOME_VIEW_OPTIONS,
-  StudentStatePreviewToggle,
-  type StudentHomeViewMode,
-} from "@/components/student/StudentStatePreviewToggle";
 import { WorkoutExerciseList } from "@/components/student/WorkoutExerciseList";
 import { CreatorSpaceBrand } from "@/components/fitness/CreatorSpaceBrand";
 import { PushOptInBanner } from "@/components/pwa/PushPrompt";
@@ -49,8 +45,6 @@ export function StudentHomePage() {
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [celebrateStreak, setCelebrateStreak] = useState(0);
-  const [viewMode, setViewMode] = useState<StudentHomeViewMode>("workout");
-  const [viewModeTouched, setViewModeTouched] = useState(false);
   const streakBeforeCheckIn = useRef(0);
   const { toast } = useToast();
 
@@ -93,16 +87,9 @@ export function StudentHomePage() {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (progress && !viewModeTouched) {
-      setViewMode(deriveHomeViewMode(progress));
-    }
-  }, [progress, viewModeTouched]);
-
-  const apiMode = deriveHomeViewMode(progress);
+  const viewMode = useMemo(() => deriveHomeViewMode(progress), [progress]);
   const nextWorkout = workouts.find((w) => w.id === progress?.nextWorkoutId) ?? workouts[0];
-  const displayWorkout =
-    viewMode === "workout" ? nextWorkout ?? workouts[0] : nextWorkout;
+  const displayWorkout = nextWorkout;
   const firstName = user?.name?.split(" ")[0] ?? "Aluno";
   const enrolledProgram = programs.find((p) => p.enrolled);
   const programTitle = enrolledProgram?.title ?? space?.name ?? "FitRadar";
@@ -209,18 +196,6 @@ export function StudentHomePage() {
         <p className="text-sm capitalize text-muted-foreground">{formatGreetingDate()}</p>
       </header>
 
-      {state === "content" && progress ? (
-        <StudentStatePreviewToggle
-          value={viewMode}
-          options={HOME_VIEW_OPTIONS}
-          onChange={(next) => {
-            setViewModeTouched(true);
-            setViewMode(next);
-          }}
-          className="px-1"
-        />
-      ) : null}
-
       <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
         {progress ? (
           <>
@@ -264,7 +239,12 @@ export function StudentHomePage() {
 
                     <div>
                       <h2 className="text-[21px] font-extrabold leading-tight tracking-tight">
-                        {displayWorkout.title}
+                        <Link
+                          to={`/student/workouts/${displayWorkout.id}`}
+                          className="hover:text-primary hover:underline"
+                        >
+                          {displayWorkout.title}
+                        </Link>
                       </h2>
                       {displayWorkout.description ? (
                         <p className="mt-1 text-sm text-muted-foreground">{displayWorkout.description}</p>
@@ -290,7 +270,7 @@ export function StudentHomePage() {
 
                 <Button
                   size="lg"
-                  disabled={todayDoneFlag || submitting || !nextWorkout || viewMode !== apiMode}
+                  disabled={todayDoneFlag || submitting || !nextWorkout}
                   onClick={() => void quickCheckIn()}
                   className={cn(
                     "h-14 gap-2.5 rounded-[14px] text-base font-bold shadow-[0_6px_20px_hsl(var(--primary)/0.36)]",
@@ -306,7 +286,7 @@ export function StudentHomePage() {
                   {todayDoneFlag ? "Treino concluído hoje" : "Treino feito!"}
                 </Button>
 
-                {!todayDoneFlag && nextWorkout && viewMode === apiMode ? (
+                {!todayDoneFlag && nextWorkout ? (
                   <button
                     type="button"
                     onClick={openCheckInSheet}
@@ -365,11 +345,15 @@ export function StudentHomePage() {
                     <h2 className="text-xl font-extrabold">Nenhum programa ainda</h2>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {progress.message ??
-                        "Você ainda não está matriculado. Fale com seu coach para começar."}
+                        "Escolha um programa gratuito do seu coach para começar a treinar."}
                     </p>
                   </div>
+                  <Button asChild size="lg" className="h-12 w-full rounded-[12px] font-bold">
+                    <Link to="/student/programs">Ver programas disponíveis</Link>
+                  </Button>
                   <p className="w-full rounded-[11px] border border-dashed border-border bg-muted/30 px-3.5 py-3 text-left text-xs leading-relaxed text-muted-foreground">
-                    Quando seu coach criar um programa e te matricular, ele aparece aqui na hora.
+                    Programas gratuitos podem ser matriculados na hora; pagos ficam disponíveis em
+                    breve.
                   </p>
                 </div>
               </div>
@@ -380,21 +364,23 @@ export function StudentHomePage() {
                 <h2 className="text-sm font-bold text-foreground/90">Próximos treinos</h2>
                 <ul className="space-y-2">
                   {upcoming.map(({ workout, dayLabel, exCount }) => (
-                    <li
-                      key={workout.id}
-                      className="flex items-center gap-3 rounded-[13px] border border-border bg-card/80 px-3.5 py-3"
-                    >
-                      <span className="inline-flex min-w-[52px] items-center justify-center rounded-lg border border-border bg-secondary px-2 py-1 text-[11.5px] font-bold text-muted-foreground">
-                        {dayLabel}
-                      </span>
-                      <Dumbbell className="size-4 shrink-0 text-primary/70" aria-hidden />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{workout.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {exCount > 0 ? `${exCount} exercícios` : "Treino programado"}
-                        </p>
-                      </div>
-                      <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
+                    <li key={workout.id}>
+                      <Link
+                        to={`/student/workouts/${workout.id}`}
+                        className="flex items-center gap-3 rounded-[13px] border border-border bg-card/80 px-3.5 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+                      >
+                        <span className="inline-flex min-w-[52px] items-center justify-center rounded-lg border border-border bg-secondary px-2 py-1 text-[11.5px] font-bold text-muted-foreground">
+                          {dayLabel}
+                        </span>
+                        <Dumbbell className="size-4 shrink-0 text-primary/70" aria-hidden />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{workout.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {exCount > 0 ? `${exCount} exercícios` : "Treino programado"}
+                          </p>
+                        </div>
+                        <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
+                      </Link>
                     </li>
                   ))}
                 </ul>

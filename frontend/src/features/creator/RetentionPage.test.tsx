@@ -31,6 +31,7 @@ vi.mock("@/lib/api/space-api", () => ({
 vi.mock("@/lib/api/copilot-api", () => ({
   copilotApi: {
     nudge: vi.fn(),
+    sendNudge: vi.fn(),
   },
 }));
 

@@ -40,7 +40,7 @@ export function subscriptionStatusLabel(status: SubscriptionStatus): string {
   }
 }
 
-export type SettingsSection = "account" | "billing" | "notifications" | "space";
+export type SettingsSection = "account" | "billing" | "notifications" | "privacy" | "space";
 
 export const SETTINGS_SECTIONS: {
   id: SettingsSection;
@@ -49,5 +49,6 @@ export const SETTINGS_SECTIONS: {
   { id: "account", label: "Conta" },
   { id: "billing", label: "Assinatura" },
   { id: "notifications", label: "Notificações" },
+  { id: "privacy", label: "Privacidade" },
   { id: "space", label: "Meu espaço" },
 ];

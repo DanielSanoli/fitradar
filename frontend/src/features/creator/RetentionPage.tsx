@@ -217,10 +217,14 @@ export function RetentionPage() {
     }
   };
 
-  const confirmReminder = async () => {
-    if (!reminderTarget) return;
+  const confirmReminder = async (text: string) => {
+    if (!reminderTarget) {
+      throw new Error("Aluno não selecionado.");
+    }
+    const result = await copilotApi.sendNudge(reminderTarget.studentId, text);
     setSentIds((prev) => new Set(prev).add(reminderTarget.studentId));
-    toast("Lembrete registrado. Envie pelo canal preferido do aluno.");
+    toast(result.summary);
+    return result;
   };
 
   const copyLink = async () => {

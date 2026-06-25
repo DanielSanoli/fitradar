@@ -1,15 +1,9 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import { useNavigate } from "react-router-dom";
-import { fetchCurrentUser, login as loginRequest, register as registerRequest } from "@/lib/api/auth-api";
+import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { fetchCurrentUser, login as loginRequest, logoutSession, register as registerRequest } from "@/lib/api/auth-api";
 import { setPaymentRequiredHandler, setUnauthorizedHandler } from "@/lib/api/client";
 import type { LoginRequest, RegisterRequest, User } from "@/lib/api/types";
+import { resolvePostLoginRedirect } from "@/lib/auth/post-login-redirect";
 import {
   clearAuthStorage,
   isAuthenticated,
@@ -25,23 +19,19 @@ export type AuthContextValue = {
   isAuthenticated: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<void>;
-  logout: () => void;
+  logout: () => void | Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-function homeForRole(role: User["role"]): string {
-  if (role === "STUDENT") return "/student";
-  return "/app";
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(() => readStoredUser());
+  const location = useLocation();  const [user, setUser] = useState<User | null>(() => readStoredUser());
   const [isLoading, setIsLoading] = useState(() => isAuthenticated());
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await logoutSession();
     clearAuthStorage();
     setUser(null);
     navigate("/login", { replace: true });
@@ -90,10 +80,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (credentials: LoginRequest) => {
       const auth = await loginRequest(credentials);
       setUser(auth.user);
+      const from = (location.state as { from?: string } | null)?.from;
+      if (auth.user.mustChangePassword) {
+        navigate("/change-password", { replace: true, state: from ? { from } : undefined });
+        return;
+      }
+      if (auth.user.termsAccepted === false) {
+        navigate("/accept-terms", { replace: true, state: from ? { from } : undefined });
+        return;
+      }
       if (auth.user.role === "STUDENT") void resyncPushIfGranted();
-      navigate(homeForRole(auth.user.role), { replace: true });
+      navigate(resolvePostLoginRedirect(from, auth.user.role), { replace: true });
     },
-    [navigate],
+    [navigate, location.state],
   );
 
   const register = useCallback(
@@ -101,11 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const auth = await registerRequest(payload);
       setUser(auth.user);
       if (auth.user.role === "STUDENT") void resyncPushIfGranted();
-      navigate(homeForRole(auth.user.role), { replace: true });
+      navigate(resolvePostLoginRedirect(undefined, auth.user.role), { replace: true });
     },
     [navigate],
   );
-
   const value = useMemo<AuthContextValue>(
     () => ({
       user,

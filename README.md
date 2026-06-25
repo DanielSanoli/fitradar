@@ -61,7 +61,11 @@ Fluxo: `Pergunta → IA(intenção) → Engine(número + premissas) → IA(respo
 | Rota | Tela |
 |------|------|
 | `/student` | Home (treino do dia, check-in, streak) |
+| `/student/programs` | Catálogo de programas matriculados |
 | `/student/progress` | Progresso (aderência, marcos, gráfico semanal) |
+| `/student/history` | Histórico de check-ins |
+| `/student/workouts/:id` | Detalhe do treino + check-in |
+| `/student/settings` | Perfil, notificações push, sessões/dispositivos e privacidade (LGPD) |
 
 ### Espaço do criador
 
@@ -156,6 +160,27 @@ A área do aluno (`/student`) é instalável como app no celular:
 
 Service worker (Workbox via Vite PWA) faz cache do shell; `/api/**` usa rede primeiro.
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) roda em cada push/PR para `main`/`master`:
+
+| Job | Comando |
+|-----|---------|
+| **backend** | `mvn clean verify -Dskip.frontend.build=true` (Postgres 16) |
+| **frontend** | `npm ci`, lint, test, build em `frontend/` |
+| **frontend-assets** | smoke PWA em `frontend-tests/` |
+
+Merge bloqueado se qualquer job falhar.
+
+## Banco de dados (Flyway)
+
+Schema versionado em `src/main/resources/db/migration/` (Flyway). Hibernate usa `ddl-auto: validate` — não há `update` em produção.
+
+- Instalação nova: Flyway aplica `V1__baseline_schema.sql`.
+- Banco existente (criado antes do Flyway): `baseline-on-migrate: true` marca baseline na versão 1 sem reaplicar DDL.
+
+Local com Docker: Postgres sobe via `docker-compose`; a app aplica migrations na subida.
+
 ## Testes
 
 Backend:
@@ -181,8 +206,18 @@ cd frontend-tests && npm test
 
 ## Swagger / OpenAPI
 
-- UI: `http://localhost:8080/swagger-ui.html`
-- JSON: `http://localhost:8080/v3/api-docs`
+- **Dev:** UI em `http://localhost:8080/swagger-ui.html`, JSON em `/v3/api-docs`
+- **Produção:** desabilitado (`springdoc.*.enabled=false` no profile `prod`); rotas não são públicas
+
+## Observabilidade
+
+| Recurso | Env | Comportamento |
+|---------|-----|----------------|
+| **Sentry** | `SENTRY_DSN` (opt-in) | Erros 5xx capturados em `GlobalExceptionHandler` |
+| **Prometheus** | `METRICS_ENABLED=true` + `MANAGEMENT_TOKEN` | `/actuator/prometheus` exposto; token via header `X-Management-Token` |
+| **Health** | — | `/actuator/health` público (probes K8s) |
+
+Em produção com métricas ativas, `MANAGEMENT_TOKEN` é obrigatório (`ProductionStartupValidator`).
 
 ## Checklist de go-live
 
@@ -193,7 +228,11 @@ cd frontend-tests && npm test
 - [ ] PostgreSQL gerenciado com backup
 - [ ] Billing / copiloto / e-mail configurados conforme uso
 - [ ] `GET /actuator/health` retorna `UP`
-- [ ] `mvn test` e `frontend` lint/test/build verdes
+- [ ] Flyway migrations aplicadas (sem `ddl-auto: update`)
+- [ ] Swagger/OpenAPI fechado em produção
+- [ ] `SENTRY_DSN` configurado (se quiser rastreamento de erros)
+- [ ] `METRICS_ENABLED` + `MANAGEMENT_TOKEN` se usar Prometheus
+- [ ] CI verde (backend + frontend)
 - [ ] PWA: `/student` instalável, SW ativo
 - [ ] Política de privacidade em `/privacy.html`
 - [ ] Vitrine `/c/<slug>` acessível e login do aluno funcional

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { TermsAcceptanceField } from "@/components/legal/TermsAcceptanceField";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,15 +14,20 @@ export function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!acceptedTerms) {
+      setError("Aceite os Termos de Uso e a Política de Privacidade para continuar.");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
-      await register({ name, email, password });
+      await register({ name, email, password, acceptedTerms: true });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Falha no cadastro";
@@ -85,7 +91,12 @@ export function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <TermsAcceptanceField
+              checked={acceptedTerms}
+              onCheckedChange={setAcceptedTerms}
+              disabled={loading}
+            />
+            <Button type="submit" className="w-full" disabled={loading || !acceptedTerms}>
               {loading ? "Criando…" : "Criar conta"}
             </Button>
           </form>

@@ -5,7 +5,6 @@ import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "@/components/ui/toast";
 import { StudentSettingsPage } from "@/features/student/StudentSettingsPage";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
-import { requestPasswordReset } from "@/lib/api/auth-api";
 import { pushApi } from "@/lib/api/push-api";
 import { pwaStorage } from "@/lib/pwa/push-utils";
 
@@ -13,8 +12,10 @@ vi.mock("@/lib/api/auth-api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api/auth-api")>();
   return {
     ...actual,
-    requestPasswordReset: vi.fn().mockResolvedValue({
-      message: "Se o email existir, enviaremos instruções de recuperação.",
+    updateProfile: vi.fn(),
+    changePassword: vi.fn(),
+    resendVerificationEmail: vi.fn().mockResolvedValue({
+      message: "Enviamos um novo link de verificação para seu e-mail.",
     }),
   };
 });
@@ -60,6 +61,7 @@ const authValue: AuthContextValue = {
     accessAllowed: true,
     accessMessage: null,
     trialDaysRemaining: 0,
+    mustChangePassword: false,
   },
   isLoading: false,
   isAuthenticated: true,
@@ -98,18 +100,21 @@ describe("StudentSettingsPage", () => {
     renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText("Lucas Alves")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Lucas Alves")).toBeInTheDocument();
     });
-
     expect(screen.getByRole("heading", { name: "Conta" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Notificações" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Sessão" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Privacidade" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Privacidade e dados" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Exportar meus dados/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Termos de Uso/i })).toHaveAttribute("href", "/terms.html");
     expect(screen.getByRole("link", { name: /Política de Privacidade/i })).toHaveAttribute(
       "href",
       "/privacy.html",
     );
-    expect(screen.getByRole("button", { name: /Enviar link por e-mail/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /salvar perfil/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /atualizar senha/i })).toBeInTheDocument();
+    expect(screen.getByText("Verificado")).toBeInTheDocument();
   });
 
   it("calls subscribe when push switch is turned on", async () => {
@@ -123,8 +128,9 @@ describe("StudentSettingsPage", () => {
     renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText("Lucas Alves")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Lucas Alves")).toBeInTheDocument();
     });
+    expect(screen.getByRole("heading", { name: "Conta" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("switch", { name: /Lembretes de treino/i }));
 
@@ -142,8 +148,9 @@ describe("StudentSettingsPage", () => {
     renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText("Lucas Alves")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Lucas Alves")).toBeInTheDocument();
     });
+    expect(screen.getByRole("heading", { name: "Conta" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("switch", { name: /Lembretes de treino/i }));
 
@@ -159,25 +166,20 @@ describe("StudentSettingsPage", () => {
     renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText("Lucas Alves")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Lucas Alves")).toBeInTheDocument();
     });
+    expect(screen.getByRole("heading", { name: "Conta" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /^Sair$/i }));
     expect(logout).toHaveBeenCalled();
   });
 
-  it("requests password reset email for the logged-in user", async () => {
-    const user = userEvent.setup();
+  it("shows profile edit fields for the logged-in user", async () => {
     renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText("Lucas Alves")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /Enviar link por e-mail/i }));
-
-    await waitFor(() => {
-      expect(requestPasswordReset).toHaveBeenCalledWith("lucas@test.com");
+      expect(screen.getByLabelText(/^nome$/i)).toHaveValue("Lucas Alves");
+      expect(screen.getByLabelText(/^e-mail$/i)).toHaveValue("lucas@test.com");
     });
   });
 });

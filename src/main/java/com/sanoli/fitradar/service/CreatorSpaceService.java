@@ -7,6 +7,7 @@ import com.sanoli.fitradar.exception.ResourceNotFoundException;
 import com.sanoli.fitradar.repository.CreatorSpaceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
 import java.util.Locale;
@@ -16,9 +17,14 @@ import java.util.UUID;
 public class CreatorSpaceService {
 
     private final CreatorSpaceRepository creatorSpaceRepository;
+    private final LogoStorageService logoStorageService;
 
-    public CreatorSpaceService(CreatorSpaceRepository creatorSpaceRepository) {
+    public CreatorSpaceService(
+            CreatorSpaceRepository creatorSpaceRepository,
+            LogoStorageService logoStorageService
+    ) {
         this.creatorSpaceRepository = creatorSpaceRepository;
+        this.logoStorageService = logoStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -42,7 +48,7 @@ public class CreatorSpaceService {
         }
 
         space.setName(request.name().trim());
-        space.setLogoUrl(request.logoUrl());
+        space.setLogoUrl(sanitizeLogoUrl(request.logoUrl()));
         space.setPrimaryColor(request.primaryColor());
         space.setBio(request.bio());
         space.setCategory(request.category() != null ? request.category() : SpaceCategory.OTHER);
@@ -55,6 +61,32 @@ public class CreatorSpaceService {
         }
 
         return creatorSpaceRepository.save(space);
+    }
+
+    @Transactional
+    public String uploadLogo(UUID creatorId, MultipartFile file) {
+        String logoUrl = logoStorageService.store(creatorId, file);
+        creatorSpaceRepository.findByCreatorId(creatorId).ifPresent(space -> {
+            String previous = space.getLogoUrl();
+            space.setLogoUrl(logoUrl);
+            creatorSpaceRepository.save(space);
+            logoStorageService.deleteIfManaged(previous);
+        });
+        return logoUrl;
+    }
+
+    static String sanitizeLogoUrl(String logoUrl) {
+        if (logoUrl == null || logoUrl.isBlank()) {
+            return null;
+        }
+        String trimmed = logoUrl.trim();
+        if (trimmed.startsWith(LogoStorageService.PUBLIC_PREFIX) && trimmed.length() <= 500) {
+            return trimmed;
+        }
+        if ((trimmed.startsWith("http://") || trimmed.startsWith("https://")) && trimmed.length() <= 500) {
+            return trimmed;
+        }
+        return null;
     }
 
     private String ensureUniqueSlug(String base, UUID currentId) {

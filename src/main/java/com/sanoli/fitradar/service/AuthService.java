@@ -5,15 +5,20 @@ import com.sanoli.fitradar.domain.RefreshToken;
 import com.sanoli.fitradar.domain.TokenPurpose;
 import com.sanoli.fitradar.domain.UserActionToken;
 import com.sanoli.fitradar.domain.UserRole;
+import com.sanoli.fitradar.dto.AcceptTermsRequest;
 import com.sanoli.fitradar.dto.AuthResponse;
+import com.sanoli.fitradar.dto.ChangePasswordRequest;
+import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.dto.ForgotPasswordRequest;
 import com.sanoli.fitradar.dto.LoginRequest;
 import com.sanoli.fitradar.dto.MessageResponse;
 import com.sanoli.fitradar.dto.RefreshTokenRequest;
 import com.sanoli.fitradar.dto.RegisterRequest;
 import com.sanoli.fitradar.dto.ResetPasswordRequest;
+import com.sanoli.fitradar.dto.UpdateProfileRequest;
 import com.sanoli.fitradar.dto.UserResponse;
 import com.sanoli.fitradar.exception.BusinessException;
+import com.sanoli.fitradar.legal.LegalConstants;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
 import com.sanoli.fitradar.repository.UserRepository;
@@ -24,6 +29,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
@@ -63,7 +70,10 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request, ClientSessionInfo sessionInfo) {
+        if (request.acceptedTerms() == null || !request.acceptedTerms()) {
+            throw new BusinessException("Aceite os Termos de Uso para continuar");
+        }
         String email = normalizeEmail(request.email());
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new BusinessException("Já existe um usuário com este email");
@@ -74,6 +84,7 @@ public class AuthService {
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.CREATOR);
+        applyTermsAcceptance(user);
         AppUser savedUser = userRepository.save(user);
 
         String verificationToken = tokenService.createEmailVerificationToken(savedUser);
@@ -83,11 +94,11 @@ public class AuthService {
             log.warn("Falha ao enviar e-mail de verificação para conta terminando em {}", maskEmail(email));
         }
 
-        return toAuthResponse(savedUser);
+        return toAuthResponse(savedUser, sessionInfo);
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, ClientSessionInfo sessionInfo) {
         String email = normalizeEmail(request.email());
         loginRateLimiter.checkAllowed(email);
 
@@ -103,11 +114,11 @@ public class AuthService {
         }
 
         loginRateLimiter.reset(email);
-        return toAuthResponse(user);
+        return toAuthResponse(user, sessionInfo);
     }
 
     @Transactional
-    public AuthResponse refresh(RefreshTokenRequest request) {
+    public AuthResponse refresh(RefreshTokenRequest request, ClientSessionInfo sessionInfo) {
         RefreshToken refreshToken = refreshTokenRepository.findByTokenAndRevokedFalse(request.refreshToken())
                 .orElseThrow(() -> new BusinessException("Refresh token inválido"));
 
@@ -118,7 +129,7 @@ public class AuthService {
 
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
-        return toAuthResponse(refreshToken.getUser());
+        return toAuthResponse(refreshToken.getUser(), sessionInfo);
     }
 
     @Transactional
@@ -146,7 +157,9 @@ public class AuthService {
 
         AppUser user = token.getUser();
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setMustChangePassword(false);
         token.setUsed(true);
+        tokenService.revokeAllRefreshTokensForUser(user.getId());
         userRepository.save(user);
         userActionTokenRepository.save(token);
         return new MessageResponse("Senha atualizada com sucesso.");
@@ -170,8 +183,98 @@ public class AuthService {
         return new MessageResponse("Email verificado com sucesso.");
     }
 
-    private AuthResponse toAuthResponse(AppUser user) {
-        String refreshToken = tokenService.createRefreshToken(user);
+    @Transactional
+    public MessageResponse resendVerification(AppUser user) {
+        if (user.isEmailVerified()) {
+            return new MessageResponse("Seu e-mail já está verificado.");
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new BusinessException("Conta sem e-mail cadastrado.");
+        }
+
+        String verificationToken = tokenService.createEmailVerificationToken(user);
+        try {
+            emailService.sendEmailVerification(
+                    user.getEmail(),
+                    publicBaseUrl + "/login?verify=" + verificationToken
+            );
+        } catch (RuntimeException exception) {
+            log.warn("Falha ao reenviar verificação para conta terminando em {}", maskEmail(user.getEmail()));
+            throw new BusinessException("Não foi possível enviar o e-mail de verificação. Tente novamente.");
+        }
+        return new MessageResponse("Enviamos um novo link de verificação para seu e-mail.");
+    }
+
+    @Transactional
+    public UserResponse updateProfile(AppUser user, UpdateProfileRequest request) {
+        String name = request.name().trim();
+        if (name.isEmpty()) {
+            throw new BusinessException("Nome é obrigatório");
+        }
+
+        String email = normalizeEmail(request.email());
+        boolean emailChanged = !email.equalsIgnoreCase(user.getEmail());
+        if (emailChanged && userRepository.existsByEmailIgnoreCase(email)) {
+            throw new BusinessException("Já existe um usuário com este email");
+        }
+
+        user.setName(name);
+        if (emailChanged) {
+            user.setEmail(email);
+            user.setEmailVerified(false);
+            String verificationToken = tokenService.createEmailVerificationToken(user);
+            try {
+                emailService.sendEmailVerification(
+                        email,
+                        publicBaseUrl + "/login?verify=" + verificationToken
+                );
+            } catch (RuntimeException exception) {
+                log.warn("Falha ao enviar verificação após troca de e-mail para {}", maskEmail(email));
+            }
+        }
+
+        AppUser saved = userRepository.save(user);
+        return UserResponse.fromEntity(saved);
+    }
+
+    @Transactional
+    public MessageResponse changePassword(AppUser user, ChangePasswordRequest request) {
+        if (!user.isMustChangePassword()) {
+            if (request.currentPassword() == null || request.currentPassword().isBlank()) {
+                throw new BusinessException("Informe a senha atual");
+            }
+            if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+                throw new BusinessException("Senha atual incorreta");
+            }
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setMustChangePassword(false);
+        tokenService.revokeAllRefreshTokensForUser(user.getId());
+        userRepository.save(user);
+        return new MessageResponse("Senha atualizada com sucesso.");
+    }
+
+    @Transactional
+    public MessageResponse acceptTerms(AppUser user, AcceptTermsRequest request) {
+        if (user.hasAcceptedTerms()) {
+            return new MessageResponse("Termos já aceitos.");
+        }
+        if (request.acceptedTerms() == null || !request.acceptedTerms()) {
+            throw new BusinessException("Aceite os Termos de Uso para continuar");
+        }
+        applyTermsAcceptance(user);
+        userRepository.save(user);
+        return new MessageResponse("Termos aceitos com sucesso.");
+    }
+
+    private void applyTermsAcceptance(AppUser user) {
+        user.setTermsAcceptedAt(LocalDateTime.now());
+        user.setTermsVersion(LegalConstants.TERMS_VERSION);
+    }
+
+    private AuthResponse toAuthResponse(AppUser user, ClientSessionInfo sessionInfo) {
+        String refreshToken = tokenService.createRefreshToken(user, sessionInfo);
         return AuthResponse.bearer(jwtService.generateToken(user), refreshToken, UserResponse.fromEntity(user));
     }
 

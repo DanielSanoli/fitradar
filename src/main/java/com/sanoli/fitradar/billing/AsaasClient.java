@@ -54,6 +54,15 @@ public class AsaasClient {
         );
     }
 
+    public void deleteSubscription(String subscriptionId) {
+        delete("/subscriptions/" + subscriptionId);
+    }
+
+    public JsonNode listPaymentsBySubscription(String subscriptionId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 50));
+        return get("/payments?subscription=" + subscriptionId + "&limit=" + safeLimit + "&order=desc");
+    }
+
     /**
      * Cobrança avulsa com split para a carteira do criador. O saldo restante fica na conta raiz (taxa FitRadar).
      */
@@ -97,6 +106,28 @@ public class AsaasClient {
                 .body(payload)
                 .retrieve()
                 .body(JsonNode.class);
+    }
+
+    private JsonNode get(String path) {
+        if (!billingProperties.isAsaasEnabled()) {
+            throw new BusinessException("Integração Asaas não configurada");
+        }
+
+        return restClient.get()
+                .uri(path)
+                .retrieve()
+                .body(JsonNode.class);
+    }
+
+    private void delete(String path) {
+        if (!billingProperties.isAsaasEnabled()) {
+            throw new BusinessException("Integração Asaas não configurada");
+        }
+
+        restClient.delete()
+                .uri(path)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     private String requiredText(JsonNode node, String field) {

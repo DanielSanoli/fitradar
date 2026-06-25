@@ -10,6 +10,14 @@ import { RadarFloatingWidget } from "@/components/radar/RadarFloatingWidget";
 import { retentionApi } from "@/lib/api/retention-api";
 import { spaceApi } from "@/lib/api/space-api";
 import { copilotApi } from "@/lib/api/copilot-api";
+import { onboardingApi } from "@/lib/api/onboarding-api";
+
+vi.mock("@/lib/api/onboarding-api", () => ({
+  onboardingApi: {
+    status: vi.fn(),
+    seedDemo: vi.fn(),
+  },
+}));
 
 vi.mock("@/lib/api/retention-api", () => ({
   retentionApi: {
@@ -72,6 +80,13 @@ function renderDashboard() {
 
 describe("CreatorDashboardPage", () => {
   beforeEach(() => {
+    vi.mocked(onboardingApi.status).mockResolvedValue({
+      hasSpace: true,
+      hasProgram: true,
+      hasStudent: true,
+      demoSeedAvailable: false,
+      onboardingComplete: true,
+    });
     vi.mocked(retentionApi.studentsAtRisk).mockResolvedValue([]);
     vi.mocked(spaceApi.get).mockResolvedValue({
       id: "s1",
@@ -158,6 +173,34 @@ describe("CreatorDashboardPage", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+  });
+
+  it("shows onboarding checklist for new creators", async () => {
+    vi.mocked(onboardingApi.status).mockResolvedValue({
+      hasSpace: false,
+      hasProgram: false,
+      hasStudent: false,
+      demoSeedAvailable: true,
+      onboardingComplete: false,
+    });
+    vi.mocked(retentionApi.overview).mockResolvedValue({
+      activeStudents: 0,
+      avgAdherence: null,
+      atRiskCount: 0,
+      checkInsThisWeek: 0,
+      newStudentsThisWeek: 0,
+      assumptions: [],
+    });
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText("Primeiros passos")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /criar programa/i })).toHaveAttribute(
+        "href",
+        "/app/programs/new",
+      );
     });
   });
 

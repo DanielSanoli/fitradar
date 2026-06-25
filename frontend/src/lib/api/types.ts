@@ -18,6 +18,10 @@ export interface User {
   accessAllowed: boolean;
   accessMessage: string | null;
   trialDaysRemaining: number;
+  /** true após convite com senha temporária — exige troca antes de continuar. */
+  mustChangePassword?: boolean;
+  /** false até aceitar Termos de Uso / Privacidade no cadastro ou onboarding. */
+  termsAccepted?: boolean;
 }
 
 export interface AuthResponse {
@@ -36,10 +40,20 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+  acceptedTerms: boolean;
 }
 
 export interface RefreshTokenRequest {
   refreshToken: string;
+}
+
+export interface UserSession {
+  id: string;
+  deviceLabel: string;
+  ipAddress: string | null;
+  createdAt: string;
+  expiresAt: string;
+  current: boolean;
 }
 
 export interface ApiErrorBody {

@@ -70,11 +70,11 @@ public class ResendEmailService implements EmailService {
     }
 
     @Override
-    public void sendStudentNudge(String email, String subject, String body) {
-        send(email, subject, body);
+    public boolean sendStudentNudge(String email, String subject, String body) {
+        return send(email, subject, body);
     }
 
-    private void send(String to, String subject, String text) {
+    private boolean send(String to, String subject, String text) {
         try {
             CreateEmailOptions params = CreateEmailOptions.builder()
                     .from(mailProperties.getFrom())
@@ -84,9 +84,11 @@ public class ResendEmailService implements EmailService {
                     .build();
             resend.emails().send(params);
             log.info("E-mail enviado via Resend para conta terminando em {}", maskEmail(to));
+            return true;
         } catch (Exception exception) {
-            log.warn("Falha ao enviar e-mail via Resend para conta terminando em {} — operação principal continua",
-                    maskEmail(to), exception);
+            log.warn("Falha ao enviar e-mail via Resend para conta terminando em {} — {}",
+                    maskEmail(to), exception.getMessage());
+            return false;
         }
     }
 

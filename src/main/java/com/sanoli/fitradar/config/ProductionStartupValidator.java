@@ -26,19 +26,22 @@ public class ProductionStartupValidator {
     private final BillingProperties billingProperties;
     private final CopilotProperties copilotProperties;
     private final CorsProperties corsProperties;
+    private final ObservabilityProperties observabilityProperties;
 
     public ProductionStartupValidator(
             Environment environment,
             AppRuntimeProperties runtimeProperties,
             BillingProperties billingProperties,
             CopilotProperties copilotProperties,
-            CorsProperties corsProperties
+            CorsProperties corsProperties,
+            ObservabilityProperties observabilityProperties
     ) {
         this.environment = environment;
         this.runtimeProperties = runtimeProperties;
         this.billingProperties = billingProperties;
         this.copilotProperties = copilotProperties;
         this.corsProperties = corsProperties;
+        this.observabilityProperties = observabilityProperties;
     }
 
     @PostConstruct
@@ -55,6 +58,7 @@ public class ProductionStartupValidator {
 
         if (production) {
             requireStrongJwt();
+            requireMetricsTokenWhenEnabled();
             if (copilotProperties.isEnabled()) {
                 requireOpenAiKey();
             }
@@ -122,6 +126,16 @@ public class ProductionStartupValidator {
         if (!StringUtils.hasText(token)) {
             throw new IllegalStateException(
                     "ASAAS_ENABLED=true exige ASAAS_WEBHOOK_TOKEN configurado.");
+        }
+    }
+
+    private void requireMetricsTokenWhenEnabled() {
+        if (!observabilityProperties.isMetricsEnabled()) {
+            return;
+        }
+        if (!StringUtils.hasText(observabilityProperties.getManagementToken())) {
+            throw new IllegalStateException(
+                    "METRICS_ENABLED=true em produção exige MANAGEMENT_TOKEN configurado.");
         }
     }
 

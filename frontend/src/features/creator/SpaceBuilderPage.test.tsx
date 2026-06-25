@@ -11,7 +11,7 @@ import { studentsApi } from "@/lib/api/students-api";
 import { ApiError } from "@/lib/api/types";
 
 vi.mock("@/lib/api/space-api", () => ({
-  spaceApi: { get: vi.fn(), update: vi.fn() },
+  spaceApi: { get: vi.fn(), update: vi.fn(), uploadLogo: vi.fn() },
 }));
 
 vi.mock("@/lib/api/programs-api", () => ({
@@ -159,5 +159,37 @@ describe("SpaceBuilderPage", () => {
       expect(screen.getByText("Convide seu primeiro aluno")).toBeInTheDocument();
     });
     expect(screen.getAllByRole("button", { name: /Copiar link/i }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("uploads logo file and persists returned url on save", async () => {
+    const user = userEvent.setup();
+    vi.mocked(spaceApi.uploadLogo).mockResolvedValue({
+      logoUrl: "/uploads/logos/c1/logo.png",
+    });
+
+    renderBuilder();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Nome do espaço/i)).toBeInTheDocument();
+    });
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["png"], "logo.png", { type: "image/png" });
+    await user.upload(input, file);
+
+    await waitFor(() => {
+      expect(spaceApi.uploadLogo).toHaveBeenCalled();
+    });
+
+    await user.type(screen.getByLabelText(/Nome do espaço/i), "Studio Logo");
+    await user.click(screen.getByRole("button", { name: /Salvar rascunho/i }));
+
+    await waitFor(() => {
+      expect(spaceApi.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          logoUrl: "/uploads/logos/c1/logo.png",
+        }),
+      );
+    });
   });
 });

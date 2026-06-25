@@ -1,6 +1,8 @@
 import type { StudentProgressResult } from "@/lib/api/domain-types";
-import type { StudentHomeViewMode } from "@/components/student/StudentStatePreviewToggle";
 import { isEarlyJourney } from "@/lib/student/student-copy";
+
+export type StudentHomeViewMode = "workout" | "rest" | "none";
+export type StudentProgressViewMode = "active" | "early";
 
 export function deriveHomeViewMode(progress: StudentProgressResult | null): StudentHomeViewMode {
   if (!progress?.enrolled) return "none";
@@ -11,6 +13,6 @@ export function deriveHomeViewMode(progress: StudentProgressResult | null): Stud
 export function deriveProgressViewMode(
   totalCheckInsDone: number | null | undefined,
   adherence: string | null,
-): "active" | "early" {
+): StudentProgressViewMode {
   return isEarlyJourney(totalCheckInsDone, adherence) ? "early" : "active";
 }

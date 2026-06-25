@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { Check, X } from "lucide-react";
+import { AlertCircle, Check, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import type { ReminderSendResult } from "@/lib/creator/reminder-delivery";
+import { reminderChannels } from "@/lib/creator/reminder-delivery";
 import { cn } from "@/lib/utils";
 
 type ReminderModalProps = {
@@ -9,7 +12,7 @@ type ReminderModalProps = {
   initialText: string;
   loading?: boolean;
   onClose: () => void;
-  onSend: (text: string) => Promise<void>;
+  onSend: (text: string) => Promise<ReminderSendResult>;
 };
 
 export function ReminderModal({
@@ -21,13 +24,15 @@ export function ReminderModal({
   onSend,
 }: ReminderModalProps) {
   const [text, setText] = useState(initialText);
-  const [sent, setSent] = useState(false);
+  const [result, setResult] = useState<ReminderSendResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (open) {
       setText(initialText);
-      setSent(false);
+      setResult(null);
+      setError(null);
     }
   }, [open, initialText]);
 
@@ -35,9 +40,12 @@ export function ReminderModal({
 
   const submit = async () => {
     setSending(true);
+    setError(null);
     try {
-      await onSend(text);
-      setSent(true);
+      const delivery = await onSend(text.trim());
+      setResult(delivery);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível enviar o lembrete.");
     } finally {
       setSending(false);
     }
@@ -84,11 +92,37 @@ export function ReminderModal({
         </div>
 
         <div className="flex flex-col gap-3 px-6 py-5">
+          {error ? (
+            <Alert variant="destructive" role="alert">
+              <AlertCircle className="size-4" aria-hidden />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {result ? (
+            <Alert role="status" aria-live="polite">
+              <Check className="size-4 text-primary" aria-hidden />
+              <AlertDescription>
+                <p className="font-semibold">{result.summary}</p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {reminderChannels(result).map(({ label, ok }) => (
+                    <li key={label}>
+                      {label}: {ok ? "enviado" : "não enviado"}
+                      {!ok && label === "E-mail" && result.emailDetail ? ` — ${result.emailDetail}` : null}
+                      {!ok && label === "Push" && result.pushDetail ? ` — ${result.pushDetail}` : null}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            disabled={loading || sent}
-            className="min-h-[130px] w-full resize-y rounded-[12px] border border-border bg-secondary/40 px-3.5 py-3 text-[14.5px] leading-relaxed focus:border-primary/55 focus:outline-none focus:ring-[3px] focus:ring-primary/15"
+            disabled={loading || !!result}
+            aria-label="Mensagem do lembrete"
+            className="min-h-[130px] w-full resize-y rounded-[12px] border border-border bg-secondary/40 px-3.5 py-3 text-[14.5px] leading-relaxed focus:border-primary/55 focus:outline-none focus:ring-[3px] focus:ring-primary/15 disabled:opacity-70"
           />
           <div className="flex items-start gap-2 rounded-[10px] border border-border bg-secondary/30 px-3 py-2.5">
             <span className="mt-0.5 flex size-[15px] shrink-0 items-center justify-center rounded-full border border-muted-foreground/50 text-[10px] font-bold italic text-muted-foreground">
@@ -103,16 +137,16 @@ export function ReminderModal({
 
         <div className="flex items-center justify-end gap-2.5 border-t border-border px-6 py-4">
           <Button type="button" variant="outline" onClick={onClose}>
-            {sent ? "Fechar" : "Cancelar"}
+            {result ? "Fechar" : "Cancelar"}
           </Button>
-          {sent ? (
+          {result ? (
             <Button
               type="button"
               variant="outline"
               className="gap-2 border-primary/40 bg-primary/10 text-primary"
               disabled
             >
-              <Check className="size-4" /> Lembrete enviado
+              <Check className="size-4" /> Enviado
             </Button>
           ) : (
             <Button

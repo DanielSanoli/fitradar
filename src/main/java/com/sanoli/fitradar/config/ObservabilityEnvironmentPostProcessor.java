@@ -27,6 +27,7 @@ public class ObservabilityEnvironmentPostProcessor implements EnvironmentPostPro
         if (isTrue(environment.getProperty("METRICS_ENABLED"))
                 || isTrue(environment.getProperty("app.observability.metrics-enabled"))) {
             properties.put("management.endpoints.web.exposure.include", "health,prometheus");
+            properties.put("management.prometheus.metrics.export.enabled", "true");
         }
 
         if (!properties.isEmpty()) {

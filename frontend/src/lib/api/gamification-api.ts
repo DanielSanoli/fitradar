@@ -1,13 +1,8 @@
 import { API_PREFIX } from "@/lib/auth/constants";
 import { api } from "@/lib/api/client";
+import type { LeaderboardEntryResponse } from "@/lib/api/domain-types";
 
-export type LeaderboardEntryResponse = {
-  rank: number;
-  studentId: string;
-  studentName: string;
-  currentStreak: number;
-  totalCheckInsDone: number;
-};
+export type { LeaderboardEntryResponse };
 
 export const gamificationApi = {
   leaderboard: (limit = 50) =>

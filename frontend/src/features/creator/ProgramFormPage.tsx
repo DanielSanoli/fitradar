@@ -4,9 +4,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PanelState } from "@/components/ui/PanelState";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { programsApi } from "@/lib/api/programs-api";
 import type { ProgramRequest } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
@@ -25,6 +27,8 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
     mode === "edit" ? "loading" : "content",
   );
   const [loadError, setLoadError] = useState<string>();
+
+  usePageTitle(mode === "create" ? "Novo programa" : title || "Editar programa");
 
   useEffect(() => {
     if (mode !== "edit" || !id) return;
@@ -177,6 +181,17 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
                 className="h-[46px] rounded-[11px]"
               />
             </div>
+            {price && parseFloat(price) > 0 ? (
+              <Alert className="mt-1">
+                <AlertDescription className="text-[13px]">
+                  Programas pagos exigem conta Asaas conectada em{" "}
+                  <Link to="/app/marketplace" className="font-semibold text-primary underline">
+                    Vendas & recebimento
+                  </Link>
+                  .
+                </AlertDescription>
+              </Alert>
+            ) : null}
             <label htmlFor="prog-active" className="flex items-center gap-2 text-sm">
               <input
                 id="prog-active"

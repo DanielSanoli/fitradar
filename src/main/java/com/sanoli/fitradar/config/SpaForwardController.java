@@ -15,6 +15,7 @@ public class SpaForwardController {
             "/forgot-password",
             "/register",
             "/billing-required",
+            "/change-password",
             "/404",
             "/c",
             "/c/**",

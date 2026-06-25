@@ -19,6 +19,8 @@ public record UserResponse(
         LocalDateTime trialEndsAt,
         LocalDateTime subscriptionEndsAt,
         boolean emailVerified,
+        boolean mustChangePassword,
+        boolean termsAccepted,
         boolean accessAllowed,
         String accessMessage,
         long trialDaysRemaining
@@ -35,6 +37,8 @@ public record UserResponse(
                 user.getTrialEndsAt(),
                 user.getSubscriptionEndsAt(),
                 user.isEmailVerified(),
+                user.isMustChangePassword(),
+                user.hasAcceptedTerms(),
                 user.hasActiveAccess(),
                 user.getAccessMessage(),
                 user.getTrialDaysRemaining()

@@ -29,8 +29,9 @@ public class LoggingEmailService implements EmailService {
     }
 
     @Override
-    public void sendStudentNudge(String email, String subject, String body) {
+    public boolean sendStudentNudge(String email, String subject, String body) {
         log.info("[email:nudge] enviado para conta {} assunto {}", maskEmail(email), subject);
+        return true;
     }
 
     private String maskEmail(String email) {

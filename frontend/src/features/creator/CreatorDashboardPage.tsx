@@ -8,6 +8,7 @@ import {
 import { InsightCard } from "@/components/radar/InsightCard";
 import { RadarChat } from "@/components/radar/RadarChat";
 import { AttentionTodayPanel } from "@/components/creator/AttentionTodayPanel";
+import { CreatorOnboardingChecklist } from "@/components/creator/CreatorOnboardingChecklist";
 import { PanelState } from "@/components/ui/PanelState";
 import { useAuth } from "@/hooks/useAuth";
 import { useRadarCopilot } from "@/features/radar/RadarCopilotProvider";
@@ -128,6 +129,8 @@ export function CreatorDashboardPage() {
           </p>
         </div>
       </div>
+
+      <CreatorOnboardingChecklist />
 
       <section aria-labelledby="insights-heading">
         <div className="mb-3.5 flex flex-wrap items-center gap-2.5">

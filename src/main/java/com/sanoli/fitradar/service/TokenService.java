@@ -4,6 +4,7 @@ import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.RefreshToken;
 import com.sanoli.fitradar.domain.TokenPurpose;
 import com.sanoli.fitradar.domain.UserActionToken;
+import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.Base64;
 
 @Service
@@ -41,11 +43,33 @@ public class TokenService {
 
     @Transactional
     public String createRefreshToken(AppUser user) {
+        return createRefreshToken(user, ClientSessionInfo.UNKNOWN);
+    }
+
+    @Transactional
+    public String createRefreshToken(AppUser user, ClientSessionInfo sessionInfo) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setToken(generateToken());
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(refreshTokenExpirationDays));
+        if (sessionInfo != null) {
+            refreshToken.setUserAgent(sessionInfo.userAgent());
+            refreshToken.setIpAddress(sessionInfo.ipAddress());
+        }
         return refreshTokenRepository.save(refreshToken).getToken();
+    }
+
+    @Transactional
+    public void revokeRefreshToken(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        refreshTokenRepository.revokeByToken(token);
+    }
+
+    @Transactional
+    public void revokeAllRefreshTokensForUser(UUID userId) {
+        refreshTokenRepository.revokeAllActiveForUser(userId);
     }
 
     @Transactional

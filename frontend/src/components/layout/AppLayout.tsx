@@ -1,32 +1,19 @@
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { Topbar } from "@/components/layout/Topbar";
+import { useResolvedPageTitle } from "@/hooks/usePageTitle";
 import { cn } from "@/lib/utils";
 
 type AppLayoutProps = {
   variant: "creator" | "student";
 };
 
-const titles: Record<string, string> = {
-  "/app": "Painel do criador",
-  "/app/retention": "Retenção",
-  "/app/students": "Alunos",
-  "/app/programs": "Programas & Treinos",
-  "/app/space": "Construtor do Espaço",
-  "/app/ranking": "Ranking",
-  "/app/settings": "Configurações",
-  "/student": "Área do aluno",
-  "/student/progress": "Progresso",
-  "/student/settings": "Perfil",
-};
-
 export function AppLayout({ variant }: AppLayoutProps) {
-  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const title = titles[location.pathname] ?? "FitRadar";
+  const title = useResolvedPageTitle();
 
   if (variant === "student") {
     return <StudentLayout />;

@@ -2,6 +2,8 @@ spring:
   datasource:
     url: jdbc:h2:mem:fitradar-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -13,6 +15,9 @@ spring:
       api-key: ""
 
 app:
+  storage:
+    logo:
+      directory: ${java.io.tmpdir}/fitradar-test-logos
   runtime:
     production: false
   copilot:

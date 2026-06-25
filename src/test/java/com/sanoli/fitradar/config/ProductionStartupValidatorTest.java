@@ -16,6 +16,7 @@ class ProductionStartupValidatorTest {
     private BillingProperties billingProperties;
     private CopilotProperties copilotProperties;
     private CorsProperties corsProperties;
+    private ObservabilityProperties observabilityProperties;
 
     @BeforeEach
     void setUp() {
@@ -24,6 +25,7 @@ class ProductionStartupValidatorTest {
         billingProperties = new BillingProperties();
         copilotProperties = new CopilotProperties();
         corsProperties = new CorsProperties();
+        observabilityProperties = new ObservabilityProperties();
         corsProperties.setAllowedOrigins(List.of("http://localhost:8080"));
     }
 
@@ -81,9 +83,26 @@ class ProductionStartupValidatorTest {
                 .hasMessageContaining("CORS");
     }
 
+    @Test
+    void productionMetricsEnabledWithoutToken_failsStartup() {
+        runtimeProperties.setProduction(true);
+        observabilityProperties.setMetricsEnabled(true);
+        observabilityProperties.setManagementToken("");
+        environment.setProperty("app.security.jwt.secret", "a-strong-production-secret-with-enough-length");
+
+        assertThatThrownBy(this::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("MANAGEMENT_TOKEN");
+    }
+
     private void validate() {
         new ProductionStartupValidator(
-                environment, runtimeProperties, billingProperties, copilotProperties, corsProperties
+                environment,
+                runtimeProperties,
+                billingProperties,
+                copilotProperties,
+                corsProperties,
+                observabilityProperties
         ).validate();
     }
 }

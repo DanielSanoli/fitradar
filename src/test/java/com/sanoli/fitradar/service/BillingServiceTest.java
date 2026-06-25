@@ -1,18 +1,21 @@
 package com.sanoli.fitradar.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sanoli.fitradar.billing.AsaasClient;
 import com.sanoli.fitradar.config.BillingProperties;
 import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.SubscriptionPlan;
 import com.sanoli.fitradar.domain.SubscriptionStatus;
+import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.WebhookUnauthorizedException;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,19 +36,23 @@ class BillingServiceTest {
     private BillingProperties billingProperties;
     private BillingService billingService;
     private ObjectMapper objectMapper;
+    private CurrentUserService currentUserService;
+    private AsaasClient asaasClient;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
+        currentUserService = mock(CurrentUserService.class);
+        asaasClient = mock(AsaasClient.class);
         billingProperties = new BillingProperties();
         billingProperties.getAsaas().setEnabled(true);
         billingProperties.getAsaas().setApiKey("asaas-test-key");
         billingProperties.getAsaas().setWebhookToken(WEBHOOK_TOKEN);
 
         billingService = new BillingService(
-                mock(CurrentUserService.class),
+                currentUserService,
                 userRepository,
-                mock(AsaasClient.class),
+                asaasClient,
                 billingProperties,
                 mock(MarketplaceBillingService.class)
         );
@@ -97,7 +104,93 @@ class BillingServiceTest {
 
         assertThat(user.getPlan()).isEqualTo(SubscriptionPlan.FREE);
         assertThat(user.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.CANCELED);
+        assertThat(user.getAsaasSubscriptionId()).isNull();
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void subscriptionDetails_activePro_canCancel() {
+        AppUser user = creatorWithSubscription();
+        user.setPlan(SubscriptionPlan.PRO);
+        user.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        var details = billingService.subscriptionDetails();
+
+        assertThat(details.plan()).isEqualTo(SubscriptionPlan.PRO);
+        assertThat(details.canCancel()).isTrue();
+        assertThat(details.canReactivate()).isFalse();
+    }
+
+    @Test
+    void subscriptionDetails_trialing_canReactivate() {
+        AppUser user = creatorWithSubscription();
+        user.setAsaasSubscriptionId(null);
+        user.setPlan(SubscriptionPlan.FREE);
+        user.setSubscriptionStatus(SubscriptionStatus.TRIALING);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        var details = billingService.subscriptionDetails();
+
+        assertThat(details.canReactivate()).isTrue();
+        assertThat(details.canCancel()).isFalse();
+    }
+
+    @Test
+    void subscriptionInvoices_returnsPaymentsFromAsaas() {
+        AppUser user = creatorWithSubscription();
+        user.setPlan(SubscriptionPlan.PRO);
+        user.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        ObjectNode payment = objectMapper.createObjectNode();
+        payment.put("id", "pay_1");
+        payment.put("status", "CONFIRMED");
+        payment.put("value", 97.0);
+        payment.put("dueDate", "2026-06-19");
+        payment.put("paymentDate", "2026-06-19");
+        payment.put("invoiceUrl", "https://sandbox.asaas.com/i/pay_1");
+        ArrayNode data = objectMapper.createArrayNode();
+        data.add(payment);
+        ObjectNode response = objectMapper.createObjectNode();
+        response.set("data", data);
+        when(asaasClient.listPaymentsBySubscription(SUBSCRIPTION_ID, 20)).thenReturn(response);
+
+        var invoices = billingService.subscriptionInvoices();
+
+        assertThat(invoices).hasSize(1);
+        assertThat(invoices.getFirst().id()).isEqualTo("pay_1");
+        assertThat(invoices.getFirst().value()).isEqualByComparingTo(new BigDecimal("97.0"));
+    }
+
+    @Test
+    void cancelCreatorSubscription_callsAsaasAndDowngrades() {
+        AppUser user = creatorWithSubscription();
+        user.setPlan(SubscriptionPlan.PRO);
+        user.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        var result = billingService.cancelCreatorSubscription();
+
+        verify(asaasClient).deleteSubscription(SUBSCRIPTION_ID);
+        verify(userRepository).save(user);
+        assertThat(user.getPlan()).isEqualTo(SubscriptionPlan.FREE);
+        assertThat(user.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.CANCELED);
+        assertThat(user.getAsaasSubscriptionId()).isNull();
+        assertThat(result.message()).contains("cancelada");
+    }
+
+    @Test
+    void cancelCreatorSubscription_rejectsWhenNotActivePro() {
+        AppUser user = creatorWithSubscription();
+        user.setPlan(SubscriptionPlan.FREE);
+        user.setSubscriptionStatus(SubscriptionStatus.CANCELED);
+        when(currentUserService.requireCreator()).thenReturn(user);
+
+        assertThatThrownBy(() -> billingService.cancelCreatorSubscription())
+                .isInstanceOf(BusinessException.class);
+
+        verify(asaasClient, never()).deleteSubscription(any());
     }
 
     @Test

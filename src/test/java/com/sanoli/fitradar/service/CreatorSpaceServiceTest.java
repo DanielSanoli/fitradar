@@ -25,11 +25,14 @@ class CreatorSpaceServiceTest {
     @Mock
     CreatorSpaceRepository creatorSpaceRepository;
 
+    @Mock
+    LogoStorageService logoStorageService;
+
     CreatorSpaceService service;
 
     @BeforeEach
     void setUp() {
-        service = new CreatorSpaceService(creatorSpaceRepository);
+        service = new CreatorSpaceService(creatorSpaceRepository, logoStorageService);
     }
 
     @Test
@@ -62,5 +65,25 @@ class CreatorSpaceServiceTest {
                 new CreatorSpaceRequest("Studio", "studio", null, null, null, null));
 
         assertThat(saved.getCategory()).isEqualTo(SpaceCategory.OTHER);
+    }
+
+    @Test
+    void save_sanitizesLogoUrl() {
+        UUID creatorId = UUID.randomUUID();
+        when(creatorSpaceRepository.findByCreatorId(creatorId)).thenReturn(Optional.empty());
+        when(creatorSpaceRepository.findBySlug(any())).thenReturn(Optional.empty());
+        when(creatorSpaceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CreatorSpace saved = service.save(
+                creatorId,
+                new CreatorSpaceRequest(
+                        "Studio",
+                        "studio",
+                        "data:image/png;base64,abc",
+                        null,
+                        null,
+                        SpaceCategory.OTHER));
+
+        assertThat(saved.getLogoUrl()).isNull();
     }
 }

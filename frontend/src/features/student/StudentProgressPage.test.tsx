@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "@/components/ui/toast";
 import { StudentProgressPage } from "@/features/student/StudentProgressPage";
 import { memberApi } from "@/lib/api/member-api";
@@ -16,6 +17,10 @@ vi.mock("@/features/radar/RadarCopilotProvider", () => ({
   }),
 }));
 
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ user: { id: "student-1", name: "Lucas" } }),
+}));
+
 vi.mock("@/lib/api/member-api", () => ({
   memberApi: {
     myProgress: vi.fn(),
@@ -23,6 +28,7 @@ vi.mock("@/lib/api/member-api", () => ({
     myCheckIns: vi.fn(),
     myPrograms: vi.fn(),
     myWorkouts: vi.fn(),
+    myLeaderboard: vi.fn(),
   },
 }));
 
@@ -32,9 +38,11 @@ vi.mock("@/lib/api/copilot-api", () => ({
 
 function renderPage() {
   return render(
-    <ToastProvider>
-      <StudentProgressPage />
-    </ToastProvider>,
+    <MemoryRouter>
+      <ToastProvider>
+        <StudentProgressPage />
+      </ToastProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -50,6 +58,7 @@ describe("StudentProgressPage", () => {
     });
     vi.mocked(memberApi.myPrograms).mockResolvedValue([]);
     vi.mocked(memberApi.myWorkouts).mockResolvedValue([]);
+    vi.mocked(memberApi.myLeaderboard).mockResolvedValue([]);
   });
 
   it("renders active progress with adherence ring and weekly chart", async () => {
@@ -95,6 +104,15 @@ describe("StudentProgressPage", () => {
         createdAt: "2024-01-01T00:00:00Z",
       },
     ]);
+    vi.mocked(memberApi.myLeaderboard).mockResolvedValue([
+      {
+        rank: 1,
+        studentId: "1",
+        studentName: "Lucas",
+        currentStreak: 7,
+        totalCheckInsDone: 12,
+      },
+    ]);
 
     renderPage();
 
@@ -104,6 +122,8 @@ describe("StudentProgressPage", () => {
       expect(screen.getByText("Aderência")).toBeInTheDocument();
       expect(screen.getByText("3 treinos esta semana")).toBeInTheDocument();
       expect(screen.getByText("Programa atual")).toBeInTheDocument();
+      expect(screen.getByText("Ranking da comunidade")).toBeInTheDocument();
+      expect(screen.getByText("#1")).toBeInTheDocument();
     });
   });
 
@@ -208,14 +228,14 @@ describe("StudentProgressPage", () => {
     expect(askMock).toHaveBeenCalledWith("Como estou indo?");
   });
 
-  it("preview toggle switches between active and early journey layouts", async () => {
+  it("shows early journey layout from progress data", async () => {
     vi.mocked(memberApi.myProgress).mockResolvedValue({
       studentId: "1",
       studentName: "Lucas",
       enrolled: true,
-      adherence: "80.00",
-      currentStreak: 7,
-      weeklyDone: 3,
+      adherence: null,
+      currentStreak: 1,
+      weeklyDone: 1,
       nextWorkoutId: "w1",
       nextWorkoutTitle: "Upper Body A",
       message: null,
@@ -223,28 +243,19 @@ describe("StudentProgressPage", () => {
     });
     vi.mocked(memberApi.myGamification).mockResolvedValue({
       studentId: "1",
-      currentStreak: 7,
-      longestStreak: 10,
-      totalCheckInsDone: 12,
+      currentStreak: 1,
+      longestStreak: 1,
+      totalCheckInsDone: 2,
       badges: [],
       rank: 1,
     });
 
-    const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText("Esta semana")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Progresso ativo" })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
+      expect(screen.getByText("Você está começando!")).toBeInTheDocument();
+      expect(screen.getByText("Seus próximos marcos")).toBeInTheDocument();
+      expect(screen.queryByText("Esta semana")).not.toBeInTheDocument();
     });
-
-    await user.click(screen.getByRole("button", { name: "Início da jornada" }));
-
-    expect(screen.getByText("Você está começando!")).toBeInTheDocument();
-    expect(screen.getByText("Seus próximos marcos")).toBeInTheDocument();
-    expect(screen.queryByText("Esta semana")).not.toBeInTheDocument();
   });
 });

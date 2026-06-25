@@ -30,17 +30,19 @@ import {
   SPACE_SWATCHES,
   spaceInitials,
 } from "@/lib/creator/space-theme";
+import {
+  isAllowedLogoFile,
+  LOGO_ACCEPT,
+  LOGO_MAX_BYTES,
+  persistableLogoUrl,
+} from "@/lib/creator/logo-upload";
 import { cn } from "@/lib/utils";
 
 const inputClass =
   "h-[46px] w-full rounded-[11px] border border-border bg-secondary/40 px-3.5 text-[15px] transition-[border-color,box-shadow] focus:outline-none focus:ring-[3px]";
 
-function persistableLogoUrl(logoUrl: string, logoPreview: string | null): string | null {
-  const url = logoUrl.trim();
-  if (url.startsWith("http") && url.length <= 500) return url;
-  if (url.startsWith("data:") && url.length <= 500) return url;
-  if (logoPreview?.startsWith("http") && logoPreview.length <= 500) return logoPreview;
-  return null;
+function resolvedLogoUrl(logoUrl: string): string | null {
+  return persistableLogoUrl(logoUrl);
 }
 
 type SpaceBuilderHeaderProps = {
@@ -116,6 +118,7 @@ export function SpaceBuilderPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFileName, setLogoFileName] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [accent, setAccent] = useState<string>(SPACE_SWATCHES[0]);
   const [bio, setBio] = useState("");
   const [category, setCategory] = useState<SpaceCategory>(DEFAULT_SPACE_CATEGORY);
@@ -192,12 +195,12 @@ export function SpaceBuilderPage() {
     return {
       name: name.trim(),
       slug: slugComputed || null,
-      logoUrl: persistableLogoUrl(logoUrl, logoPreview),
+      logoUrl: resolvedLogoUrl(logoUrl),
       primaryColor: accent,
       bio: bio.trim() || null,
       category,
     };
-  }, [name, slugComputed, logoUrl, logoPreview, accent, bio, category]);
+  }, [name, slugComputed, logoUrl, accent, bio, category]);
 
   const saveDraft = async () => {
     if (!name.trim()) {
@@ -244,25 +247,36 @@ export function SpaceBuilderPage() {
     }
   };
 
-  const onLogoPick = (file: File | null) => {
+  const onLogoPick = async (file: File | null) => {
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
+    if (!isAllowedLogoFile(file)) {
+      toast("Use PNG, JPG, WebP ou SVG.", "error");
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
       toast("Logo deve ter até 2 MB.", "error");
       return;
     }
-    const url = URL.createObjectURL(file);
-    setLogoPreview(url);
+
+    const localPreview = URL.createObjectURL(file);
+    setLogoPreview(localPreview);
     setLogoFileName(file.name);
+    setLogoUploading(true);
     setPublished(false);
 
-    if (file.type === "image/svg+xml" || file.name.endsWith(".svg")) {
-      void file.text().then((text) => {
-        const encoded = `data:image/svg+xml,${encodeURIComponent(text)}`;
-        if (encoded.length <= 500) {
-          setLogoUrl(encoded);
-          setLogoPreview(encoded);
-        }
-      });
+    try {
+      const { logoUrl: uploadedUrl } = await spaceApi.uploadLogo(file);
+      setLogoUrl(uploadedUrl);
+      setLogoPreview(uploadedUrl);
+      toast("Logo enviado.");
+    } catch (e) {
+      setLogoPreview(null);
+      setLogoFileName(null);
+      setLogoUrl("");
+      toast(e instanceof ApiError ? e.message : "Erro ao enviar logo.", "error");
+    } finally {
+      URL.revokeObjectURL(localPreview);
+      setLogoUploading(false);
     }
   };
 
@@ -270,7 +284,7 @@ export function SpaceBuilderPage() {
     setLogoUrl(value);
     setPublished(false);
     const trimmed = value.trim();
-    if (trimmed.startsWith("http") || trimmed.startsWith("data:")) {
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/uploads/logos/")) {
       setLogoPreview(trimmed);
     }
   };
@@ -444,14 +458,17 @@ export function SpaceBuilderPage() {
                   <input
                     ref={fileRef}
                     type="file"
-                    accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                    accept={LOGO_ACCEPT}
                     className="sr-only"
-                    onChange={(e) => onLogoPick(e.target.files?.[0] ?? null)}
+                    disabled={logoUploading}
+                    onChange={(e) => void onLogoPick(e.target.files?.[0] ?? null)}
                   />
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="flex h-[72px] w-full items-center gap-3 rounded-[13px] border border-dashed border-border bg-card/80 px-4 text-left transition-colors hover:border-[var(--logo-hover)] hover:bg-card"
+                    disabled={logoUploading}
+                    aria-busy={logoUploading}
+                    className="flex h-[72px] w-full items-center gap-3 rounded-[13px] border border-dashed border-border bg-card/80 px-4 text-left transition-colors hover:border-[var(--logo-hover)] hover:bg-card disabled:opacity-60"
                     style={{ "--logo-hover": accent } as React.CSSProperties}
                   >
                     <span
@@ -469,7 +486,9 @@ export function SpaceBuilderPage() {
                     </span>
                     <span>
                       <span className="block text-[13px] font-semibold">
-                        {logoFileName ?? "Arraste ou clique para enviar"}
+                        {logoUploading
+                          ? "Enviando logo…"
+                          : logoFileName ?? "Arraste ou clique para enviar"}
                       </span>
                       <span className="block text-[11.5px] text-muted-foreground">
                         PNG ou SVG · até 2 MB
@@ -479,14 +498,14 @@ export function SpaceBuilderPage() {
                   <input
                     id="space-logo-url"
                     type="url"
-                    value={logoUrl.startsWith("blob:") ? "" : logoUrl}
+                    value={logoUrl.startsWith("blob:") || logoUrl.startsWith("data:") ? "" : logoUrl}
                     onChange={(e) => onLogoUrlChange(e.target.value)}
                     placeholder="https://… (URL pública, opcional)"
                     className={cn(inputClass, "mt-2 h-10 text-sm")}
                     aria-describedby="logo-url-hint"
                   />
                   <p id="logo-url-hint" className="text-[11px] text-muted-foreground">
-                    Upload gera preview local; use URL https para persistir no espaço.
+                    Ou cole uma URL pública (https) se preferir hospedar fora.
                   </p>
                 </div>
 

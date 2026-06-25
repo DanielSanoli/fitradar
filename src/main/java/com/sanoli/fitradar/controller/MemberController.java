@@ -6,6 +6,7 @@ import com.sanoli.fitradar.dto.CheckInResponse;
 import com.sanoli.fitradar.dto.CreatorSpaceResponse;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.GamificationProfileResponse;
+import com.sanoli.fitradar.dto.LeaderboardEntryResponse;
 import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.ProgramCheckoutResponse;
 import com.sanoli.fitradar.dto.StudentProgramResponse;
@@ -96,6 +97,19 @@ public class MemberController {
     @Operation(summary = "Badges, streak persistido e ranking do aluno")
     public ResponseEntity<GamificationProfileResponse> myGamification() {
         return ResponseEntity.ok(gamificationService.profileForStudent(currentUserService.requireStudent()));
+    }
+
+    @GetMapping("/leaderboard")
+    @Operation(summary = "Ranking de engajamento da comunidade do criador (visão aluno)")
+    public ResponseEntity<List<LeaderboardEntryResponse>> myLeaderboard(
+            @RequestParam(name = "limit", defaultValue = "20") int limit
+    ) {
+        AppUser student = currentUserService.requireStudent();
+        if (student.getCreatorId() == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        int safeLimit = Math.max(1, Math.min(limit, 50));
+        return ResponseEntity.ok(gamificationService.leaderboard(student.getCreatorId(), safeLimit));
     }
 
     @GetMapping("/programs")

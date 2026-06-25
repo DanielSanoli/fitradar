@@ -51,9 +51,11 @@ async function rawRequest(
   path: string,
   body?: unknown,
   withAuth = false,
+  extraHeaders: Record<string, string> = {},
 ): Promise<Response> {
   const headers: Record<string, string> = {
     Accept: "application/json",
+    ...extraHeaders,
   };
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -108,18 +110,65 @@ function handlePaymentRequired(data: unknown) {
   onPaymentRequired?.(message);
 }
 
+export async function apiUpload<T>(path: string, formData: FormData, withAuth = true): Promise<T> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+  const token = readStoredToken();
+  if (withAuth && token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const url = `${baseUrl()}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+  } catch {
+    const hint = baseUrl()
+      ? `Verifique se a API está rodando em ${baseUrl()}.`
+      : "Verifique se a API está rodando em http://localhost:8080 (docker compose up).";
+    throw new ApiError(0, `Não foi possível conectar à API. ${hint}`);
+  }
+
+  if (res.status === 401 && withAuth) {
+    const refreshed = await refreshOnce();
+    if (refreshed) {
+      return apiUpload<T>(path, formData, withAuth);
+    }
+    handleAuthFailure();
+    throw new ApiError(401, "Sessão expirada. Faça login novamente.");
+  }
+
+  const data = await parseBody(res);
+
+  if (res.status === 402) {
+    handlePaymentRequired(data);
+    throw new ApiError(402, errorMessage(data, "Assinatura necessária."), data as ApiErrorBody);
+  }
+
+  if (!res.ok) {
+    throw new ApiError(res.status, errorMessage(data, `Erro ${res.status}`), data as ApiErrorBody);
+  }
+
+  return data as T;
+}
+
 export async function apiRequest<T>(
   method: string,
   path: string,
   body?: unknown,
   withAuth = true,
+  extraHeaders: Record<string, string> = {},
 ): Promise<T> {
-  let res = await rawRequest(method, path, body, withAuth);
+  let res = await rawRequest(method, path, body, withAuth, extraHeaders);
 
   if (res.status === 401 && withAuth) {
     const refreshed = await refreshOnce();
     if (refreshed) {
-      res = await rawRequest(method, path, body, withAuth);
+      res = await rawRequest(method, path, body, withAuth, extraHeaders);
     } else {
       handleAuthFailure();
       throw new ApiError(401, "Sessão expirada. Faça login novamente.");
