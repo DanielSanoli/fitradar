@@ -6,13 +6,12 @@ import com.sanoli.fitradar.domain.TokenPurpose;
 import com.sanoli.fitradar.domain.UserActionToken;
 import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.dto.AcceptTermsRequest;
-import com.sanoli.fitradar.dto.AuthResponse;
 import com.sanoli.fitradar.dto.ChangePasswordRequest;
 import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.dto.ForgotPasswordRequest;
 import com.sanoli.fitradar.dto.LoginRequest;
 import com.sanoli.fitradar.dto.MessageResponse;
-import com.sanoli.fitradar.dto.RefreshTokenRequest;
+import com.sanoli.fitradar.dto.IssuedAuthTokens;
 import com.sanoli.fitradar.dto.RegisterRequest;
 import com.sanoli.fitradar.dto.ResetPasswordRequest;
 import com.sanoli.fitradar.dto.UpdateProfileRequest;
@@ -24,6 +23,7 @@ import com.sanoli.fitradar.repository.AnamneseRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.JwtService;
+import com.sanoli.fitradar.security.TokenHashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,7 +74,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request, ClientSessionInfo sessionInfo) {
+    public IssuedAuthTokens register(RegisterRequest request, ClientSessionInfo sessionInfo) {
         if (request.acceptedTerms() == null || !request.acceptedTerms()) {
             throw new BusinessException("Aceite os Termos de Uso para continuar");
         }
@@ -98,11 +98,11 @@ public class AuthService {
             log.warn("Falha ao enviar e-mail de verificação para conta terminando em {}", maskEmail(email));
         }
 
-        return toAuthResponse(savedUser, sessionInfo);
+        return issueAuthTokens(savedUser, sessionInfo);
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request, ClientSessionInfo sessionInfo) {
+    public IssuedAuthTokens login(LoginRequest request, ClientSessionInfo sessionInfo) {
         String email = normalizeEmail(request.email());
         loginRateLimiter.checkAllowed(email);
 
@@ -118,12 +118,13 @@ public class AuthService {
         }
 
         loginRateLimiter.reset(email);
-        return toAuthResponse(user, sessionInfo);
+        return issueAuthTokens(user, sessionInfo);
     }
 
     @Transactional
-    public AuthResponse refresh(RefreshTokenRequest request, ClientSessionInfo sessionInfo) {
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenAndRevokedFalse(request.refreshToken())
+    public IssuedAuthTokens refresh(String refreshTokenValue, ClientSessionInfo sessionInfo) {
+        RefreshToken refreshToken = refreshTokenRepository
+                .findByTokenHashAndRevokedFalse(TokenHashUtil.sha256Hex(refreshTokenValue))
                 .orElseThrow(() -> new BusinessException("Refresh token inválido"));
 
         if (refreshToken.isExpired()) {
@@ -133,7 +134,7 @@ public class AuthService {
 
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
-        return toAuthResponse(refreshToken.getUser(), sessionInfo);
+        return issueAuthTokens(refreshToken.getUser(), sessionInfo);
     }
 
     @Transactional
@@ -152,7 +153,9 @@ public class AuthService {
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
         UserActionToken token = userActionTokenRepository
-                .findByTokenAndPurposeAndUsedFalse(request.token(), TokenPurpose.PASSWORD_RESET)
+                .findByTokenHashAndPurposeAndUsedFalse(
+                        TokenHashUtil.sha256Hex(request.token()),
+                        TokenPurpose.PASSWORD_RESET)
                 .orElseThrow(() -> new BusinessException("Token de recuperação inválido"));
 
         if (token.isExpired()) {
@@ -172,7 +175,9 @@ public class AuthService {
     @Transactional
     public MessageResponse verifyEmail(String tokenValue) {
         UserActionToken token = userActionTokenRepository
-                .findByTokenAndPurposeAndUsedFalse(tokenValue, TokenPurpose.EMAIL_VERIFICATION)
+                .findByTokenHashAndPurposeAndUsedFalse(
+                        TokenHashUtil.sha256Hex(tokenValue),
+                        TokenPurpose.EMAIL_VERIFICATION)
                 .orElseThrow(() -> new BusinessException("Token de verificação inválido"));
 
         if (token.isExpired()) {
@@ -277,9 +282,13 @@ public class AuthService {
         user.setTermsVersion(LegalConstants.TERMS_VERSION);
     }
 
-    private AuthResponse toAuthResponse(AppUser user, ClientSessionInfo sessionInfo) {
+    private IssuedAuthTokens issueAuthTokens(AppUser user, ClientSessionInfo sessionInfo) {
         String refreshToken = tokenService.createRefreshToken(user, sessionInfo);
-        return AuthResponse.bearer(jwtService.generateToken(user), refreshToken, toUserResponse(user));
+        return new IssuedAuthTokens(
+                jwtService.generateToken(user),
+                refreshToken,
+                toUserResponse(user)
+        );
     }
 
     public UserResponse toUserResponse(AppUser user) {

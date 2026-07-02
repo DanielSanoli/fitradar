@@ -33,7 +33,7 @@ public class JwtService {
     public JwtService(
             ObjectMapper objectMapper,
             @Value("${app.security.jwt.secret:fitradar-dev-secret-change-me}") String secret,
-            @Value("${app.security.jwt.access-token-ttl-minutes:60}") long accessTokenTtlMinutes
+            @Value("${app.security.jwt.access-token-ttl-minutes:15}") long accessTokenTtlMinutes
     ) {
         this.objectMapper = objectMapper;
         this.secret = secret.getBytes(StandardCharsets.UTF_8);

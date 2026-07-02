@@ -1,16 +1,16 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchCurrentUser, login as loginRequest, logoutSession, register as registerRequest } from "@/lib/api/auth-api";
-import { setUnauthorizedHandler } from "@/lib/api/client";
+import {
+  fetchCurrentUser,
+  login as loginRequest,
+  logoutSession,
+  refreshSession,
+  register as registerRequest,
+} from "@/lib/api/auth-api";
+import { setUnauthorizedHandler, startProactiveAccessTokenRefresh } from "@/lib/api/client";
 import type { LoginRequest, RegisterRequest, User } from "@/lib/api/types";
 import { resolvePostLoginRedirect } from "@/lib/auth/post-login-redirect";
-import {
-  clearAuthStorage,
-  isAuthenticated,
-  persistAuth,
-  readStoredUser,
-} from "@/lib/auth/storage";
-import { AUTH_STORAGE } from "@/lib/auth/constants";
+import { clearAuthStorage, hasAccessToken, persistUser } from "@/lib/auth/storage";
 import { resyncPushIfGranted } from "@/lib/pwa/push-utils";
 
 export type AuthContextValue = {
@@ -27,8 +27,9 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const location = useLocation();  const [user, setUser] = useState<User | null>(() => readStoredUser());
-  const [isLoading, setIsLoading] = useState(() => isAuthenticated());
+  const location = useLocation();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(async () => {
     await logoutSession();
@@ -38,17 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [navigate]);
 
   const refreshUser = useCallback(async () => {
-    if (!isAuthenticated()) {
-      setUser(null);
+    if (!hasAccessToken()) {
+      const restored = await refreshSession();
+      if (!restored) {
+        setUser(null);
+        return;
+      }
+      setUser(restored.user);
       return;
     }
     const me = await fetchCurrentUser();
     setUser(me);
-    const token = localStorage.getItem(AUTH_STORAGE.token);
-    const refresh = localStorage.getItem(AUTH_STORAGE.refresh);
-    if (token && refresh) {
-      persistAuth({ token, refreshToken: refresh, tokenType: "Bearer", user: me });
-    }
+    persistUser(me);
   }, []);
 
   useEffect(() => {
@@ -57,18 +59,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      setIsLoading(false);
-      return;
+    if (!user) return;
+    return startProactiveAccessTokenRefresh();
+  }, [user?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      try {
+        const restored = await refreshSession();
+        if (cancelled) return;
+        if (restored) {
+          setUser(restored.user);
+          if (restored.user.role === "STUDENT") void resyncPushIfGranted();
+          return;
+        }
+        setUser(null);
+        clearAuthStorage();
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+          clearAuthStorage();
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     }
-    refreshUser()
-      .catch(() => logout())
-      .finally(() => {
-        setIsLoading(false);
-        const u = readStoredUser();
-        if (u?.role === "STUDENT") void resyncPushIfGranted();
-      });
-  }, [logout, refreshUser]);
+
+    void bootstrap();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
@@ -102,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [navigate],
   );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,

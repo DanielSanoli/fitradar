@@ -2,9 +2,9 @@ import { API_PREFIX } from "@/lib/auth/constants";
 import { FREE_LIMIT_MESSAGE_SNIPPET } from "@/lib/billing/pro-upgrade-prompt";
 import {
   clearAuthStorage,
+  getAccessToken,
+  hasAccessToken,
   persistAuth,
-  readStoredRefreshToken,
-  readStoredToken,
 } from "@/lib/auth/storage";
 import type {
   ApiErrorBody,
@@ -19,6 +19,9 @@ const baseUrl = () => (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 let refreshPromise: Promise<boolean> | null = null;
 let onUnauthorized: UnauthorizedHandler | null = null;
 let onPaymentRequired: PaymentRequiredHandler | null = null;
+
+const ACCESS_REFRESH_BUFFER_MS = 2 * 60 * 1000;
+let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
   onUnauthorized = handler;
@@ -61,7 +64,7 @@ async function rawRequest(
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
   }
-  const token = readStoredToken();
+  const token = getAccessToken();
   if (withAuth && token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -70,6 +73,7 @@ async function rawRequest(
     return await fetch(url, {
       method,
       headers,
+      credentials: "include",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
@@ -80,15 +84,72 @@ async function rawRequest(
   }
 }
 
-async function tryRefresh(): Promise<boolean> {
-  const refreshToken = readStoredRefreshToken();
-  if (!refreshToken) return false;
+function readAccessTokenExpiryMs(): number | null {
+  const token = getAccessToken();
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const payload = JSON.parse(
+      atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { exp?: number };
+    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
 
-  const res = await rawRequest("POST", `${API_PREFIX}/auth/refresh`, { refreshToken }, false);
+function scheduleProactiveAccessRefresh() {
+  if (proactiveRefreshTimer) {
+    clearTimeout(proactiveRefreshTimer);
+    proactiveRefreshTimer = null;
+  }
+  if (!hasAccessToken()) return;
+
+  const expMs = readAccessTokenExpiryMs();
+  if (!expMs) return;
+
+  const delay = Math.max(5_000, expMs - Date.now() - ACCESS_REFRESH_BUFFER_MS);
+  proactiveRefreshTimer = setTimeout(() => {
+    proactiveRefreshTimer = null;
+    void refreshOnce().then((ok) => {
+      if (ok) scheduleProactiveAccessRefresh();
+    });
+  }, delay);
+}
+
+export function startProactiveAccessTokenRefresh(): () => void {
+  scheduleProactiveAccessRefresh();
+
+  const onVisibility = () => {
+    if (document.visibilityState !== "visible") return;
+    const expMs = readAccessTokenExpiryMs();
+    if (expMs && Date.now() >= expMs - ACCESS_REFRESH_BUFFER_MS) {
+      void refreshOnce().then((ok) => {
+        if (ok) scheduleProactiveAccessRefresh();
+      });
+      return;
+    }
+    scheduleProactiveAccessRefresh();
+  };
+
+  document.addEventListener("visibilitychange", onVisibility);
+  return () => {
+    if (proactiveRefreshTimer) {
+      clearTimeout(proactiveRefreshTimer);
+      proactiveRefreshTimer = null;
+    }
+    document.removeEventListener("visibilitychange", onVisibility);
+  };
+}
+
+async function tryRefresh(): Promise<boolean> {
+  const res = await rawRequest("POST", `${API_PREFIX}/auth/refresh`, undefined, false);
   if (!res.ok) return false;
 
   const data = (await parseBody(res)) as AuthResponse;
   persistAuth(data);
+  scheduleProactiveAccessRefresh();
   return true;
 }
 
@@ -120,7 +181,7 @@ export async function apiUpload<T>(path: string, formData: FormData, withAuth = 
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
-  const token = readStoredToken();
+  const token = getAccessToken();
   if (withAuth && token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -130,6 +191,7 @@ export async function apiUpload<T>(path: string, formData: FormData, withAuth = 
     res = await fetch(url, {
       method: "POST",
       headers,
+      credentials: "include",
       body: formData,
     });
   } catch {

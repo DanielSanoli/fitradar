@@ -6,6 +6,7 @@ import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.dto.SessionResponse;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
+import com.sanoli.fitradar.security.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -81,7 +82,7 @@ class SessionServiceTest {
     private static RefreshToken session(AppUser user, String token) {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
-        refreshToken.setToken(token);
+        refreshToken.setTokenHash(TokenHashUtil.sha256Hex(token));
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshToken.setRevoked(false);
         refreshToken.setUserAgent("Mozilla/5.0 (Windows NT 10.0)");

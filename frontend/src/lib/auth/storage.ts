@@ -1,36 +1,46 @@
 import type { AuthResponse, User } from "@/lib/api/types";
 import { AUTH_STORAGE } from "@/lib/auth/constants";
 
-export function readStoredUser(): User | null {
-  const raw = localStorage.getItem(AUTH_STORAGE.user);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as User;
-  } catch {
-    return null;
-  }
-}
+let accessToken: string | null = null;
+let cachedUser: User | null = null;
 
-export function readStoredToken(): string | null {
-  return localStorage.getItem(AUTH_STORAGE.token);
-}
-
-export function readStoredRefreshToken(): string | null {
-  return localStorage.getItem(AUTH_STORAGE.refresh);
-}
-
-export function persistAuth(auth: AuthResponse): void {
-  localStorage.setItem(AUTH_STORAGE.token, auth.token);
-  localStorage.setItem(AUTH_STORAGE.refresh, auth.refreshToken);
-  localStorage.setItem(AUTH_STORAGE.user, JSON.stringify(auth.user));
-}
-
-export function clearAuthStorage(): void {
+/** Remove tokens legados de localStorage (migração). */
+function clearLegacyTokenStorage(): void {
   localStorage.removeItem(AUTH_STORAGE.token);
   localStorage.removeItem(AUTH_STORAGE.refresh);
   localStorage.removeItem(AUTH_STORAGE.user);
 }
 
+clearLegacyTokenStorage();
+
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
+export function hasAccessToken(): boolean {
+  return Boolean(accessToken);
+}
+
+export function readStoredUser(): User | null {
+  return cachedUser;
+}
+
+export function persistAuth(auth: AuthResponse): void {
+  accessToken = auth.token;
+  cachedUser = auth.user;
+  clearLegacyTokenStorage();
+}
+
+export function persistUser(user: User): void {
+  cachedUser = user;
+}
+
+export function clearAuthStorage(): void {
+  accessToken = null;
+  cachedUser = null;
+  clearLegacyTokenStorage();
+}
+
 export function isAuthenticated(): boolean {
-  return Boolean(readStoredToken() && readStoredUser());
+  return hasAccessToken();
 }

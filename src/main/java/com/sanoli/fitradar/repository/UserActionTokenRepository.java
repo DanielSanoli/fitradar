@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface UserActionTokenRepository extends JpaRepository<UserActionToken, UUID> {
 
-    Optional<UserActionToken> findByTokenAndPurposeAndUsedFalse(String token, TokenPurpose purpose);
+    Optional<UserActionToken> findByTokenHashAndPurposeAndUsedFalse(String tokenHash, TokenPurpose purpose);
 
     void deleteByUser_Id(UUID userId);
 }

@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
 
-    Optional<RefreshToken> findByTokenAndRevokedFalse(String token);
+    Optional<RefreshToken> findByTokenHashAndRevokedFalse(String tokenHash);
 
     List<RefreshToken> findByUser_IdAndRevokedFalseAndExpiresAtAfterOrderByCreatedAtDesc(
             UUID userId,
@@ -27,8 +27,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     int revokeAllActiveForUser(@Param("userId") UUID userId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE RefreshToken r SET r.revoked = true WHERE r.token = :token AND r.revoked = false")
-    int revokeByToken(@Param("token") String token);
+    @Query("UPDATE RefreshToken r SET r.revoked = true WHERE r.tokenHash = :tokenHash AND r.revoked = false")
+    int revokeByTokenHash(@Param("tokenHash") String tokenHash);
 
     void deleteByUser_Id(UUID userId);
 }

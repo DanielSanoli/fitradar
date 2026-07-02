@@ -7,14 +7,15 @@ import com.sanoli.fitradar.domain.UserActionToken;
 import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
+import com.sanoli.fitradar.security.TokenHashUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import java.util.Base64;
+import java.util.UUID;
 
 @Service
 public class TokenService {
@@ -48,15 +49,17 @@ public class TokenService {
 
     @Transactional
     public String createRefreshToken(AppUser user, ClientSessionInfo sessionInfo) {
+        String rawToken = generateToken();
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
-        refreshToken.setToken(generateToken());
+        refreshToken.setTokenHash(TokenHashUtil.sha256Hex(rawToken));
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(refreshTokenExpirationDays));
         if (sessionInfo != null) {
             refreshToken.setUserAgent(sessionInfo.userAgent());
             refreshToken.setIpAddress(sessionInfo.ipAddress());
         }
-        return refreshTokenRepository.save(refreshToken).getToken();
+        refreshTokenRepository.save(refreshToken);
+        return rawToken;
     }
 
     @Transactional
@@ -64,7 +67,7 @@ public class TokenService {
         if (token == null || token.isBlank()) {
             return;
         }
-        refreshTokenRepository.revokeByToken(token);
+        refreshTokenRepository.revokeByTokenHash(TokenHashUtil.sha256Hex(token));
     }
 
     @Transactional
@@ -83,12 +86,14 @@ public class TokenService {
     }
 
     private String createActionToken(AppUser user, TokenPurpose purpose, int expirationHours) {
+        String rawToken = generateToken();
         UserActionToken token = new UserActionToken();
         token.setUser(user);
         token.setPurpose(purpose);
-        token.setToken(generateToken());
+        token.setTokenHash(TokenHashUtil.sha256Hex(rawToken));
         token.setExpiresAt(LocalDateTime.now().plusHours(expirationHours));
-        return userActionTokenRepository.save(token).getToken();
+        userActionTokenRepository.save(token);
+        return rawToken;
     }
 
     private String generateToken() {

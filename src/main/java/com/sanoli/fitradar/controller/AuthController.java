@@ -8,21 +8,22 @@ import com.sanoli.fitradar.dto.ChangePasswordRequest;
 import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.dto.DeleteAccountRequest;
 import com.sanoli.fitradar.dto.ForgotPasswordRequest;
+import com.sanoli.fitradar.dto.IssuedAuthTokens;
 import com.sanoli.fitradar.dto.LoginRequest;
-import com.sanoli.fitradar.dto.LogoutRequest;
 import com.sanoli.fitradar.dto.MessageResponse;
-import com.sanoli.fitradar.dto.RefreshTokenRequest;
 import com.sanoli.fitradar.dto.RegisterRequest;
 import com.sanoli.fitradar.dto.ResetPasswordRequest;
 import com.sanoli.fitradar.dto.SessionResponse;
 import com.sanoli.fitradar.dto.UpdateProfileRequest;
 import com.sanoli.fitradar.dto.UserResponse;
 import com.sanoli.fitradar.security.CurrentUserService;
+import com.sanoli.fitradar.security.RefreshTokenCookieService;
 import com.sanoli.fitradar.service.AccountPrivacyService;
 import com.sanoli.fitradar.service.AuthService;
 import com.sanoli.fitradar.service.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,6 +50,7 @@ public class AuthController {
     private final SessionService sessionService;
     private final AccountPrivacyService accountPrivacyService;
     private final CurrentUserService currentUserService;
+    private final RefreshTokenCookieService refreshTokenCookieService;
     private final ObjectMapper objectMapper;
 
     public AuthController(
@@ -57,12 +58,14 @@ public class AuthController {
             SessionService sessionService,
             AccountPrivacyService accountPrivacyService,
             CurrentUserService currentUserService,
+            RefreshTokenCookieService refreshTokenCookieService,
             ObjectMapper objectMapper
     ) {
         this.authService = authService;
         this.sessionService = sessionService;
         this.accountPrivacyService = accountPrivacyService;
         this.currentUserService = currentUserService;
+        this.refreshTokenCookieService = refreshTokenCookieService;
         this.objectMapper = objectMapper;
     }
 
@@ -70,44 +73,56 @@ public class AuthController {
     @Operation(summary = "Cria uma conta de criador")
     public ResponseEntity<AuthResponse> register(
             @Valid @RequestBody RegisterRequest request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(authService.register(request, ClientSessionInfo.from(httpRequest)));
+        return authResponse(authService.register(request, ClientSessionInfo.from(httpRequest)), httpResponse,
+                HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Autentica um usuário (criador ou aluno)")
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
-        return ResponseEntity.ok(authService.login(request, ClientSessionInfo.from(httpRequest)));
+        return authResponse(authService.login(request, ClientSessionInfo.from(httpRequest)), httpResponse,
+                HttpStatus.OK);
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "Renova o token JWT usando refresh token")
+    @Operation(summary = "Renova o token JWT usando refresh token (cookie httpOnly)")
     public ResponseEntity<AuthResponse> refresh(
-            @Valid @RequestBody RefreshTokenRequest request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
-        return ResponseEntity.ok(authService.refresh(request, ClientSessionInfo.from(httpRequest)));
+        String refreshToken = refreshTokenCookieService.requireRefreshToken(httpRequest);
+        return authResponse(
+                authService.refresh(refreshToken, ClientSessionInfo.from(httpRequest)),
+                httpResponse,
+                HttpStatus.OK
+        );
     }
 
     @PostMapping("/logout")
     @Operation(summary = "Encerra a sessão atual revogando o refresh token")
-    public ResponseEntity<MessageResponse> logout(@Valid @RequestBody LogoutRequest request) {
-        return ResponseEntity.ok(sessionService.logout(request.refreshToken()));
+    public ResponseEntity<MessageResponse> logout(
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        refreshTokenCookieService.readRefreshToken(httpRequest)
+                .ifPresent(sessionService::logout);
+        refreshTokenCookieService.clearRefreshToken(httpResponse);
+        return ResponseEntity.ok(new MessageResponse("Sessão encerrada."));
     }
 
     @GetMapping("/sessions")
     @Operation(summary = "Lista sessões ativas do usuário autenticado")
-    public ResponseEntity<List<SessionResponse>> listSessions(
-            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken
-    ) {
+    public ResponseEntity<List<SessionResponse>> listSessions(HttpServletRequest httpRequest) {
         return ResponseEntity.ok(sessionService.listActiveSessions(
                 currentUserService.getCurrentUser(),
-                refreshToken
+                refreshTokenCookieService.readRefreshToken(httpRequest).orElse(null)
         ));
     }
 
@@ -115,13 +130,19 @@ public class AuthController {
     @Operation(summary = "Encerra uma sessão específica")
     public ResponseEntity<MessageResponse> revokeSession(
             @PathVariable UUID sessionId,
-            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
-        return ResponseEntity.ok(sessionService.revokeSession(
+        String currentRefresh = refreshTokenCookieService.readRefreshToken(httpRequest).orElse(null);
+        MessageResponse response = sessionService.revokeSession(
                 currentUserService.getCurrentUser(),
                 sessionId,
-                refreshToken
-        ));
+                currentRefresh
+        );
+        if (response.message().contains("atual")) {
+            refreshTokenCookieService.clearRefreshToken(httpResponse);
+        }
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/forgot-password")
@@ -185,8 +206,21 @@ public class AuthController {
 
     @DeleteMapping("/me")
     @Operation(summary = "Exclui ou anonimiza a conta do titular (LGPD)")
-    public ResponseEntity<MessageResponse> deleteMyAccount(@Valid @RequestBody DeleteAccountRequest request) {
+    public ResponseEntity<MessageResponse> deleteMyAccount(
+            @Valid @RequestBody DeleteAccountRequest request,
+            HttpServletResponse httpResponse
+    ) {
         accountPrivacyService.deleteAccount(currentUserService.getCurrentUser(), request);
+        refreshTokenCookieService.clearRefreshToken(httpResponse);
         return ResponseEntity.ok(new MessageResponse("Conta excluída. Seus dados foram removidos conforme a LGPD."));
+    }
+
+    private ResponseEntity<AuthResponse> authResponse(
+            IssuedAuthTokens tokens,
+            HttpServletResponse httpResponse,
+            HttpStatus status
+    ) {
+        refreshTokenCookieService.writeRefreshToken(httpResponse, tokens.refreshToken());
+        return ResponseEntity.status(status).body(tokens.toResponse());
     }
 }

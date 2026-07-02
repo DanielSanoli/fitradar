@@ -10,6 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+
 /**
  * Avalia diariamente as regras de retenção para todos os criadores (em lotes).
  */
@@ -28,6 +30,7 @@ public class RetentionAlertScheduler {
     }
 
     @Scheduled(cron = "${app.retention.alerts-cron:0 0 8 * * *}", zone = "${app.retention.timezone:America/Sao_Paulo}")
+    @SchedulerLock(name = "retentionAlerts", lockAtMostFor = "PT2H", lockAtLeastFor = "PT1M")
     public void evaluateAllCreators() {
         int page = 0;
         Page<AppUser> creators;

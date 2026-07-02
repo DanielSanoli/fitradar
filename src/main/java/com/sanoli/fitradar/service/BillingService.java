@@ -6,6 +6,7 @@ import com.sanoli.fitradar.config.BillingProperties;
 import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.SubscriptionPlan;
 import com.sanoli.fitradar.domain.SubscriptionStatus;
+import com.sanoli.fitradar.domain.WebhookEventStatus;
 import com.sanoli.fitradar.dto.CheckoutResponse;
 import com.sanoli.fitradar.dto.MessageResponse;
 import com.sanoli.fitradar.dto.ProCheckoutRequest;
@@ -40,6 +41,7 @@ public class BillingService {
     private final BillingProperties billingProperties;
     private final MarketplaceBillingService marketplaceBillingService;
     private final PlanEntitlementService planEntitlementService;
+    private final WebhookEventService webhookEventService;
 
     public BillingService(
             CurrentUserService currentUserService,
@@ -47,7 +49,8 @@ public class BillingService {
             AsaasClient asaasClient,
             BillingProperties billingProperties,
             MarketplaceBillingService marketplaceBillingService,
-            PlanEntitlementService planEntitlementService
+            PlanEntitlementService planEntitlementService,
+            WebhookEventService webhookEventService
     ) {
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
@@ -55,6 +58,7 @@ public class BillingService {
         this.billingProperties = billingProperties;
         this.marketplaceBillingService = marketplaceBillingService;
         this.planEntitlementService = planEntitlementService;
+        this.webhookEventService = webhookEventService;
     }
 
     @Transactional
@@ -220,20 +224,39 @@ public class BillingService {
 
         validateWebhookToken(accessToken);
 
-        String event = payload.path("event").asText("");
-        log.info("[billing:webhook] recebido event={}", event);
+        String eventId = requireEventId(payload);
+        String eventType = payload.path("event").asText("");
+        log.info("[billing:webhook] recebido event={} eventId={}", eventType, LoggingSanitizer.refId(eventId));
 
+        if (webhookEventService.beginProcessing(
+                eventId,
+                eventType,
+                webhookEventService.hashPayload(payload)).isEmpty()) {
+            log.info("[billing:webhook] duplicado eventId={} — ignorado", LoggingSanitizer.refId(eventId));
+            return;
+        }
+
+        try {
+            WebhookEventStatus outcome = dispatchWebhook(payload, eventType);
+            webhookEventService.complete(eventId, outcome);
+        } catch (RuntimeException exception) {
+            webhookEventService.markFailed(eventId);
+            throw exception;
+        }
+    }
+
+    private WebhookEventStatus dispatchWebhook(JsonNode payload, String event) {
         JsonNode payment = payload.path("payment");
 
         if (marketplaceBillingService.handlePaymentWebhook(event, payment)) {
             log.info("[billing:webhook] processado event={} channel=marketplace", event);
-            return;
+            return WebhookEventStatus.PROCESSED;
         }
 
         String subscriptionId = payment.path("subscription").asText(null);
         if (subscriptionId == null || subscriptionId.isBlank()) {
             log.info("[billing:webhook] ignorado event={} motivo=sem_subscription", event);
-            return;
+            return WebhookEventStatus.IGNORED;
         }
 
         AppUser user = userRepository.findByAsaasSubscriptionId(subscriptionId)
@@ -252,6 +275,15 @@ public class BillingService {
 
         log.info("[billing:webhook] processado event={} subscriptionRef={} changed={}",
                 event, LoggingSanitizer.refId(subscriptionId), changed);
+        return WebhookEventStatus.PROCESSED;
+    }
+
+    private static String requireEventId(JsonNode payload) {
+        String eventId = payload.path("id").asText(null);
+        if (eventId == null || eventId.isBlank()) {
+            throw new BusinessException("Webhook Asaas sem eventId");
+        }
+        return eventId;
     }
 
     private void validateWebhookToken(String accessToken) {

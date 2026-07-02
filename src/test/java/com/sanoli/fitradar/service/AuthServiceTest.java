@@ -5,13 +5,12 @@ import com.sanoli.fitradar.domain.RefreshToken;
 import com.sanoli.fitradar.domain.TokenPurpose;
 import com.sanoli.fitradar.domain.UserActionToken;
 import com.sanoli.fitradar.domain.UserRole;
-import com.sanoli.fitradar.dto.AuthResponse;
+import com.sanoli.fitradar.dto.IssuedAuthTokens;
 import com.sanoli.fitradar.dto.ChangePasswordRequest;
 import com.sanoli.fitradar.dto.ClientSessionInfo;
 import com.sanoli.fitradar.dto.ForgotPasswordRequest;
 import com.sanoli.fitradar.dto.LoginRequest;
 import com.sanoli.fitradar.dto.MessageResponse;
-import com.sanoli.fitradar.dto.RefreshTokenRequest;
 import com.sanoli.fitradar.dto.RegisterRequest;
 import com.sanoli.fitradar.dto.ResetPasswordRequest;
 import com.sanoli.fitradar.dto.UpdateProfileRequest;
@@ -21,6 +20,7 @@ import com.sanoli.fitradar.repository.AnamneseRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.JwtService;
+import com.sanoli.fitradar.security.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -89,11 +89,11 @@ class AuthServiceTest {
             return user;
         });
 
-        AuthResponse response = authService.register(
+        IssuedAuthTokens response = authService.register(
                 new RegisterRequest("Creator", EMAIL, PASSWORD, true),
                 ClientSessionInfo.UNKNOWN);
 
-        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.accessToken()).isEqualTo("jwt-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
         assertThat(response.user().email()).isEqualTo(EMAIL);
         assertThat(response.user().role()).isEqualTo(UserRole.CREATOR);
@@ -123,9 +123,9 @@ class AuthServiceTest {
         AppUser user = savedCreator();
         when(userRepository.findByEmailIgnoreCase(EMAIL)).thenReturn(Optional.of(user));
 
-        AuthResponse response = authService.login(new LoginRequest(EMAIL, PASSWORD), ClientSessionInfo.UNKNOWN);
+        IssuedAuthTokens response = authService.login(new LoginRequest(EMAIL, PASSWORD), ClientSessionInfo.UNKNOWN);
 
-        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.accessToken()).isEqualTo("jwt-token");
         assertThat(response.user().email()).isEqualTo(EMAIL);
     }
 
@@ -142,28 +142,28 @@ class AuthServiceTest {
     void refresh_rotatesTokenAndReturnsNewAuth() {
         AppUser user = savedCreator();
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken("old-refresh");
+        refreshToken.setTokenHash(TokenHashUtil.sha256Hex("old-refresh"));
         refreshToken.setUser(user);
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshToken.setRevoked(false);
 
-        when(refreshTokenRepository.findByTokenAndRevokedFalse("old-refresh")).thenReturn(Optional.of(refreshToken));
+        when(refreshTokenRepository.findByTokenHashAndRevokedFalse(TokenHashUtil.sha256Hex("old-refresh")))
+                .thenReturn(Optional.of(refreshToken));
         when(refreshTokenRepository.save(refreshToken)).thenReturn(refreshToken);
 
-        AuthResponse response = authService.refresh(
-                new RefreshTokenRequest("old-refresh"), ClientSessionInfo.UNKNOWN);
+        IssuedAuthTokens response = authService.refresh("old-refresh", ClientSessionInfo.UNKNOWN);
 
         assertThat(refreshToken.isRevoked()).isTrue();
-        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.accessToken()).isEqualTo("jwt-token");
         verify(refreshTokenRepository).save(refreshToken);
     }
 
     @Test
     void refresh_rejectsUnknownToken() {
-        when(refreshTokenRepository.findByTokenAndRevokedFalse("bad")).thenReturn(Optional.empty());
+        when(refreshTokenRepository.findByTokenHashAndRevokedFalse(TokenHashUtil.sha256Hex("bad")))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.refresh(
-                new RefreshTokenRequest("bad"), ClientSessionInfo.UNKNOWN))
+        assertThatThrownBy(() -> authService.refresh("bad", ClientSessionInfo.UNKNOWN))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("inválido");
     }
@@ -193,12 +193,13 @@ class AuthServiceTest {
         AppUser user = savedCreator();
         UserActionToken token = new UserActionToken();
         token.setUser(user);
-        token.setToken("reset-token");
+        token.setTokenHash(TokenHashUtil.sha256Hex("reset-token"));
         token.setPurpose(TokenPurpose.PASSWORD_RESET);
         token.setExpiresAt(LocalDateTime.now().plusHours(1));
         token.setUsed(false);
 
-        when(userActionTokenRepository.findByTokenAndPurposeAndUsedFalse("reset-token", TokenPurpose.PASSWORD_RESET))
+        when(userActionTokenRepository.findByTokenHashAndPurposeAndUsedFalse(
+                TokenHashUtil.sha256Hex("reset-token"), TokenPurpose.PASSWORD_RESET))
                 .thenReturn(Optional.of(token));
         when(userRepository.save(user)).thenReturn(user);
         when(userActionTokenRepository.save(token)).thenReturn(token);
@@ -217,12 +218,12 @@ class AuthServiceTest {
         AppUser user = savedCreator();
         UserActionToken token = new UserActionToken();
         token.setUser(user);
-        token.setToken("verify-token");
+        token.setTokenHash(TokenHashUtil.sha256Hex("verify-token"));
         token.setPurpose(TokenPurpose.EMAIL_VERIFICATION);
         token.setExpiresAt(LocalDateTime.now().plusHours(1));
 
-        when(userActionTokenRepository.findByTokenAndPurposeAndUsedFalse(
-                "verify-token", TokenPurpose.EMAIL_VERIFICATION))
+        when(userActionTokenRepository.findByTokenHashAndPurposeAndUsedFalse(
+                TokenHashUtil.sha256Hex("verify-token"), TokenPurpose.EMAIL_VERIFICATION))
                 .thenReturn(Optional.of(token));
         when(userRepository.save(user)).thenReturn(user);
         when(userActionTokenRepository.save(token)).thenReturn(token);

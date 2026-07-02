@@ -1,8 +1,9 @@
 import { apiRequestPublic, api, apiRequest } from "@/lib/api/client";
 import type { AuthResponse, LoginRequest, RegisterRequest, User, UserSession } from "@/lib/api/types";
 import { API_PREFIX } from "@/lib/auth/constants";
-import { persistAuth, readStoredRefreshToken, readStoredToken } from "@/lib/auth/storage";
+import { getAccessToken, persistAuth, persistUser } from "@/lib/auth/storage";
 import { ApiError } from "@/lib/api/types";
+
 export async function login(credentials: LoginRequest): Promise<AuthResponse> {
   const auth = await apiRequestPublic<AuthResponse>("POST", `${API_PREFIX}/auth/login`, credentials);
   persistAuth(auth);
@@ -71,7 +72,7 @@ export async function deleteMyAccount(confirmEmail: string): Promise<{ message: 
 }
 
 export async function downloadMyDataExport(): Promise<void> {
-  const token = readStoredToken();
+  const token = getAccessToken();
   if (!token) {
     throw new ApiError(401, "Sessão expirada. Faça login novamente.");
   }
@@ -79,6 +80,7 @@ export async function downloadMyDataExport(): Promise<void> {
   const base = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
   const url = `${base}${API_PREFIX}/auth/me/export`;
   const response = await fetch(url, {
+    credentials: "include",
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${token}`,
@@ -106,42 +108,27 @@ export async function downloadMyDataExport(): Promise<void> {
 }
 
 export async function refreshSession(): Promise<AuthResponse | null> {
-  const refreshToken = readStoredRefreshToken();
-  if (!refreshToken) return null;
-  const auth = await apiRequestPublic<AuthResponse>("POST", `${API_PREFIX}/auth/refresh`, {
-    refreshToken,
-  });
-  persistAuth(auth);
-  return auth;
+  try {
+    const auth = await apiRequestPublic<AuthResponse>("POST", `${API_PREFIX}/auth/refresh`);
+    persistAuth(auth);
+    return auth;
+  } catch {
+    return null;
+  }
 }
 
 export async function logoutSession(): Promise<void> {
-  const refreshToken = readStoredRefreshToken();
-  if (!refreshToken) return;
   try {
-    await apiRequestPublic<{ message: string }>("POST", `${API_PREFIX}/auth/logout`, {
-      refreshToken,
-    });
+    await apiRequestPublic<{ message: string }>("POST", `${API_PREFIX}/auth/logout`);
   } catch {
     // encerra localmente mesmo se a API falhar
   }
 }
 
-function sessionHeaders(): Record<string, string> {
-  const refreshToken = readStoredRefreshToken();
-  return refreshToken ? { "X-Refresh-Token": refreshToken } : {};
-}
-
 export async function listSessions(): Promise<UserSession[]> {
-  return apiRequest<UserSession[]>("GET", `${API_PREFIX}/auth/sessions`, undefined, true, sessionHeaders());
+  return apiRequest<UserSession[]>("GET", `${API_PREFIX}/auth/sessions`);
 }
 
 export async function revokeSession(sessionId: string): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>(
-    "DELETE",
-    `${API_PREFIX}/auth/sessions/${sessionId}`,
-    undefined,
-    true,
-    sessionHeaders(),
-  );
+  return apiRequest<{ message: string }>("DELETE", `${API_PREFIX}/auth/sessions/${sessionId}`);
 }

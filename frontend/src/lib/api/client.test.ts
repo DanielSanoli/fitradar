@@ -4,13 +4,12 @@ import {
   setPaymentRequiredHandler,
   setUnauthorizedHandler,
 } from "@/lib/api/client";
-import { AUTH_STORAGE } from "@/lib/auth/constants";
-import { persistAuth } from "@/lib/auth/storage";
+import { API_PREFIX } from "@/lib/auth/constants";
+import { clearAuthStorage, getAccessToken, persistAuth } from "@/lib/auth/storage";
 import type { AuthResponse } from "@/lib/api/types";
 
 const authFixture: AuthResponse = {
   token: "access-token",
-  refreshToken: "refresh-token",
   tokenType: "Bearer",
   user: {
     id: "u1",
@@ -31,7 +30,7 @@ const authFixture: AuthResponse = {
 
 describe("api client", () => {
   beforeEach(() => {
-    localStorage.clear();
+    clearAuthStorage();
     vi.stubEnv("VITE_API_URL", "http://api.test");
     setUnauthorizedHandler(null);
     setPaymentRequiredHandler(null);
@@ -50,8 +49,40 @@ describe("api client", () => {
 
     const data = await apiRequest<{ ok: boolean }>("GET", "/api/v1/auth/me");
     expect(data.ok).toBe(true);
-    expect(localStorage.getItem(AUTH_STORAGE.token)).toBe("new-access");
+    expect(getAccessToken()).toBe("new-access");
     expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ credentials: "include" });
+  });
+
+  it("deduplicates refresh when concurrent requests get 401", async () => {
+    persistAuth(authFixture);
+    let refreshCalls = 0;
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const path = url.replace("http://api.test", "");
+      if (path === `${API_PREFIX}/auth/refresh`) {
+        refreshCalls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        return new Response(JSON.stringify({ ...authFixture, token: "new-access" }), { status: 200 });
+      }
+      const headers = init?.headers as Record<string, string> | undefined;
+      if (headers?.Authorization === "Bearer access-token") {
+        return new Response(JSON.stringify({ message: "expired" }), { status: 401 });
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const [programs, students, me] = await Promise.all([
+      apiRequest<{ ok: boolean }>("GET", "/api/v1/programs"),
+      apiRequest<{ ok: boolean }>("GET", "/api/v1/students"),
+      apiRequest<{ ok: boolean }>("GET", "/api/v1/auth/me"),
+    ]);
+
+    expect(refreshCalls).toBe(1);
+    expect(programs.ok).toBe(true);
+    expect(students.ok).toBe(true);
+    expect(me.ok).toBe(true);
+    expect(getAccessToken()).toBe("new-access");
   });
 
   it("logs out on 401 when refresh fails", async () => {
@@ -63,12 +94,12 @@ describe("api client", () => {
       vi
         .fn()
         .mockResolvedValueOnce(new Response("{}", { status: 401 }))
-        .mockResolvedValueOnce(new Response("{}", { status: 401 })),
+        .mockResolvedValueOnce(new Response("{}", { status: 400 })),
     );
 
     await expect(apiRequest("GET", "/api/v1/programs")).rejects.toMatchObject({ status: 401 });
     expect(onUnauthorized).toHaveBeenCalledOnce();
-    expect(localStorage.getItem(AUTH_STORAGE.token)).toBeNull();
+    expect(getAccessToken()).toBeNull();
   });
 
   it("handles 402 payment required", async () => {

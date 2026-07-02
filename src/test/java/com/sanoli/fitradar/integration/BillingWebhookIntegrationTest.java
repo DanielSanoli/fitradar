@@ -1,5 +1,7 @@
 package com.sanoli.fitradar.integration;
 
+import com.sanoli.fitradar.domain.WebhookEventStatus;
+import com.sanoli.fitradar.repository.WebhookEventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -7,6 +9,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,6 +19,9 @@ class BillingWebhookIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    WebhookEventRepository webhookEventRepository;
 
     @DynamicPropertySource
     static void enableBilling(DynamicPropertyRegistry registry) {
@@ -29,7 +35,9 @@ class BillingWebhookIntegrationTest extends AbstractIntegrationTest {
     void webhookRejectsMissingToken() throws Exception {
         mockMvc.perform(post("/api/v1/billing/webhook")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"event\":\"PAYMENT_CONFIRMED\",\"payment\":{}}"))
+                        .content("""
+                                {"id":"evt_missing_token","event":"PAYMENT_CONFIRMED","payment":{}}
+                                """))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -38,7 +46,9 @@ class BillingWebhookIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/v1/billing/webhook")
                         .header("asaas-access-token", "wrong-token")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"event\":\"PAYMENT_CONFIRMED\",\"payment\":{}}"))
+                        .content("""
+                                {"id":"evt_wrong_token","event":"PAYMENT_CONFIRMED","payment":{}}
+                                """))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -47,7 +57,36 @@ class BillingWebhookIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/v1/billing/webhook")
                         .header("asaas-access-token", WEBHOOK_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"event\":\"UNKNOWN\",\"payment\":{}}"))
+                        .content("""
+                                {"id":"evt_unknown","event":"UNKNOWN","payment":{}}
+                                """))
                 .andExpect(status().isOk());
+
+        var stored = webhookEventRepository.findByEventId("evt_unknown").orElseThrow();
+        assertThat(stored.getStatus()).isEqualTo(WebhookEventStatus.IGNORED);
+        assertThat(stored.getProcessedAt()).isNotNull();
+    }
+
+    @Test
+    void webhookIsIdempotentForSameEventId() throws Exception {
+        String payload = """
+                {"id":"evt_idempotent","event":"UNKNOWN","payment":{}}
+                """;
+
+        mockMvc.perform(post("/api/v1/billing/webhook")
+                        .header("asaas-access-token", WEBHOOK_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/billing/webhook")
+                        .header("asaas-access-token", WEBHOOK_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        assertThat(webhookEventRepository.findByEventId("evt_idempotent")).isPresent();
+        assertThat(webhookEventRepository.findByEventId("evt_idempotent").orElseThrow().getStatus())
+                .isEqualTo(WebhookEventStatus.IGNORED);
     }
 }

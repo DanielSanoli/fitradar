@@ -11,6 +11,11 @@ springdoc:
   swagger-ui:
     enabled: false
 
+app:
+  security:
+    jwt:
+      refresh-cookie-secure: true
+
 logging:
   structured:
     format:

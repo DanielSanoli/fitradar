@@ -6,6 +6,7 @@ import com.sanoli.fitradar.dto.MessageResponse;
 import com.sanoli.fitradar.dto.SessionResponse;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
+import com.sanoli.fitradar.security.TokenHashUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,6 +64,6 @@ public class SessionService {
     private boolean isCurrentSession(RefreshToken session, String currentRefreshToken) {
         return currentRefreshToken != null
                 && !currentRefreshToken.isBlank()
-                && currentRefreshToken.equals(session.getToken());
+                && session.getTokenHash().equals(TokenHashUtil.sha256Hex(currentRefreshToken));
     }
 }

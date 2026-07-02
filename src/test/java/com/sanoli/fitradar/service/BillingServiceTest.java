@@ -8,6 +8,8 @@ import com.sanoli.fitradar.config.BillingProperties;
 import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.domain.SubscriptionPlan;
 import com.sanoli.fitradar.domain.SubscriptionStatus;
+import com.sanoli.fitradar.domain.WebhookEvent;
+import com.sanoli.fitradar.domain.WebhookEventStatus;
 import com.sanoli.fitradar.dto.ProCheckoutRequest;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.WebhookUnauthorizedException;
@@ -23,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -41,12 +44,14 @@ class BillingServiceTest {
     private ObjectMapper objectMapper;
     private CurrentUserService currentUserService;
     private AsaasClient asaasClient;
+    private WebhookEventService webhookEventService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         currentUserService = mock(CurrentUserService.class);
         asaasClient = mock(AsaasClient.class);
+        webhookEventService = mock(WebhookEventService.class);
         billingProperties = new BillingProperties();
         billingProperties.getAsaas().setEnabled(true);
         billingProperties.getAsaas().setApiKey("asaas-test-key");
@@ -68,9 +73,17 @@ class BillingServiceTest {
                 asaasClient,
                 billingProperties,
                 mock(MarketplaceBillingService.class),
-                planEntitlementService
+                planEntitlementService,
+                webhookEventService
         );
         objectMapper = new ObjectMapper();
+
+        when(webhookEventService.hashPayload(any())).thenReturn("payload-hash");
+        when(webhookEventService.beginProcessing(anyString(), anyString(), anyString())).thenAnswer(invocation -> {
+            WebhookEvent event = new WebhookEvent();
+            event.setEventId(invocation.getArgument(0));
+            return Optional.of(event);
+        });
     }
 
     @Test
@@ -172,6 +185,29 @@ class BillingServiceTest {
         assertThat(user.getPlan()).isEqualTo(SubscriptionPlan.PRO);
         assertThat(user.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
         verify(userRepository).save(user);
+        verify(webhookEventService).complete("evt_PAYMENT_CONFIRMED", WebhookEventStatus.PROCESSED);
+    }
+
+    @Test
+    void webhook_duplicateEventId_skipsReprocessing() {
+        when(webhookEventService.beginProcessing(anyString(), anyString(), anyString())).thenReturn(Optional.empty());
+
+        billingService.handleWebhook(WEBHOOK_TOKEN, paymentPayload("PAYMENT_CONFIRMED"));
+
+        verify(userRepository, never()).save(any());
+        verify(webhookEventService, never()).complete(anyString(), any());
+        verify(webhookEventService, never()).markFailed(anyString());
+    }
+
+    @Test
+    void webhook_processingFailure_marksFailedAndRethrows() {
+        when(userRepository.findByAsaasSubscriptionId(SUBSCRIPTION_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> billingService.handleWebhook(WEBHOOK_TOKEN, paymentPayload("PAYMENT_CONFIRMED")))
+                .isInstanceOf(BusinessException.class);
+
+        verify(webhookEventService).markFailed("evt_PAYMENT_CONFIRMED");
+        verify(webhookEventService, never()).complete(anyString(), any());
     }
 
     @Test
@@ -298,6 +334,7 @@ class BillingServiceTest {
 
     private ObjectNode paymentPayload(String event) {
         ObjectNode payload = objectMapper.createObjectNode();
+        payload.put("id", "evt_" + event);
         payload.put("event", event);
         ObjectNode payment = objectMapper.createObjectNode();
         payment.put("subscription", SUBSCRIPTION_ID);

@@ -29,7 +29,6 @@ export interface User {
 
 export interface AuthResponse {
   token: string;
-  refreshToken: string;
   tokenType: string;
   user: User;
 }
@@ -46,9 +45,6 @@ export interface RegisterRequest {
   acceptedTerms: boolean;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
 
 export interface UserSession {
   id: string;

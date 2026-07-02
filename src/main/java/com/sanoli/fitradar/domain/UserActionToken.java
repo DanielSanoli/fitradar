@@ -23,8 +23,8 @@ public class UserActionToken {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 128)
-    private String token;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    private String tokenHash;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -52,12 +52,12 @@ public class UserActionToken {
         return id;
     }
 
-    public String getToken() {
-        return token;
+    public String getTokenHash() {
+        return tokenHash;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public void setTokenHash(String tokenHash) {
+        this.tokenHash = tokenHash;
     }
 
     public AppUser getUser() {

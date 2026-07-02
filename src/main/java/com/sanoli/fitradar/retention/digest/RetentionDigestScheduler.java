@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+
 /**
  * Dispara o resumo semanal ao criador e os nudges aos alunos inativos.
  */
@@ -24,6 +26,7 @@ public class RetentionDigestScheduler {
     }
 
     @Scheduled(cron = "${app.digest.weekly-cron:0 0 8 * * MON}", zone = "${app.retention.timezone:America/Sao_Paulo}")
+    @SchedulerLock(name = "weeklyDigest", lockAtMostFor = "PT1H", lockAtLeastFor = "PT1M")
     public void weeklyDigest() {
         if (!digestProperties.isEnabled()) {
             return;
@@ -33,6 +36,7 @@ public class RetentionDigestScheduler {
     }
 
     @Scheduled(cron = "${app.digest.daily-cron:0 0 8 * * *}", zone = "${app.retention.timezone:America/Sao_Paulo}")
+    @SchedulerLock(name = "dailyDigest", lockAtMostFor = "PT1H", lockAtLeastFor = "PT1M")
     public void dailyDigest() {
         if (!digestProperties.isEnabled()) {
             return;
@@ -44,6 +48,7 @@ public class RetentionDigestScheduler {
     }
 
     @Scheduled(cron = "${app.digest.nudge-cron:0 0 9 * * *}", zone = "${app.retention.timezone:America/Sao_Paulo}")
+    @SchedulerLock(name = "inactiveNudges", lockAtMostFor = "PT2H", lockAtLeastFor = "PT1M")
     public void inactiveNudges() {
         if (!digestProperties.isEnabled()) {
             return;
