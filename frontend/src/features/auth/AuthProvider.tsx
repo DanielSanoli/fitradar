@@ -83,6 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         navigate("/accept-terms", { replace: true, state: from ? { from } : undefined });
         return;
       }
+      if (auth.user.role === "STUDENT" && auth.user.anamneseCompleted !== true) {
+        navigate("/anamnese", { replace: true, state: from ? { from } : undefined });
+        return;
+      }
       if (auth.user.role === "STUDENT") void resyncPushIfGranted();
       navigate(resolvePostLoginRedirect(from, auth.user.role), { replace: true });
     },

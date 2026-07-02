@@ -121,6 +121,54 @@ export type StudentResendInviteResponse = {
   emailSent: boolean;
 };
 
+export type ObjetivoPrincipal =
+  | "EMAGRECIMENTO"
+  | "HIPERTROFIA"
+  | "CONDICIONAMENTO"
+  | "SAUDE"
+  | "PERFORMANCE";
+
+export type ExperienciaTreino = "INICIANTE" | "INTERMEDIARIO" | "AVANCADO";
+
+export type NivelAtividadeRotina = "SEDENTARIO" | "LEVE" | "MODERADO" | "ATIVO";
+
+export type AnamneseRequest = {
+  objetivoPrincipal: ObjetivoPrincipal;
+  experienciaTreino: ExperienciaTreino;
+  diasDisponiveisSemana: number;
+  nivelAtividadeRotina: NivelAtividadeRotina;
+  alturaCm: number;
+  pesoAtualKg: string;
+  pesoObjetivoKg?: string | null;
+  historicoLesoes?: string | null;
+  condicoesSaude?: string | null;
+  medicacoes?: string | null;
+  restricoesAlimentares?: string | null;
+  observacoes?: string | null;
+  consentimentoDadosSaude: boolean;
+};
+
+export type AnamneseResponse = {
+  id: string;
+  studentId: string;
+  creatorId: string;
+  objetivoPrincipal: ObjetivoPrincipal;
+  experienciaTreino: ExperienciaTreino;
+  diasDisponiveisSemana: number;
+  nivelAtividadeRotina: NivelAtividadeRotina;
+  alturaCm: number;
+  pesoAtualKg: string;
+  pesoObjetivoKg: string | null;
+  historicoLesoes: string | null;
+  condicoesSaude: string | null;
+  medicacoes: string | null;
+  restricoesAlimentares: string | null;
+  observacoes: string | null;
+  consentimentoDadosSaude: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type EnrollmentResponse = {
   id: string;
   studentId: string;

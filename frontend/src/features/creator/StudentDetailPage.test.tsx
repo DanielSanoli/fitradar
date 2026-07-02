@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { StudentDetailPage } from "@/features/creator/StudentDetailPage";
+import { anamneseApi } from "@/lib/api/anamnese-api";
 import { copilotApi } from "@/lib/api/copilot-api";
 import { gamificationApi } from "@/lib/api/gamification-api";
 import { retentionApi } from "@/lib/api/retention-api";
@@ -12,6 +13,7 @@ vi.mock("@/lib/api/students-api");
 vi.mock("@/lib/api/retention-api");
 vi.mock("@/lib/api/gamification-api");
 vi.mock("@/lib/api/copilot-api");
+vi.mock("@/lib/api/anamnese-api");
 
 function renderDetail(id = "s1") {
   return render(
@@ -73,6 +75,26 @@ describe("StudentDetailPage", () => {
         totalCheckInsDone: 14,
       },
     ]);
+    vi.mocked(anamneseApi.forStudent).mockResolvedValue({
+      id: "a1",
+      studentId: "s1",
+      creatorId: "c1",
+      objetivoPrincipal: "HIPERTROFIA",
+      experienciaTreino: "INTERMEDIARIO",
+      diasDisponiveisSemana: 4,
+      nivelAtividadeRotina: "MODERADO",
+      alturaCm: 178,
+      pesoAtualKg: "82.00",
+      pesoObjetivoKg: "78.00",
+      historicoLesoes: null,
+      condicoesSaude: null,
+      medicacoes: null,
+      restricoesAlimentares: null,
+      observacoes: null,
+      consentimentoDadosSaude: true,
+      createdAt: "2026-04-01T00:00:00Z",
+      updatedAt: "2026-04-01T00:00:00Z",
+    });
     vi.mocked(copilotApi.nudge).mockResolvedValue({
       studentId: "s1",
       studentName: "Marcos Vieira",

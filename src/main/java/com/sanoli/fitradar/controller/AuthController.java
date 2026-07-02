@@ -163,7 +163,7 @@ public class AuthController {
     @GetMapping("/me")
     @Operation(summary = "Retorna o usuário autenticado")
     public ResponseEntity<UserResponse> me() {
-        return ResponseEntity.ok(UserResponse.fromEntity(currentUserService.getCurrentUser()));
+        return ResponseEntity.ok(authService.toUserResponse(currentUserService.getCurrentUser()));
     }
 
     @PostMapping("/accept-terms")

@@ -21,12 +21,17 @@ public record UserResponse(
         boolean emailVerified,
         boolean mustChangePassword,
         boolean termsAccepted,
+        boolean anamneseCompleted,
         boolean accessAllowed,
         boolean hasProFeatures,
         String accessMessage,
         long trialDaysRemaining
 ) {
     public static UserResponse fromEntity(AppUser user) {
+        return fromEntity(user, true);
+    }
+
+    public static UserResponse fromEntity(AppUser user, boolean anamneseCompleted) {
         return new UserResponse(
                 user.getId(),
                 user.getName(),
@@ -40,6 +45,7 @@ public record UserResponse(
                 user.isEmailVerified(),
                 user.isMustChangePassword(),
                 user.hasAcceptedTerms(),
+                anamneseCompleted,
                 user.hasBasicCreatorAccess(),
                 user.hasProFeatures(),
                 user.getAccessMessage(),

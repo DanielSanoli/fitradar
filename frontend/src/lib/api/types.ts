@@ -23,6 +23,8 @@ export interface User {
   mustChangePassword?: boolean;
   /** false até aceitar Termos de Uso / Privacidade no cadastro ou onboarding. */
   termsAccepted?: boolean;
+  /** false até o aluno preencher a anamnese (somente STUDENT). */
+  anamneseCompleted?: boolean;
 }
 
 export interface AuthResponse {

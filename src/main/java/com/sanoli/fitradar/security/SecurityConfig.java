@@ -33,7 +33,8 @@ public class SecurityConfig {
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             SubscriptionAccessFilter subscriptionAccessFilter,
-            ProFeatureAccessFilter proFeatureAccessFilter
+            ProFeatureAccessFilter proFeatureAccessFilter,
+            AnamneseAccessFilter anamneseAccessFilter
     ) throws Exception {
         http
                 .cors(withDefaults())
@@ -65,6 +66,7 @@ public class SecurityConfig {
                             "/billing-required",
                             "/change-password",
                             "/accept-terms",
+                            "/anamnese",
                             "/404",
                             "/c",
                             "/c/**",
@@ -109,7 +111,8 @@ public class SecurityConfig {
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(subscriptionAccessFilter, JwtAuthenticationFilter.class)
-                .addFilterAfter(proFeatureAccessFilter, SubscriptionAccessFilter.class);
+                .addFilterAfter(anamneseAccessFilter, SubscriptionAccessFilter.class)
+                .addFilterAfter(proFeatureAccessFilter, AnamneseAccessFilter.class);
 
         return http.build();
     }

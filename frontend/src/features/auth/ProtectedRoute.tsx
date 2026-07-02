@@ -34,6 +34,16 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/accept-terms" replace state={{ from: location.pathname }} />;
   }
 
+  if (
+    user.role === "STUDENT" &&
+    !user.mustChangePassword &&
+    user.termsAccepted !== false &&
+    user.anamneseCompleted !== true &&
+    location.pathname !== "/anamnese"
+  ) {
+    return <Navigate to="/anamnese" replace state={{ from: location.pathname }} />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const fallback = user.role === "STUDENT" ? "/student" : "/app";
     return <Navigate to={fallback} replace />;
@@ -60,6 +70,9 @@ export function PublicOnlyRoute() {
     }
     if (user.termsAccepted === false) {
       return <Navigate to="/accept-terms" replace />;
+    }
+    if (user.role === "STUDENT" && user.anamneseCompleted !== true) {
+      return <Navigate to="/anamnese" replace />;
     }
     const from = (location.state as { from?: string } | null)?.from;
     const target = from ?? (user.role === "STUDENT" ? "/student" : "/app");

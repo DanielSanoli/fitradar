@@ -18,6 +18,7 @@ public class SpaForwardController {
             "/billing-required",
             "/change-password",
             "/accept-terms",
+            "/anamnese",
             "/404",
             "/c",
             "/c/**",

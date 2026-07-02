@@ -20,6 +20,7 @@ import com.sanoli.fitradar.dto.UserResponse;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.legal.LegalConstants;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
+import com.sanoli.fitradar.repository.AnamneseRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.JwtService;
@@ -38,6 +39,7 @@ public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
+    private final AnamneseRepository anamneseRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserActionTokenRepository userActionTokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -49,6 +51,7 @@ public class AuthService {
 
     public AuthService(
             UserRepository userRepository,
+            AnamneseRepository anamneseRepository,
             RefreshTokenRepository refreshTokenRepository,
             UserActionTokenRepository userActionTokenRepository,
             PasswordEncoder passwordEncoder,
@@ -59,6 +62,7 @@ public class AuthService {
             @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl
     ) {
         this.userRepository = userRepository;
+        this.anamneseRepository = anamneseRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userActionTokenRepository = userActionTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -234,7 +238,7 @@ public class AuthService {
         }
 
         AppUser saved = userRepository.save(user);
-        return UserResponse.fromEntity(saved);
+        return toUserResponse(saved);
     }
 
     @Transactional
@@ -275,7 +279,13 @@ public class AuthService {
 
     private AuthResponse toAuthResponse(AppUser user, ClientSessionInfo sessionInfo) {
         String refreshToken = tokenService.createRefreshToken(user, sessionInfo);
-        return AuthResponse.bearer(jwtService.generateToken(user), refreshToken, UserResponse.fromEntity(user));
+        return AuthResponse.bearer(jwtService.generateToken(user), refreshToken, toUserResponse(user));
+    }
+
+    public UserResponse toUserResponse(AppUser user) {
+        boolean anamneseCompleted = user.getRole() != UserRole.STUDENT
+                || anamneseRepository.existsByStudentId(user.getId());
+        return UserResponse.fromEntity(user, anamneseCompleted);
     }
 
     private String normalizeEmail(String email) {

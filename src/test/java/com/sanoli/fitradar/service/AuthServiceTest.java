@@ -17,6 +17,7 @@ import com.sanoli.fitradar.dto.ResetPasswordRequest;
 import com.sanoli.fitradar.dto.UpdateProfileRequest;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.repository.RefreshTokenRepository;
+import com.sanoli.fitradar.repository.AnamneseRepository;
 import com.sanoli.fitradar.repository.UserActionTokenRepository;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.security.JwtService;
@@ -42,6 +43,7 @@ class AuthServiceTest {
     private static final String PASSWORD = "senha12345";
 
     private UserRepository userRepository;
+    private AnamneseRepository anamneseRepository;
     private RefreshTokenRepository refreshTokenRepository;
     private UserActionTokenRepository userActionTokenRepository;
     private PasswordEncoder passwordEncoder;
@@ -52,6 +54,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
+        anamneseRepository = mock(AnamneseRepository.class);
         refreshTokenRepository = mock(RefreshTokenRepository.class);
         userActionTokenRepository = mock(UserActionTokenRepository.class);
         passwordEncoder = new BCryptPasswordEncoder();
@@ -60,6 +63,7 @@ class AuthServiceTest {
 
         authService = new AuthService(
                 userRepository,
+                anamneseRepository,
                 refreshTokenRepository,
                 userActionTokenRepository,
                 passwordEncoder,

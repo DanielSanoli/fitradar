@@ -3,6 +3,7 @@ import { Bell, ChevronLeft, TriangleAlert } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { CheckInHistorySummary } from "@/components/creator/CheckInHistorySummary";
 import { ReminderModal } from "@/components/creator/ReminderModal";
+import { StudentAnamnesePanel } from "@/components/creator/StudentAnamnesePanel";
 import { StudentAvatar } from "@/components/creator/StudentAvatar";
 import { AdherenceRing } from "@/components/fitness/AdherenceRing";
 import { StreakFlame } from "@/components/fitness/StreakFlame";
@@ -13,10 +14,12 @@ import { PanelState } from "@/components/ui/PanelState";
 import { useToast } from "@/components/ui/toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { copilotApi } from "@/lib/api/copilot-api";
+import { anamneseApi } from "@/lib/api/anamnese-api";
 import { gamificationApi } from "@/lib/api/gamification-api";
 import { retentionApi } from "@/lib/api/retention-api";
 import { studentsApi } from "@/lib/api/students-api";
 import type {
+  AnamneseResponse,
   ChurnRiskResult,
   EnrollmentResponse,
   StudentProgressResult,
@@ -56,6 +59,8 @@ export function StudentDetailPage() {
   const [progressWarning, setProgressWarning] = useState<string>();
   const [enrollWarning, setEnrollWarning] = useState<string>();
   const [leaderboardWarning, setLeaderboardWarning] = useState<string>();
+  const [anamnese, setAnamnese] = useState<AnamneseResponse | null>(null);
+  const [anamneseError, setAnamneseError] = useState<string>();
 
   usePageTitle(student?.name ?? null);
 
@@ -83,14 +88,17 @@ export function StudentDetailPage() {
     setProgressWarning(undefined);
     setEnrollWarning(undefined);
     setLeaderboardWarning(undefined);
+    setAnamneseError(undefined);
+    setAnamnese(null);
     setNudgeError(undefined);
 
-    const [sResult, rResult, pResult, eResult, lbResult] = await Promise.allSettled([
+    const [sResult, rResult, pResult, eResult, lbResult, aResult] = await Promise.allSettled([
       studentsApi.get(id),
       retentionApi.studentRisk(id),
       retentionApi.studentProgress(id),
       studentsApi.enrollments(id),
       gamificationApi.leaderboard(),
+      anamneseApi.forStudent(id),
     ]);
 
     if (sResult.status === "rejected") {
@@ -115,6 +123,14 @@ export function StudentDetailPage() {
     } else {
       setTotalCheckIns(0);
       setLeaderboardWarning(blockErrorMessage(lbResult.reason));
+    }
+
+    if (aResult.status === "fulfilled") {
+      setAnamnese(aResult.value);
+    } else if (aResult.reason instanceof ApiError && aResult.reason.status === 404) {
+      setAnamnese(null);
+    } else if (aResult.status === "rejected") {
+      setAnamneseError(blockErrorMessage(aResult.reason));
     }
 
     setState("content");
@@ -317,6 +333,8 @@ export function StudentDetailPage() {
                 </div>
               ))}
             </div>
+
+            <StudentAnamnesePanel anamnese={anamnese} error={anamneseError} />
 
             {showRiskPanel ? (
               <div className="overflow-hidden rounded-[14px] border border-destructive/30 bg-destructive/5">

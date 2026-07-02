@@ -9,7 +9,7 @@ function homeForRole(role: UserRole): string {
 
 function isRoleAllowedPath(role: UserRole, path: string): boolean {
   if (role === "STUDENT") {
-    return path.startsWith("/student");
+    return path.startsWith("/student") || path === "/anamnese";
   }
   if (role === "CREATOR" || role === "ADMIN") {
     return path.startsWith("/app");

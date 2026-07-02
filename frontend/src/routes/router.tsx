@@ -89,6 +89,11 @@ const StudentWorkoutDetailPage = lazy(() =>
     default: m.StudentWorkoutDetailPage,
   })),
 );
+const StudentAnamnesePage = lazy(() =>
+  import("@/features/student/StudentAnamnesePage").then((m) => ({
+    default: m.StudentAnamnesePage,
+  })),
+);
 const PublicSpacePage = lazy(() =>
   import("@/features/public/PublicSpacePage").then((m) => ({ default: m.PublicSpacePage })),
 );
@@ -119,6 +124,14 @@ export const router = createBrowserRouter([
               { path: "billing-required", element: <BillingRequiredPage /> },
               { path: "change-password", element: <ForceChangePasswordPage /> },
               { path: "accept-terms", element: <AcceptTermsPage /> },
+              {
+                path: "anamnese",
+                element: (
+                  <Lazy>
+                    <StudentAnamnesePage />
+                  </Lazy>
+                ),
+              },
             ],
           },
         ],

@@ -20,6 +20,7 @@ const creatorBase = {
   trialDaysRemaining: 0,
   mustChangePassword: false,
   termsAccepted: true,
+  anamneseCompleted: true,
 };
 
 function renderProtected(
@@ -44,9 +45,13 @@ function renderProtected(
           <Route element={<ProtectedRoute allowedRoles={["CREATOR"]} />}>
             <Route path="/app" element={<div>Protected area</div>} />
           </Route>
+          <Route element={<ProtectedRoute allowedRoles={["STUDENT"]} />}>
+            <Route path="/student" element={<div>Student home</div>} />
+          </Route>
           <Route element={<ProtectedRoute />}>
             <Route path="/change-password" element={<div>Change password</div>} />
             <Route path="/accept-terms" element={<div>Accept terms</div>} />
+            <Route path="/anamnese" element={<div>Anamnese form</div>} />
           </Route>
           <Route path="/login" element={<div>Login page</div>} />
           <Route path="/student" element={<div>Student home</div>} />
@@ -68,6 +73,7 @@ describe("ProtectedRoute", () => {
       ...creatorBase,
       role: "STUDENT",
       creatorId: "c1",
+      anamneseCompleted: true,
     });
     expect(screen.getByText("Student home")).toBeInTheDocument();
   });
@@ -109,6 +115,19 @@ describe("ProtectedRoute", () => {
       "/app",
     );
     expect(screen.getByText("Accept terms")).toBeInTheDocument();
+  });
+
+  it("redirects students without anamnese to anamnese page", () => {
+    renderProtected(
+      {
+        ...creatorBase,
+        role: "STUDENT",
+        creatorId: "c1",
+        anamneseCompleted: false,
+      },
+      "/student",
+    );
+    expect(screen.getByText("Anamnese form")).toBeInTheDocument();
   });
 
   it("renders outlet for allowed role with access", () => {

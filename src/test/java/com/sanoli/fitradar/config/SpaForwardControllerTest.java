@@ -47,6 +47,9 @@ class SpaForwardControllerTest {
         mockMvc.perform(get("/accept-terms"))
                 .andExpect(status().isOk())
                 .andExpect(forwardedUrl("/index.html"));
+        mockMvc.perform(get("/anamnese"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
     }
 
     @Test
