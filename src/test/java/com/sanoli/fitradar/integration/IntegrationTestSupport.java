@@ -64,6 +64,12 @@ class IntegrationTestSupport {
     }
 
     ProgramContext createProgramWithWorkout(String creatorToken, String title) throws Exception {
+        String slug = title.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-+|-+$)", "");
+        if (slug.isBlank()) {
+            slug = "espaco-teste";
+        }
+        createSpace(creatorToken, slug + "-" + System.nanoTime());
+
         MvcResult programResult = mockMvc.perform(post("/api/v1/programs")
                         .header("Authorization", "Bearer " + creatorToken)
                         .contentType(MediaType.APPLICATION_JSON)

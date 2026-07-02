@@ -42,6 +42,9 @@ public class Program {
     @Column(precision = 12, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "nutrition_structured", nullable = false)
+    private boolean nutritionStructured = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -96,6 +99,14 @@ public class Program {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public boolean isNutritionStructured() {
+        return nutritionStructured;
+    }
+
+    public void setNutritionStructured(boolean nutritionStructured) {
+        this.nutritionStructured = nutritionStructured;
     }
 
     public boolean isPaid() {

@@ -49,6 +49,7 @@ public class StudentService {
     private final PaginationProperties paginationProperties;
     private final PlanEntitlementService planEntitlementService;
     private final String publicBaseUrl;
+    private final CreatorSpaceGuard creatorSpaceGuard;
 
     public StudentService(
             UserRepository userRepository,
@@ -58,7 +59,8 @@ public class StudentService {
             EmailService emailService,
             PaginationProperties paginationProperties,
             PlanEntitlementService planEntitlementService,
-            @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl
+            @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl,
+            CreatorSpaceGuard creatorSpaceGuard
     ) {
         this.userRepository = userRepository;
         this.programRepository = programRepository;
@@ -68,6 +70,7 @@ public class StudentService {
         this.paginationProperties = paginationProperties;
         this.planEntitlementService = planEntitlementService;
         this.publicBaseUrl = publicBaseUrl;
+        this.creatorSpaceGuard = creatorSpaceGuard;
     }
 
     @Transactional
@@ -136,6 +139,7 @@ public class StudentService {
 
     @Transactional
     public EnrollmentResponse enroll(AppUser creator, UUID studentId, EnrollmentRequest request) {
+        creatorSpaceGuard.requireSpace(creator.getId());
         requireStudent(creator.getId(), studentId);
         Program program = programRepository.findByIdAndCreatorId(request.programId(), creator.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Programa não encontrado: " + request.programId()));

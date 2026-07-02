@@ -81,3 +81,32 @@ export function PublicOnlyRoute() {
 
   return <Outlet />;
 }
+
+/** Landing and other guest-only pages — redirects authenticated users to their home. */
+export function GuestOnlyRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center p-6" role="status" aria-label="Carregando">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated && user) {
+    if (user.mustChangePassword) {
+      return <Navigate to="/change-password" replace />;
+    }
+    if (user.termsAccepted === false) {
+      return <Navigate to="/accept-terms" replace />;
+    }
+    if (user.role === "STUDENT" && user.anamneseCompleted !== true) {
+      return <Navigate to="/anamnese" replace />;
+    }
+    const target = user.role === "STUDENT" ? "/student" : "/app";
+    return <Navigate to={target} replace />;
+  }
+
+  return <Outlet />;
+}

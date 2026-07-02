@@ -10,6 +10,7 @@ const freeProgram: StudentProgramResponse = {
   paid: false,
   enrolled: false,
   purchasePending: false,
+  nutritionStructured: false,
 };
 
 describe("programPriceLabel", () => {

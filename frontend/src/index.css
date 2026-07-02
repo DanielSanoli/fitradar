@@ -257,6 +257,8 @@
     .animate-draw-line,
     .spark-endpoint,
     .landing-hero::before,
+    .landing-float-soft,
+    .landing-float-soft-delayed,
     .app-page-enter {
       animation: none !important;
     }
@@ -336,8 +338,88 @@
     perspective: 1200px;
   }
 
+  .landing-grid-bg {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.2) 1px, transparent 1px);
+    background-size: 52px 52px;
+    mask-image: radial-gradient(ellipse 88% 75% at 50% 38%, black 8%, transparent 74%);
+  }
+
+  .landing-feature-spotlight {
+    border-color: hsl(var(--primary) / 0.38);
+    background: linear-gradient(152deg, hsl(var(--primary) / 0.16) 0%, hsl(var(--card) / 0.94) 58%);
+    box-shadow:
+      0 10px 42px rgba(0, 0, 0, 0.34),
+      0 0 0 1px hsl(var(--primary) / 0.14),
+      0 0 52px hsl(var(--primary) / 0.11);
+  }
+
+  .landing-float-soft {
+    animation: landing-float-soft 5.5s ease-in-out infinite;
+  }
+
+  .landing-float-soft-delayed {
+    animation: landing-float-soft 5.5s ease-in-out 1.2s infinite;
+  }
+
+  .landing-step-track {
+    position: relative;
+  }
+
+  .landing-step-track::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    top: 2.25rem;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.45) 18%,
+      hsl(var(--primary) / 0.45) 82%,
+      transparent 100%
+    );
+  }
+
+  .landing-trust-pill {
+    border: 1px solid hsl(var(--border) / 0.75);
+    background: hsl(var(--card) / 0.55);
+    backdrop-filter: blur(6px);
+  }
+
+  .landing-cta-band::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0.45;
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.16) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.16) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 90% at 50% 50%, black 15%, transparent 78%);
+  }
+
+  .landing-cta-band > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .app-page-enter {
     animation-duration: 0.45s;
+  }
+
+  @keyframes landing-float-soft {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-7px);
+    }
   }
 
   @keyframes float {

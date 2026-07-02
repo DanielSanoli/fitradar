@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export function StudentProgramsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { vocabulary: v } = useSpaceVocabulary();
+  const { vocabulary: v, category } = useSpaceVocabulary();
   const ProgramIcon = v.programIcon;
   const { space } = useStudentSpace();
   const [programs, setPrograms] = useState<StudentProgramResponse[]>([]);
@@ -172,6 +172,15 @@ export function StudentProgramsPage() {
                             )
                           }
                         />
+                        {category === "NUTRITION" && program.nutritionStructured ? (
+                          <Button
+                            variant="outline"
+                            className="w-full rounded-[12px]"
+                            onClick={() => navigate(`/student/programs/${program.id}/nutrition`)}
+                          >
+                            Ver plano com macros
+                          </Button>
+                        ) : null}
                       </div>
                     ) : program.paid ? (
                       <Button

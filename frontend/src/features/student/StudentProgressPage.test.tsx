@@ -91,6 +91,7 @@ describe("StudentProgressPage", () => {
         price: null,
         paid: false,
         purchasePending: false,
+        nutritionStructured: false,
       },
     ]);
     vi.mocked(memberApi.myWorkouts).mockResolvedValue([

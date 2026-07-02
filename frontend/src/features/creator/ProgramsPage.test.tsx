@@ -7,6 +7,17 @@ import { studentsApi } from "@/lib/api/students-api";
 
 vi.mock("@/lib/api/programs-api");
 vi.mock("@/lib/api/students-api");
+vi.mock("@/lib/api/onboarding-api", () => ({
+  onboardingApi: {
+    status: vi.fn().mockResolvedValue({
+      hasSpace: true,
+      hasProgram: true,
+      hasStudent: false,
+      demoAvailable: false,
+      onboardingComplete: false,
+    }),
+  },
+}));
 
 describe("ProgramsListPage", () => {
   beforeEach(() => {
@@ -20,6 +31,7 @@ describe("ProgramsListPage", () => {
         price: null,
         paid: false,
         workoutCount: 3,
+        nutritionStructured: false,
         createdAt: "2026-01-01",
       },
     ]);

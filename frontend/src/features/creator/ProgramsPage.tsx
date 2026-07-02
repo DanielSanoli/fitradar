@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Clock, Plus, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { CreatorEmptyRings } from "@/components/creator/CreatorEmptyRings";
+import { CreatorSpaceRequiredPrompt } from "@/components/creator/CreatorSpaceRequiredPrompt";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PanelState } from "@/components/ui/PanelState";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   formatCountLabel,
   formatProgramItemSummary,
 } from "@/lib/space/vocabulary";
+import { useCreatorHasSpace } from "@/hooks/useCreatorHasSpace";
 
 type ProgramWithMeta = ProgramResponse & { enrolledCount: number };
 
@@ -54,6 +56,8 @@ async function loadProgramsWithEnrollment(): Promise<{
 export function ProgramsListPage() {
   const navigate = useNavigate();
   const { vocabulary: v } = useSpaceVocabulary();
+  const { hasSpace } = useCreatorHasSpace();
+  const canWrite = hasSpace === true;
   const ProgramIcon = v.programIcon;
   const ItemIcon = v.itemIcon;
   const [programs, setPrograms] = useState<ProgramWithMeta[]>([]);
@@ -94,12 +98,15 @@ export function ProgramsListPage() {
         </div>
         <Button
           onClick={() => navigate("/app/programs/new")}
+          disabled={!canWrite}
           className="h-11 gap-2 rounded-[11px] px-5 shadow-[0_4px_18px_hsl(var(--primary)/0.28)]"
         >
           <Plus className="size-4" strokeWidth={2.5} aria-hidden />
           Criar {v.program.singular}
         </Button>
       </div>
+
+      {!canWrite && hasSpace === false ? <CreatorSpaceRequiredPrompt compact /> : null}
 
       {enrollWarning ? (
         <Alert>
@@ -132,9 +139,11 @@ export function ProgramsListPage() {
                     </div>
                     <h2 className="text-[17px] font-bold tracking-tight">{p.title}</h2>
                   </div>
-                  <Button variant="outline" size="sm" className="h-[30px] shrink-0 rounded-lg px-3 text-xs" asChild>
-                    <Link to={`/app/programs/${p.id}/edit`}>Editar</Link>
-                  </Button>
+                  {canWrite ? (
+                    <Button variant="outline" size="sm" className="h-[30px] shrink-0 rounded-lg px-3 text-xs" asChild>
+                      <Link to={`/app/programs/${p.id}/edit`}>Editar</Link>
+                    </Button>
+                  ) : null}
                 </div>
                 <p className="text-[13.5px] leading-relaxed text-muted-foreground">
                   {p.description ?? "Sem descrição."}
@@ -165,25 +174,29 @@ export function ProgramsListPage() {
       </PanelState>
 
       {state === "content" && programs.length === 0 ? (
-        <div className="flex flex-col items-center gap-5 py-20 text-center">
-          <CreatorEmptyRings size="lg" />
-          <div>
-            <p className="text-[22px] font-extrabold tracking-tight">
-              Crie seu primeiro {v.program.singular}
-            </p>
-            <p className="mx-auto mt-2.5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-              {v.programsListEmptyDescription}
-            </p>
+        canWrite ? (
+          <div className="flex flex-col items-center gap-5 py-20 text-center">
+            <CreatorEmptyRings size="lg" />
+            <div>
+              <p className="text-[22px] font-extrabold tracking-tight">
+                Crie seu primeiro {v.program.singular}
+              </p>
+              <p className="mx-auto mt-2.5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+                {v.programsListEmptyDescription}
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="h-[46px] gap-2 rounded-[11px] px-7 shadow-[0_4px_18px_hsl(var(--primary)/0.3)]"
+              onClick={() => navigate("/app/programs/new")}
+            >
+              <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+              Criar primeiro {v.program.singular}
+            </Button>
           </div>
-          <Button
-            size="lg"
-            className="h-[46px] gap-2 rounded-[11px] px-7 shadow-[0_4px_18px_hsl(var(--primary)/0.3)]"
-            onClick={() => navigate("/app/programs/new")}
-          >
-            <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-            Criar primeiro {v.program.singular}
-          </Button>
-        </div>
+        ) : hasSpace === false ? (
+          <CreatorSpaceRequiredPrompt />
+        ) : null
       ) : null}
     </div>
   );

@@ -34,6 +34,7 @@ class StudentServiceTest {
     private UserRepository userRepository;
     private EmailService emailService;
     private PasswordEncoder passwordEncoder;
+    private CreatorSpaceGuard creatorSpaceGuard;
     private StudentService studentService;
 
     private AppUser creator;
@@ -44,6 +45,7 @@ class StudentServiceTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         emailService = mock(EmailService.class);
+        creatorSpaceGuard = mock(CreatorSpaceGuard.class);
         passwordEncoder = new BCryptPasswordEncoder();
 
         PaginationProperties paginationProperties = new PaginationProperties();
@@ -58,7 +60,8 @@ class StudentServiceTest {
                 emailService,
                 paginationProperties,
                 mock(PlanEntitlementService.class),
-                "http://localhost:8080"
+                "http://localhost:8080",
+                creatorSpaceGuard
         );
 
         creatorId = UUID.randomUUID();

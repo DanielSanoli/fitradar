@@ -7,6 +7,7 @@ import com.sanoli.fitradar.dto.CreatorSpaceResponse;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.GamificationProfileResponse;
 import com.sanoli.fitradar.dto.LeaderboardEntryResponse;
+import com.sanoli.fitradar.dto.NutritionPlanResponse;
 import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.ProgramCheckoutResponse;
 import com.sanoli.fitradar.dto.StudentProgramResponse;
@@ -16,6 +17,7 @@ import com.sanoli.fitradar.retention.engine.StudentProgressResult;
 import com.sanoli.fitradar.security.CurrentUserService;
 import com.sanoli.fitradar.service.GamificationService;
 import com.sanoli.fitradar.service.MarketplaceBillingService;
+import com.sanoli.fitradar.service.MealPlanService;
 import com.sanoli.fitradar.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -40,6 +42,7 @@ public class MemberController {
     private final RetentionEngineService retentionEngineService;
     private final MarketplaceBillingService marketplaceBillingService;
     private final GamificationService gamificationService;
+    private final MealPlanService mealPlanService;
     private final CurrentUserService currentUserService;
 
     public MemberController(
@@ -47,12 +50,14 @@ public class MemberController {
             RetentionEngineService retentionEngineService,
             MarketplaceBillingService marketplaceBillingService,
             GamificationService gamificationService,
+            MealPlanService mealPlanService,
             CurrentUserService currentUserService
     ) {
         this.memberService = memberService;
         this.retentionEngineService = retentionEngineService;
         this.marketplaceBillingService = marketplaceBillingService;
         this.gamificationService = gamificationService;
+        this.mealPlanService = mealPlanService;
         this.currentUserService = currentUserService;
     }
 
@@ -130,5 +135,12 @@ public class MemberController {
     public ResponseEntity<ProgramCheckoutResponse> checkoutProgram(@PathVariable UUID programId) {
         return ResponseEntity.ok(
                 marketplaceBillingService.checkoutProgram(currentUserService.requireStudent(), programId));
+    }
+
+    @GetMapping("/programs/{programId}/nutrition")
+    @Operation(summary = "Plano alimentar estruturado do aluno (somente leitura)")
+    public ResponseEntity<NutritionPlanResponse> myNutritionPlan(@PathVariable UUID programId) {
+        return ResponseEntity.ok(
+                mealPlanService.getPlanForStudent(currentUserService.requireStudent(), programId));
     }
 }

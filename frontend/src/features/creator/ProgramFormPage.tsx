@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { CreatorSpaceRequiredPrompt } from "@/components/creator/CreatorSpaceRequiredPrompt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { PanelState } from "@/components/ui/PanelState";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useCreatorHasSpace } from "@/hooks/useCreatorHasSpace";
 import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 import { programsApi } from "@/lib/api/programs-api";
 import type { ProgramRequest } from "@/lib/api/domain-types";
@@ -17,6 +19,8 @@ import { ApiError } from "@/lib/api/types";
 export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
   const { toast } = useToast();
   const { vocabulary: v } = useSpaceVocabulary();
+  const { hasSpace } = useCreatorHasSpace();
+  const canWrite = hasSpace === true;
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -98,6 +102,20 @@ export function ProgramFormPage({ mode }: { mode: "create" | "edit" }) {
         }}
         rows={3}
       />
+    );
+  }
+
+  if (!canWrite && hasSpace === false) {
+    return (
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-5 animate-in fade-in duration-300">
+        <Button variant="outline" size="sm" asChild className="h-9 w-fit gap-2 rounded-[9px]">
+          <Link to="/app/programs">
+            <ChevronLeft className="size-4" />
+            Voltar
+          </Link>
+        </Button>
+        <CreatorSpaceRequiredPrompt />
+      </div>
     );
   }
 

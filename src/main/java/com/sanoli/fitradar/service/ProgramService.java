@@ -24,15 +24,18 @@ public class ProgramService {
     private final ProgramRepository programRepository;
     private final WorkoutRepository workoutRepository;
     private final PlanEntitlementService planEntitlementService;
+    private final CreatorSpaceGuard creatorSpaceGuard;
 
     public ProgramService(
             ProgramRepository programRepository,
             WorkoutRepository workoutRepository,
-            PlanEntitlementService planEntitlementService
+            PlanEntitlementService planEntitlementService,
+            CreatorSpaceGuard creatorSpaceGuard
     ) {
         this.programRepository = programRepository;
         this.workoutRepository = workoutRepository;
         this.planEntitlementService = planEntitlementService;
+        this.creatorSpaceGuard = creatorSpaceGuard;
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +61,7 @@ public class ProgramService {
 
     @Transactional
     public ProgramResponse create(AppUser creator, ProgramRequest request) {
+        creatorSpaceGuard.requireSpace(creator.getId());
         boolean active = request.active() == null || request.active();
         if (active) {
             planEntitlementService.assertCanAddActiveProgram(creator);
@@ -74,6 +78,7 @@ public class ProgramService {
 
     @Transactional
     public ProgramResponse update(AppUser creator, UUID programId, ProgramRequest request) {
+        creatorSpaceGuard.requireSpace(creator.getId());
         Program program = requireProgram(creator.getId(), programId);
         program.setTitle(request.title().trim());
         program.setDescription(request.description());
@@ -108,6 +113,7 @@ public class ProgramService {
 
     @Transactional
     public WorkoutResponse addWorkout(UUID creatorId, UUID programId, WorkoutRequest request) {
+        creatorSpaceGuard.requireSpace(creatorId);
         requireProgram(creatorId, programId);
         Workout workout = new Workout();
         workout.setProgramId(programId);
@@ -120,6 +126,7 @@ public class ProgramService {
 
     @Transactional
     public WorkoutResponse updateWorkout(UUID creatorId, UUID programId, UUID workoutId, WorkoutRequest request) {
+        creatorSpaceGuard.requireSpace(creatorId);
         requireProgram(creatorId, programId);
         Workout workout = workoutRepository.findByIdAndProgramId(workoutId, programId)
                 .orElseThrow(() -> new ResourceNotFoundException("Treino não encontrado: " + workoutId));

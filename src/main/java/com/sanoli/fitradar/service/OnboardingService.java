@@ -24,19 +24,22 @@ public class OnboardingService {
     private final UserRepository userRepository;
     private final WorkoutRepository workoutRepository;
     private final AppRuntimeProperties runtimeProperties;
+    private final CreatorSpaceGuard creatorSpaceGuard;
 
     public OnboardingService(
             CreatorSpaceRepository creatorSpaceRepository,
             ProgramRepository programRepository,
             UserRepository userRepository,
             WorkoutRepository workoutRepository,
-            AppRuntimeProperties runtimeProperties
+            AppRuntimeProperties runtimeProperties,
+            CreatorSpaceGuard creatorSpaceGuard
     ) {
         this.creatorSpaceRepository = creatorSpaceRepository;
         this.programRepository = programRepository;
         this.userRepository = userRepository;
         this.workoutRepository = workoutRepository;
         this.runtimeProperties = runtimeProperties;
+        this.creatorSpaceGuard = creatorSpaceGuard;
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +61,7 @@ public class OnboardingService {
         if (!programRepository.findByCreatorIdOrderByCreatedAtDesc(creatorId).isEmpty()) {
             throw new BusinessException("Você já possui programas — o demo não é necessário");
         }
+        creatorSpaceGuard.requireSpace(creatorId);
 
         Program program = new Program();
         program.setCreatorId(creatorId);

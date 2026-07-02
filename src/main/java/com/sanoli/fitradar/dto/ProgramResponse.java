@@ -15,6 +15,7 @@ public record ProgramResponse(
         BigDecimal price,
         boolean paid,
         long workoutCount,
+        boolean nutritionStructured,
         Instant createdAt
 ) {
     public static ProgramResponse fromEntity(Program program, long workoutCount) {
@@ -27,6 +28,7 @@ public record ProgramResponse(
                 program.getPrice(),
                 program.isPaid(),
                 workoutCount,
+                program.isNutritionStructured(),
                 program.getCreatedAt()
         );
     }

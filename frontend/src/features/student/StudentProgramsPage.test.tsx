@@ -101,6 +101,7 @@ describe("StudentProgramsPage", () => {
         paid: false,
         enrolled: false,
         purchasePending: false,
+        nutritionStructured: false,
       },
       {
         id: "p2",
@@ -110,6 +111,7 @@ describe("StudentProgramsPage", () => {
         paid: true,
         enrolled: false,
         purchasePending: false,
+        nutritionStructured: false,
       },
     ]);
 
@@ -133,6 +135,7 @@ describe("StudentProgramsPage", () => {
         paid: false,
         enrolled: false,
         purchasePending: false,
+        nutritionStructured: false,
       },
     ]);
     vi.mocked(memberApi.enrollProgram).mockResolvedValue({
@@ -169,6 +172,7 @@ describe("StudentProgramsPage", () => {
         paid: true,
         enrolled: false,
         purchasePending: false,
+        nutritionStructured: false,
       },
     ]);
     vi.mocked(startProgramCheckout).mockResolvedValue({ ok: true, redirected: true });
@@ -197,6 +201,7 @@ describe("StudentProgramsPage", () => {
         paid: false,
         enrolled: true,
         purchasePending: false,
+        nutritionStructured: false,
       },
     ]);
     vi.mocked(memberApi.myWorkouts).mockResolvedValue([

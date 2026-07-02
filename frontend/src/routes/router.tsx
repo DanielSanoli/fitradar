@@ -7,7 +7,7 @@ import { LoginRoute } from "@/features/auth/LoginRoute";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ForceChangePasswordPage } from "@/features/auth/ForceChangePasswordPage";
 import { AcceptTermsPage } from "@/features/auth/AcceptTermsPage";
-import { ProtectedRoute, PublicOnlyRoute } from "@/features/auth/ProtectedRoute";
+import { GuestOnlyRoute, ProtectedRoute, PublicOnlyRoute } from "@/features/auth/ProtectedRoute";
 import { RegisterPage } from "@/features/auth/RegisterPage";
 import { BillingRequiredPage } from "@/pages/BillingRequiredPage";
 import { HomePage } from "@/pages/HomePage";
@@ -94,6 +94,11 @@ const StudentAnamnesePage = lazy(() =>
     default: m.StudentAnamnesePage,
   })),
 );
+const StudentNutritionPlanPage = lazy(() =>
+  import("@/features/student/StudentNutritionPlanPage").then((m) => ({
+    default: m.StudentNutritionPlanPage,
+  })),
+);
 const PublicSpacePage = lazy(() =>
   import("@/features/public/PublicSpacePage").then((m) => ({ default: m.PublicSpacePage })),
 );
@@ -109,7 +114,10 @@ export const router = createBrowserRouter([
       {
         element: <PublicLayout />,
         children: [
-          { index: true, element: <HomePage /> },
+          {
+            element: <GuestOnlyRoute />,
+            children: [{ index: true, element: <HomePage /> }],
+          },
           {
             element: <PublicOnlyRoute />,
             children: [
@@ -297,6 +305,14 @@ export const router = createBrowserRouter([
                 element: (
                   <Lazy>
                     <StudentProgramsPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "programs/:programId/nutrition",
+                element: (
+                  <Lazy>
+                    <StudentNutritionPlanPage />
                   </Lazy>
                 ),
               },

@@ -160,6 +160,7 @@ describe("StudentHomePage", () => {
         paid: false,
         enrolled: true,
         purchasePending: false,
+        nutritionStructured: false,
       },
     ]);
 

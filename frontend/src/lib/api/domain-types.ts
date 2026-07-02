@@ -191,7 +191,75 @@ export type ProgramResponse = {
   price: string | null;
   paid: boolean;
   workoutCount: number;
+  nutritionStructured: boolean;
   createdAt: string;
+};
+
+export type FoodSource = "TACO" | "USDA" | "CUSTOM";
+
+export type FoodResponse = {
+  id: string;
+  nome: string;
+  fonte: FoodSource;
+  kcalPor100g: string;
+  proteinaPor100g: string;
+  carboPor100g: string;
+  gorduraPor100g: string;
+};
+
+export type CustomFoodRequest = {
+  nome: string;
+  kcalPor100g: string;
+  proteinaPor100g: string;
+  carboPor100g: string;
+  gorduraPor100g: string;
+};
+
+export type NutrientTotalsResponse = {
+  kcal: string;
+  proteinaG: string;
+  carboG: string;
+  gorduraG: string;
+};
+
+export type MealItemResponse = {
+  id: string;
+  foodId: string;
+  foodNome: string;
+  foodFonte: string;
+  quantidadeG: string;
+  ordem: number;
+  totals: NutrientTotalsResponse;
+};
+
+export type MealResponse = {
+  id: string;
+  nome: string;
+  horario: string | null;
+  ordem: number;
+  items: MealItemResponse[];
+  totals: NutrientTotalsResponse;
+};
+
+export type NutritionPlanResponse = {
+  programId: string;
+  structured: boolean;
+  meals: MealResponse[];
+  dailyTotals: NutrientTotalsResponse;
+  weeklyProjection: NutrientTotalsResponse;
+  weeklyProjectionLabel: string;
+};
+
+export type MealRequest = {
+  nome: string;
+  horario?: string | null;
+  ordem?: number;
+};
+
+export type MealItemRequest = {
+  foodId: string;
+  quantidadeG: string;
+  ordem?: number;
 };
 
 export type ProgramRequest = {
@@ -276,6 +344,7 @@ export type StudentProgramResponse = {
   paid: boolean;
   enrolled: boolean;
   purchasePending: boolean;
+  nutritionStructured: boolean;
 };
 
 export type OnboardingStatusResponse = {

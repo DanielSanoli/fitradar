@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, Clock, GripVertical, Plus, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { EnrollStudentsModal } from "@/components/creator/EnrollStudentsModal";
+import { CreatorSpaceRequiredPrompt } from "@/components/creator/CreatorSpaceRequiredPrompt";
+import { StructuredNutritionPanel } from "@/features/creator/StructuredNutritionPanel";
 import { WorkoutThumbnail } from "@/components/fitness/WorkoutThumbnail";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,7 @@ import { PanelState } from "@/components/ui/PanelState";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useCreatorHasSpace } from "@/hooks/useCreatorHasSpace";
 import { programsApi } from "@/lib/api/programs-api";
 import { studentsApi } from "@/lib/api/students-api";
 import type { ProgramResponse, StudentResponse, WorkoutResponse } from "@/lib/api/domain-types";
@@ -26,6 +29,8 @@ import {
 export function ProgramDetailPage() {
   const { toast } = useToast();
   const { vocabulary: v, category } = useSpaceVocabulary();
+  const { hasSpace } = useCreatorHasSpace();
+  const canWrite = hasSpace === true;
   const ProgramIcon = v.programIcon;
   const ItemIcon = v.itemIcon;
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
@@ -43,6 +48,7 @@ export function ProgramDetailPage() {
   const [allStudents, setAllStudents] = useState<StudentResponse[]>([]);
   const [selectedEnrollIds, setSelectedEnrollIds] = useState<string[]>([]);
   const [enrollSaving, setEnrollSaving] = useState(false);
+  const [nutritionTab, setNutritionTab] = useState<"markdown" | "structured">("markdown");
 
   usePageTitle(program?.title ?? null);
 
@@ -56,6 +62,7 @@ export function ProgramDetailPage() {
         studentsApi.list(0, 200),
       ]);
       setProgram(p);
+      setNutritionTab(p.nutritionStructured ? "structured" : "markdown");
       setWorkouts(w.sort((a, b) => a.dayIndex - b.dayIndex));
       setAllStudents(studentsPage.content);
 
@@ -196,6 +203,8 @@ export function ProgramDetailPage() {
               </Alert>
             ) : null}
 
+            {!canWrite && hasSpace === false ? <CreatorSpaceRequiredPrompt compact /> : null}
+
             <div className="flex flex-wrap items-start justify-between gap-5 rounded-[14px] border border-border bg-card p-5 shadow-[0_6px_24px_rgba(0,0,0,0.28)] md:p-6">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="flex size-[52px] shrink-0 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10">
@@ -222,23 +231,48 @@ export function ProgramDetailPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2.5">
-                <Button variant="outline" className="h-10 rounded-[10px]" asChild>
-                  <Link to={`/app/programs/${id}/edit`}>Editar {v.program.singular}</Link>
-                </Button>
-                <Button variant="outline" className="h-10 rounded-[10px]" onClick={() => setShowEnroll(true)}>
-                  Matricular aluno
-                </Button>
-                <Button
-                  className="h-10 gap-1.5 rounded-[10px] shadow-[0_4px_14px_hsl(var(--primary)/0.26)]"
-                  onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
-                >
-                  <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-                  {v.addItem}
-                </Button>
+                {canWrite ? (
+                  <>
+                    <Button variant="outline" className="h-10 rounded-[10px]" asChild>
+                      <Link to={`/app/programs/${id}/edit`}>Editar {v.program.singular}</Link>
+                    </Button>
+                    <Button variant="outline" className="h-10 rounded-[10px]" onClick={() => setShowEnroll(true)}>
+                      Matricular aluno
+                    </Button>
+                    <Button
+                      className="h-10 gap-1.5 rounded-[10px] shadow-[0_4px_14px_hsl(var(--primary)/0.26)]"
+                      onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
+                    >
+                      <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+                      {v.addItem}
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </div>
 
-            {workouts.length === 0 ? (
+            {category === "NUTRITION" ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={nutritionTab === "markdown" ? "default" : "outline"}
+                  onClick={() => setNutritionTab("markdown")}
+                >
+                  Refeições em texto
+                </Button>
+                <Button
+                  size="sm"
+                  variant={nutritionTab === "structured" ? "default" : "outline"}
+                  onClick={() => setNutritionTab("structured")}
+                >
+                  Plano com macros (TACO)
+                </Button>
+              </div>
+            ) : null}
+
+            {category === "NUTRITION" && nutritionTab === "structured" ? (
+              <StructuredNutritionPanel programId={id} canWrite={canWrite} />
+            ) : workouts.length === 0 ? (
               <div className="flex flex-col items-center gap-4 rounded-[14px] border border-dashed border-border bg-secondary/20 px-6 py-14 text-center">
                 <div className="flex size-[52px] items-center justify-center rounded-[14px] border border-dashed border-border">
                   <ItemIcon className="size-6 text-muted-foreground" strokeWidth={1.8} aria-hidden />
@@ -249,7 +283,10 @@ export function ProgramDetailPage() {
                     {v.programDetailEmptyHint}
                   </p>
                 </div>
-                <Button onClick={() => navigate(`/app/programs/${id}/workouts/new`)}>
+                <Button
+                  disabled={!canWrite}
+                  onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
+                >
                   {v.addFirstItem}
                 </Button>
               </div>
@@ -269,7 +306,7 @@ export function ProgramDetailPage() {
                     <div
                       key={w.id}
                       role="listitem"
-                      draggable
+                      draggable={canWrite}
                       onDragStart={() => setDraggingId(w.id)}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -317,17 +354,21 @@ export function ProgramDetailPage() {
                         {formatItemContentCount(countExercises(w.contentMarkdown), v)}
                       </span>
                       <div className="flex shrink-0 gap-1.5">
-                        <Button variant="outline" size="sm" className="h-[34px] rounded-[9px]" asChild>
-                          <Link to={`/app/programs/${id}/workouts/${w.id}/edit`}>Editar</Link>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-[34px] rounded-[9px] text-destructive hover:bg-destructive/10"
-                          onClick={() => void deleteWorkout(w)}
-                        >
-                          Excluir
-                        </Button>
+                        {canWrite ? (
+                          <>
+                            <Button variant="outline" size="sm" className="h-[34px] rounded-[9px]" asChild>
+                              <Link to={`/app/programs/${id}/workouts/${w.id}/edit`}>Editar</Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-[34px] rounded-[9px] text-destructive hover:bg-destructive/10"
+                              onClick={() => void deleteWorkout(w)}
+                            >
+                              Excluir
+                            </Button>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   ))}

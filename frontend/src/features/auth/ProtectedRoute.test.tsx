@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthContext, type AuthContextValue } from "@/features/auth/AuthProvider";
-import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
+import { GuestOnlyRoute, ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
 const creatorBase = {
   id: "1",
@@ -145,5 +145,64 @@ describe("ProtectedRoute", () => {
       hasProFeatures: false,
     });
     expect(screen.getByText("Protected area")).toBeInTheDocument();
+  });
+});
+
+describe("GuestOnlyRoute", () => {
+  function renderGuest(user: AuthContextValue["user"], isLoading = false) {
+    const value: AuthContextValue = {
+      user,
+      isLoading,
+      isAuthenticated: Boolean(user),
+      login: async () => {},
+      register: async () => {},
+      logout: () => {},
+      refreshUser: async () => {},
+    };
+
+    render(
+      <AuthContext.Provider value={value}>
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route element={<GuestOnlyRoute />}>
+              <Route index element={<div>Landing page</div>} />
+            </Route>
+            <Route path="/app" element={<div>Creator home</div>} />
+            <Route path="/student" element={<div>Student home</div>} />
+            <Route path="/anamnese" element={<div>Anamnese</div>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+  }
+
+  it("shows landing for guests", () => {
+    renderGuest(null);
+    expect(screen.getByText("Landing page")).toBeInTheDocument();
+  });
+
+  it("redirects authenticated creators to /app", () => {
+    renderGuest({ ...creatorBase });
+    expect(screen.getByText("Creator home")).toBeInTheDocument();
+  });
+
+  it("redirects authenticated students to /student", () => {
+    renderGuest({
+      ...creatorBase,
+      role: "STUDENT",
+      creatorId: "c1",
+      anamneseCompleted: true,
+    });
+    expect(screen.getByText("Student home")).toBeInTheDocument();
+  });
+
+  it("redirects students without anamnese to /anamnese", () => {
+    renderGuest({
+      ...creatorBase,
+      role: "STUDENT",
+      creatorId: "c1",
+      anamneseCompleted: false,
+    });
+    expect(screen.getByText("Anamnese")).toBeInTheDocument();
   });
 });

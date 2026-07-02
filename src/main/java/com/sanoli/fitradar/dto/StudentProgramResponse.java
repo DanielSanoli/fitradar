@@ -12,7 +12,8 @@ public record StudentProgramResponse(
         BigDecimal price,
         boolean paid,
         boolean enrolled,
-        boolean purchasePending
+        boolean purchasePending,
+        boolean nutritionStructured
 ) {
     public static StudentProgramResponse fromEntity(
             Program program,
@@ -26,7 +27,8 @@ public record StudentProgramResponse(
                 program.getPrice(),
                 program.isPaid(),
                 enrolled,
-                purchasePending
+                purchasePending,
+                program.isNutritionStructured()
         );
     }
 }
