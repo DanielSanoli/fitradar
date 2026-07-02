@@ -14,6 +14,7 @@ import {
   rgbaHex,
 } from "@/lib/creator/space-theme";
 import { normalizeSpaceCategory, spaceCategoryLabel } from "@/lib/creator/space-categories";
+import { spaceModulesSummary } from "@/lib/creator/space-modules";
 
 export function PublicSpacePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -80,6 +81,7 @@ export function PublicSpacePage() {
   const displayBio =
     space.bio?.trim() || "Bem-vindo ao espaço do seu coach. Entre para acessar treinos e check-ins.";
   const areaLabel = spaceCategoryLabel(normalizeSpaceCategory(space.category));
+  const modulesLabel = spaceModulesSummary(space.modules ?? []);
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(1100px_560px_at_82%_-14%,hsl(165_40%_12%),hsl(215_28%_7%)_56%)] text-foreground">
@@ -121,7 +123,7 @@ export function PublicSpacePage() {
                     style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
                     aria-hidden
                   />
-                  Espaço no FitRadar · {areaLabel}
+                  Espaço no FitRadar · {areaLabel} · {modulesLabel}
                 </div>
               </div>
               <Button

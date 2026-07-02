@@ -86,6 +86,7 @@ describe("StudentProgramsPage", () => {
       primaryColor: null,
       bio: null,
       category: "OTHER",
+      modules: ["TRAINING"],
       createdAt: "2024-01-01T00:00:00Z",
     });
     vi.mocked(memberApi.myWorkouts).mockResolvedValue([]);

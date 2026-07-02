@@ -33,7 +33,7 @@ class CoreFlowE2ETest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + creatorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Comunidade Flow","slug":"flow","bio":"Teste E2E"}
+                                {"name":"Comunidade Flow","slug":"flow","bio":"Teste E2E","modules":["TRAINING"]}
                                 """))
                 .andExpect(status().isOk());
 

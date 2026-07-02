@@ -43,6 +43,7 @@ public class FoodService {
     @Transactional
     public FoodResponse createCustom(UUID creatorId, CustomFoodRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         Food food = new Food();
         food.setNome(request.nome().trim());
         food.setFonte(FoodSource.CUSTOM);

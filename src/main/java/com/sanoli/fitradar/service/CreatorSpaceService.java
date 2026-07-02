@@ -2,7 +2,9 @@ package com.sanoli.fitradar.service;
 
 import com.sanoli.fitradar.domain.CreatorSpace;
 import com.sanoli.fitradar.domain.SpaceCategory;
+import com.sanoli.fitradar.domain.SpaceModule;
 import com.sanoli.fitradar.dto.CreatorSpaceRequest;
+import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.ResourceNotFoundException;
 import com.sanoli.fitradar.repository.CreatorSpaceRepository;
 import org.springframework.stereotype.Service;
@@ -10,7 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -52,6 +57,7 @@ public class CreatorSpaceService {
         space.setPrimaryColor(request.primaryColor());
         space.setBio(request.bio());
         space.setCategory(request.category() != null ? request.category() : SpaceCategory.OTHER);
+        space.setModules(resolveModules(request));
 
         String desiredSlug = (request.slug() != null && !request.slug().isBlank())
                 ? slugify(request.slug())
@@ -87,6 +93,21 @@ public class CreatorSpaceService {
             return trimmed;
         }
         return null;
+    }
+
+    static Set<SpaceModule> resolveModules(CreatorSpaceRequest request) {
+        Set<SpaceModule> modules = new LinkedHashSet<>();
+        if (request.modules() != null) {
+            modules.addAll(request.modules());
+        }
+        if (modules.isEmpty()) {
+            SpaceCategory category = request.category() != null ? request.category() : SpaceCategory.OTHER;
+            modules.add(category == SpaceCategory.NUTRITION ? SpaceModule.NUTRITION : SpaceModule.TRAINING);
+        }
+        if (modules.isEmpty()) {
+            throw new BusinessException("Selecione ao menos um módulo (Treino ou Nutrição).");
+        }
+        return EnumSet.copyOf(modules);
     }
 
     private String ensureUniqueSlug(String base, UUID currentId) {

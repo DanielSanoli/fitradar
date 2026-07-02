@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export function StudentProgramsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { vocabulary: v, category } = useSpaceVocabulary();
+  const { vocabulary: v, hasNutrition } = useSpaceVocabulary();
   const ProgramIcon = v.programIcon;
   const { space } = useStudentSpace();
   const [programs, setPrograms] = useState<StudentProgramResponse[]>([]);
@@ -172,7 +172,7 @@ export function StudentProgramsPage() {
                             )
                           }
                         />
-                        {category === "NUTRITION" && program.nutritionStructured ? (
+                        {hasNutrition && program.nutritionStructured ? (
                           <Button
                             variant="outline"
                             className="w-full rounded-[12px]"

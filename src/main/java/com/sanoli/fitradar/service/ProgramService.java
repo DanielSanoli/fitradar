@@ -114,6 +114,7 @@ public class ProgramService {
     @Transactional
     public WorkoutResponse addWorkout(UUID creatorId, UUID programId, WorkoutRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireWorkoutWrite(creatorId);
         requireProgram(creatorId, programId);
         Workout workout = new Workout();
         workout.setProgramId(programId);
@@ -127,6 +128,7 @@ public class ProgramService {
     @Transactional
     public WorkoutResponse updateWorkout(UUID creatorId, UUID programId, UUID workoutId, WorkoutRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireWorkoutWrite(creatorId);
         requireProgram(creatorId, programId);
         Workout workout = workoutRepository.findByIdAndProgramId(workoutId, programId)
                 .orElseThrow(() -> new ResourceNotFoundException("Treino não encontrado: " + workoutId));

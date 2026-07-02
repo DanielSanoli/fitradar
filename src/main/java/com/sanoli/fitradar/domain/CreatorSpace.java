@@ -1,16 +1,22 @@
 package com.sanoli.fitradar.domain;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -45,6 +51,12 @@ public class CreatorSpace {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 24)
     private SpaceCategory category = SpaceCategory.OTHER;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "creator_space_modules", joinColumns = @JoinColumn(name = "space_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "module", nullable = false, length = 24)
+    private Set<SpaceModule> modules = EnumSet.noneOf(SpaceModule.class);
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -121,6 +133,14 @@ public class CreatorSpace {
 
     public void setCategory(SpaceCategory category) {
         this.category = category;
+    }
+
+    public Set<SpaceModule> getModules() {
+        return modules;
+    }
+
+    public void setModules(Set<SpaceModule> modules) {
+        this.modules = modules != null ? EnumSet.copyOf(modules) : EnumSet.noneOf(SpaceModule.class);
     }
 
     public Instant getCreatedAt() {

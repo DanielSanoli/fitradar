@@ -11,6 +11,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +41,7 @@ class NutritionIntegrationTest extends AbstractIntegrationTest {
     void setUp() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         creator = support.registerCreator("nutrition-" + suffix + "@test.local");
-        support.createSpace(creator.token(), "nutrition-" + suffix);
+        support.createSpace(creator.token(), "nutrition-" + suffix, List.of("NUTRITION"));
 
         MvcResult programResult = mockMvc.perform(post("/api/v1/programs")
                         .header("Authorization", "Bearer " + creator.token())
@@ -114,7 +115,7 @@ class NutritionIntegrationTest extends AbstractIntegrationTest {
         String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
         IntegrationTestSupport.AuthContext other = support.registerCreator(
                 "other-nutrition-" + otherSuffix + "@test.local");
-        support.createSpace(other.token(), "other-nutrition-" + otherSuffix);
+        support.createSpace(other.token(), "other-nutrition-" + otherSuffix, List.of("NUTRITION"));
 
         MvcResult created = mockMvc.perform(post("/api/v1/foods")
                         .header("Authorization", "Bearer " + other.token())

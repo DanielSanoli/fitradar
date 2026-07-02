@@ -3,6 +3,7 @@ import { ChevronLeft, Clock, GripVertical, Plus, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { EnrollStudentsModal } from "@/components/creator/EnrollStudentsModal";
 import { CreatorSpaceRequiredPrompt } from "@/components/creator/CreatorSpaceRequiredPrompt";
+import { CreatorModuleRequiredPrompt } from "@/components/creator/CreatorModuleRequiredPrompt";
 import { StructuredNutritionPanel } from "@/features/creator/StructuredNutritionPanel";
 import { WorkoutThumbnail } from "@/components/fitness/WorkoutThumbnail";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -28,9 +29,16 @@ import {
 
 export function ProgramDetailPage() {
   const { toast } = useToast();
-  const { vocabulary: v, category } = useSpaceVocabulary();
+  const { vocabulary: v, hasTraining, hasNutrition, category } = useSpaceVocabulary();
   const { hasSpace } = useCreatorHasSpace();
   const canWrite = hasSpace === true;
+  const [nutritionTab, setNutritionTab] = useState<"markdown" | "structured">("markdown");
+  const canWriteWorkouts = canWrite && (hasTraining || (hasNutrition && !hasTraining));
+  const canWriteNutrition = canWrite && hasNutrition;
+  const showWorkoutSection =
+    hasTraining || (hasNutrition && !hasTraining && nutritionTab === "markdown");
+  const showStructuredNutrition =
+    hasNutrition && (hasTraining || nutritionTab === "structured");
   const ProgramIcon = v.programIcon;
   const ItemIcon = v.itemIcon;
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
@@ -48,7 +56,6 @@ export function ProgramDetailPage() {
   const [allStudents, setAllStudents] = useState<StudentResponse[]>([]);
   const [selectedEnrollIds, setSelectedEnrollIds] = useState<string[]>([]);
   const [enrollSaving, setEnrollSaving] = useState(false);
-  const [nutritionTab, setNutritionTab] = useState<"markdown" | "structured">("markdown");
 
   usePageTitle(program?.title ?? null);
 
@@ -239,19 +246,21 @@ export function ProgramDetailPage() {
                     <Button variant="outline" className="h-10 rounded-[10px]" onClick={() => setShowEnroll(true)}>
                       Matricular aluno
                     </Button>
-                    <Button
-                      className="h-10 gap-1.5 rounded-[10px] shadow-[0_4px_14px_hsl(var(--primary)/0.26)]"
-                      onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
-                    >
-                      <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-                      {v.addItem}
-                    </Button>
+                    {canWriteWorkouts ? (
+                      <Button
+                        className="h-10 gap-1.5 rounded-[10px] shadow-[0_4px_14px_hsl(var(--primary)/0.26)]"
+                        onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
+                      >
+                        <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+                        {v.addItem}
+                      </Button>
+                    ) : null}
                   </>
                 ) : null}
               </div>
             </div>
 
-            {category === "NUTRITION" ? (
+            {hasNutrition && !hasTraining ? (
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
@@ -270,9 +279,17 @@ export function ProgramDetailPage() {
               </div>
             ) : null}
 
-            {category === "NUTRITION" && nutritionTab === "structured" ? (
-              <StructuredNutritionPanel programId={id} canWrite={canWrite} />
-            ) : workouts.length === 0 ? (
+            {showStructuredNutrition ? (
+              <>
+                {!canWriteNutrition ? (
+                  <CreatorModuleRequiredPrompt module="NUTRITION" compact />
+                ) : null}
+                <StructuredNutritionPanel programId={id} canWrite={canWriteNutrition} />
+              </>
+            ) : null}
+
+            {showWorkoutSection ? (
+              workouts.length === 0 ? (
               <div className="flex flex-col items-center gap-4 rounded-[14px] border border-dashed border-border bg-secondary/20 px-6 py-14 text-center">
                 <div className="flex size-[52px] items-center justify-center rounded-[14px] border border-dashed border-border">
                   <ItemIcon className="size-6 text-muted-foreground" strokeWidth={1.8} aria-hidden />
@@ -284,7 +301,7 @@ export function ProgramDetailPage() {
                   </p>
                 </div>
                 <Button
-                  disabled={!canWrite}
+                  disabled={!canWriteWorkouts}
                   onClick={() => navigate(`/app/programs/${id}/workouts/new`)}
                 >
                   {v.addFirstItem}
@@ -306,7 +323,7 @@ export function ProgramDetailPage() {
                     <div
                       key={w.id}
                       role="listitem"
-                      draggable={canWrite}
+                      draggable={canWriteWorkouts}
                       onDragStart={() => setDraggingId(w.id)}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -354,7 +371,7 @@ export function ProgramDetailPage() {
                         {formatItemContentCount(countExercises(w.contentMarkdown), v)}
                       </span>
                       <div className="flex shrink-0 gap-1.5">
-                        {canWrite ? (
+                        {canWriteWorkouts ? (
                           <>
                             <Button variant="outline" size="sm" className="h-[34px] rounded-[9px]" asChild>
                               <Link to={`/app/programs/${id}/workouts/${w.id}/edit`}>Editar</Link>
@@ -374,7 +391,12 @@ export function ProgramDetailPage() {
                   ))}
                 </div>
               </div>
-            )}
+            )
+            ) : null}
+
+            {showWorkoutSection && !canWriteWorkouts && canWrite && hasTraining ? (
+              <CreatorModuleRequiredPrompt module="TRAINING" compact />
+            ) : null}
           </>
         ) : null}
       </PanelState>

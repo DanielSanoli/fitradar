@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.List;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -54,12 +56,19 @@ class IntegrationTestSupport {
     }
 
     void createSpace(String creatorToken, String slug) throws Exception {
+        createSpace(creatorToken, slug, List.of("TRAINING"));
+    }
+
+    void createSpace(String creatorToken, String slug, List<String> modules) throws Exception {
+        String modulesJson = modules.stream()
+                .map(m -> "\"" + m + "\"")
+                .collect(java.util.stream.Collectors.joining(", "));
         mockMvc.perform(put("/api/v1/creator-space")
                         .header("Authorization", "Bearer " + creatorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Espaco %s","slug":"%s","bio":"Teste"}
-                                """.formatted(slug, slug)))
+                                {"name":"Espaco %s","slug":"%s","bio":"Teste","modules":[%s]}
+                                """.formatted(slug, slug, modulesJson)))
                 .andExpect(status().isOk());
     }
 

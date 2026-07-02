@@ -2,6 +2,7 @@ package com.sanoli.fitradar.service;
 
 import com.sanoli.fitradar.domain.CreatorSpace;
 import com.sanoli.fitradar.domain.SpaceCategory;
+import com.sanoli.fitradar.domain.SpaceModule;
 import com.sanoli.fitradar.dto.CreatorSpaceRequest;
 import com.sanoli.fitradar.repository.CreatorSpaceRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,7 +46,7 @@ class CreatorSpaceServiceTest {
 
         CreatorSpace saved = service.save(
                 creatorId,
-                new CreatorSpaceRequest("Studio Cross", "studio-cross", null, "#1ed7a6", "Bio", SpaceCategory.CROSSFIT));
+                new CreatorSpaceRequest("Studio Cross", "studio-cross", null, "#1ed7a6", "Bio", SpaceCategory.CROSSFIT, null));
 
         assertThat(saved.getCategory()).isEqualTo(SpaceCategory.CROSSFIT);
 
@@ -62,7 +64,7 @@ class CreatorSpaceServiceTest {
 
         CreatorSpace saved = service.save(
                 creatorId,
-                new CreatorSpaceRequest("Studio", "studio", null, null, null, null));
+                new CreatorSpaceRequest("Studio", "studio", null, null, null, null, null));
 
         assertThat(saved.getCategory()).isEqualTo(SpaceCategory.OTHER);
     }
@@ -82,8 +84,30 @@ class CreatorSpaceServiceTest {
                         "data:image/png;base64,abc",
                         null,
                         null,
-                        SpaceCategory.OTHER));
+                        SpaceCategory.OTHER,
+                        null));
 
         assertThat(saved.getLogoUrl()).isNull();
+    }
+
+    @Test
+    void save_persistsExplicitModules() {
+        UUID creatorId = UUID.randomUUID();
+        when(creatorSpaceRepository.findByCreatorId(creatorId)).thenReturn(Optional.empty());
+        when(creatorSpaceRepository.findBySlug(any())).thenReturn(Optional.empty());
+        when(creatorSpaceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CreatorSpace saved = service.save(
+                creatorId,
+                new CreatorSpaceRequest(
+                        "Hibrido",
+                        "hibrido",
+                        null,
+                        null,
+                        null,
+                        SpaceCategory.GYM,
+                        List.of(SpaceModule.TRAINING, SpaceModule.NUTRITION)));
+
+        assertThat(saved.getModules()).containsExactlyInAnyOrder(SpaceModule.TRAINING, SpaceModule.NUTRITION);
     }
 }

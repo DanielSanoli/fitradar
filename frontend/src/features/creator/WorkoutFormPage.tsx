@@ -5,6 +5,7 @@ import { ChevronLeft, Plus, X } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { CreatorSpaceRequiredPrompt } from "@/components/creator/CreatorSpaceRequiredPrompt";
+import { CreatorModuleRequiredPrompt } from "@/components/creator/CreatorModuleRequiredPrompt";
 
 import { Button } from "@/components/ui/button";
 
@@ -52,11 +53,12 @@ export function WorkoutFormPage({ mode }: { mode: "create" | "edit" }) {
 
   const { toast } = useToast();
 
-  const { vocabulary: v } = useSpaceVocabulary();
+  const { vocabulary: v, hasTraining, hasNutrition } = useSpaceVocabulary();
 
   const { hasSpace } = useCreatorHasSpace();
 
   const canWrite = hasSpace === true;
+  const canWriteWorkouts = canWrite && (hasTraining || (hasNutrition && !hasTraining));
 
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
@@ -315,6 +317,32 @@ export function WorkoutFormPage({ mode }: { mode: "create" | "edit" }) {
         </Button>
 
         <CreatorSpaceRequiredPrompt />
+
+      </div>
+
+    );
+
+  }
+
+  if (!canWriteWorkouts) {
+
+    return (
+
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-5 animate-in fade-in duration-300">
+
+        <Button variant="outline" size="sm" asChild className="h-9 w-fit gap-2 rounded-[9px]">
+
+          <Link to={`/app/programs/${programId}`}>
+
+            <ChevronLeft className="size-4" />
+
+            Voltar
+
+          </Link>
+
+        </Button>
+
+        <CreatorModuleRequiredPrompt module="TRAINING" />
 
       </div>
 

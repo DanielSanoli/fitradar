@@ -278,6 +278,7 @@ public class AccountPrivacyService {
         map.put("slug", space.getSlug());
         map.put("name", space.getName());
         map.put("category", space.getCategory());
+        map.put("modules", space.getModules().stream().sorted().map(Enum::name).toList());
         map.put("primaryColor", space.getPrimaryColor());
         map.put("bio", space.getBio());
         return map;

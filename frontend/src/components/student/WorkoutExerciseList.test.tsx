@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { WorkoutExerciseList } from "@/components/student/WorkoutExerciseList";
 import { getSpaceVocabulary } from "@/lib/space/vocabulary";
+import { defaultModulesForCategory, hasNutritionModule, hasTrainingModule } from "@/lib/creator/space-modules";
 
 vi.mock("@/hooks/useSpaceVocabulary", () => ({
   useSpaceVocabulary: vi.fn(),
@@ -10,9 +11,13 @@ vi.mock("@/hooks/useSpaceVocabulary", () => ({
 import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
 
 function mockVocabulary(category: "GYM" | "NUTRITION") {
+  const modules = defaultModulesForCategory(category);
   vi.mocked(useSpaceVocabulary).mockReturnValue({
     category,
-    vocabulary: getSpaceVocabulary(category),
+    modules,
+    hasTraining: hasTrainingModule(modules),
+    hasNutrition: hasNutritionModule(modules),
+    vocabulary: getSpaceVocabulary(category, modules),
   });
 }
 

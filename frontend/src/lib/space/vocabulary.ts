@@ -1,7 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import { Dumbbell, Salad, UtensilsCrossed } from "lucide-react";
-import type { SpaceCategory } from "@/lib/api/domain-types";
+import type { SpaceCategory, SpaceModule } from "@/lib/api/domain-types";
 import { DEFAULT_SPACE_CATEGORY, normalizeSpaceCategory } from "@/lib/creator/space-categories";
+import {
+  defaultModulesForCategory,
+  hasNutritionModule,
+  hasTrainingModule,
+  isHybridSpace,
+  normalizeSpaceModules,
+} from "@/lib/creator/space-modules";
 
 export type SpaceVocabulary = {
   /** Program / plan icon — sidebar nav and program cards. */
@@ -287,11 +294,34 @@ const NUTRITION_VOCABULARY: SpaceVocabulary = {
   itemTitlePlaceholder: "Ex.: Café da manhã",
 };
 
+const HYBRID_VOCABULARY: SpaceVocabulary = {
+  ...FITNESS_VOCABULARY,
+  programsNav: "Programas & Planos",
+  programsAndItems: "Programas, Treinos & Nutrição",
+  programsPageSubtitleEmpty: "Nenhum conteúdo ainda — crie o primeiro programa ou plano",
+  programsListEmptyDescription:
+    "Gerencie treinos e planos alimentares no mesmo espaço — ideal para quem acompanha treino e nutrição.",
+  newProgram: "Novo programa / plano",
+  editProgram: "Editar programa / plano",
+};
+
 const VOCABULARY_BY_CATEGORY: Partial<Record<SpaceCategory, SpaceVocabulary>> = {
   NUTRITION: NUTRITION_VOCABULARY,
 };
 
-export function getSpaceVocabulary(category?: SpaceCategory | string | null): SpaceVocabulary {
+export function getSpaceVocabulary(
+  category?: SpaceCategory | string | null,
+  modules?: SpaceModule[] | null,
+): SpaceVocabulary {
+  const normalizedModules = normalizeSpaceModules(
+    modules ?? defaultModulesForCategory(category ?? DEFAULT_SPACE_CATEGORY),
+  );
+  if (isHybridSpace(normalizedModules)) {
+    return HYBRID_VOCABULARY;
+  }
+  if (hasNutritionModule(normalizedModules) && !hasTrainingModule(normalizedModules)) {
+    return NUTRITION_VOCABULARY;
+  }
   const normalized = normalizeSpaceCategory(category ?? DEFAULT_SPACE_CATEGORY);
   return VOCABULARY_BY_CATEGORY[normalized] ?? FITNESS_VOCABULARY;
 }

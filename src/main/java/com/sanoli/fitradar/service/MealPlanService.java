@@ -82,6 +82,7 @@ public class MealPlanService {
     @Transactional
     public MealResponse createMeal(UUID creatorId, UUID programId, MealRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         Program program = requireProgram(creatorId, programId);
         Meal meal = new Meal();
         meal.setProgramId(programId);
@@ -97,6 +98,7 @@ public class MealPlanService {
     @Transactional
     public MealResponse updateMeal(UUID creatorId, UUID programId, UUID mealId, MealRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         Meal meal = requireMeal(creatorId, programId, mealId);
         meal.setNome(request.nome().trim());
@@ -111,6 +113,7 @@ public class MealPlanService {
     @Transactional
     public void deleteMeal(UUID creatorId, UUID programId, UUID mealId) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         Meal meal = requireMeal(creatorId, programId, mealId);
         mealItemRepository.findByMealIdOrderByOrdemAsc(mealId)
@@ -121,6 +124,7 @@ public class MealPlanService {
     @Transactional
     public void reorderMeals(UUID creatorId, UUID programId, ReorderRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         List<Meal> meals = mealRepository.findByProgramIdAndCreatorIdOrderByOrdemAsc(programId, creatorId);
         applyReorder(meals, request.orderedIds(), Meal::getId, Meal::setOrdem);
@@ -130,6 +134,7 @@ public class MealPlanService {
     @Transactional
     public MealItemResponse addItem(UUID creatorId, UUID programId, UUID mealId, MealItemRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         Meal meal = requireMeal(creatorId, programId, mealId);
         Food food = foodService.requireAccessibleFood(creatorId, request.foodId());
@@ -152,6 +157,7 @@ public class MealPlanService {
             MealItemRequest request
     ) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         requireMeal(creatorId, programId, mealId);
         MealItem item = requireItem(mealId, itemId);
@@ -169,6 +175,7 @@ public class MealPlanService {
     @Transactional
     public void deleteItem(UUID creatorId, UUID programId, UUID mealId, UUID itemId) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         requireMeal(creatorId, programId, mealId);
         MealItem item = requireItem(mealId, itemId);
@@ -178,6 +185,7 @@ public class MealPlanService {
     @Transactional
     public void reorderItems(UUID creatorId, UUID programId, UUID mealId, ReorderRequest request) {
         creatorSpaceGuard.requireSpace(creatorId);
+        creatorSpaceGuard.requireNutritionModule(creatorId);
         requireProgram(creatorId, programId);
         requireMeal(creatorId, programId, mealId);
         List<MealItem> items = mealItemRepository.findByMealIdOrderByOrdemAsc(mealId);

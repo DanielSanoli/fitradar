@@ -4,6 +4,7 @@ import {
   normalizeSpaceCategory,
   spaceCategoryLabel,
 } from "@/lib/creator/space-categories";
+import { spaceModulesSummary } from "@/lib/creator/space-modules";
 import { normalizeAccentColor, rgbaHex } from "@/lib/creator/space-theme";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ export function StudentSpaceHero({ space, className }: StudentSpaceHeroProps) {
   const accent = normalizeAccentColor(space.primaryColor);
   const category = normalizeSpaceCategory(space.category);
   const areaLabel = spaceCategoryLabel(category);
+  const modulesLabel = spaceModulesSummary(space.modules ?? []);
   const bio =
     space.bio?.trim() ||
     "Bem-vindo ao seu espaço de acompanhamento — conteúdo, check-ins e progresso em um só lugar.";
@@ -72,7 +74,7 @@ export function StudentSpaceHero({ space, className }: StudentSpaceHeroProps) {
                 style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
                 aria-hidden
               />
-              <span className="truncate">{areaLabel}</span>
+              <span className="truncate">{areaLabel} · {modulesLabel}</span>
             </div>
           </div>
         </div>

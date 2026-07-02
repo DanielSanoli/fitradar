@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "@/components/ui/toast";
@@ -96,7 +96,8 @@ describe("SpaceBuilderPage", () => {
     });
 
     await user.type(screen.getByLabelText(/Nome do espaço/i), "Studio Nutri");
-    await user.click(screen.getByRole("button", { name: /Nutrição/i }));
+    const areaGroup = screen.getByRole("group", { name: "Área do espaço" });
+    await user.click(within(areaGroup).getByRole("button", { name: "Nutrição" }));
     await user.click(screen.getByRole("button", { name: /Salvar rascunho/i }));
 
     await waitFor(() => {
@@ -104,6 +105,7 @@ describe("SpaceBuilderPage", () => {
         expect.objectContaining({
           name: "Studio Nutri",
           category: "NUTRITION",
+          modules: ["NUTRITION"],
         }),
       );
     });
@@ -147,6 +149,7 @@ describe("SpaceBuilderPage", () => {
       primaryColor: "#1ed7a6",
       bio: "Bio",
       category: "OTHER",
+      modules: ["TRAINING"],
       createdAt: "2026-01-01",
     });
     vi.mocked(spaceApi.update).mockResolvedValue({
@@ -158,6 +161,7 @@ describe("SpaceBuilderPage", () => {
       primaryColor: "#1ed7a6",
       bio: "Bio",
       category: "OTHER",
+      modules: ["TRAINING"],
       createdAt: "2026-01-01",
     });
 
@@ -187,6 +191,7 @@ describe("SpaceBuilderPage", () => {
       primaryColor: "#1ed7a6",
       bio: "Bio",
       category: "OTHER",
+      modules: ["TRAINING"],
       createdAt: "2026-01-01",
     });
     vi.mocked(studentsApi.invite).mockResolvedValue({

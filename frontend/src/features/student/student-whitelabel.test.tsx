@@ -11,6 +11,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { PageTitleProvider } from "@/hooks/usePageTitle";
 import { SpaceVocabularyProvider } from "@/hooks/useSpaceVocabulary";
 import { memberApi } from "@/lib/api/member-api";
+import type { CreatorSpaceResponse } from "@/lib/api/domain-types";
 import { buildStudentThemeCssVars } from "@/lib/creator/space-theme";
 
 vi.mock("@/lib/api/member-api", () => ({
@@ -25,7 +26,7 @@ vi.mock("@/lib/api/member-api", () => ({
   },
 }));
 
-const blueSpace = {
+const blueSpace: CreatorSpaceResponse = {
   id: "1",
   creatorId: "c1",
   name: "Blue Coaching",
@@ -34,6 +35,7 @@ const blueSpace = {
   primaryColor: "#5b8cff",
   bio: "Nutrição esportiva personalizada para seus objetivos.",
   category: "NUTRITION" as const,
+  modules: ["NUTRITION"],
   createdAt: "2024-01-01T00:00:00Z",
 };
 

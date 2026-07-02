@@ -13,7 +13,7 @@ vi.mock("@/lib/api/onboarding-api", () => ({
       hasSpace: true,
       hasProgram: true,
       hasStudent: false,
-      demoAvailable: false,
+      demoSeedAvailable: false,
       onboardingComplete: false,
     }),
   },

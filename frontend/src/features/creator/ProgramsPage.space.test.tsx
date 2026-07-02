@@ -20,7 +20,7 @@ describe("ProgramsListPage space guard", () => {
       hasSpace: false,
       hasProgram: false,
       hasStudent: false,
-      demoAvailable: false,
+      demoSeedAvailable: false,
       onboardingComplete: false,
     });
     vi.mocked(programsApi.list).mockResolvedValue([]);

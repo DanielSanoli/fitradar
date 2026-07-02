@@ -114,6 +114,7 @@ describe("space vocabulary UI", () => {
       primaryColor: null,
       bio: null,
       category: "NUTRITION",
+      modules: ["NUTRITION"],
       createdAt: "2024-01-01T00:00:00Z",
     });
 
@@ -135,6 +136,7 @@ describe("space vocabulary UI", () => {
       primaryColor: null,
       bio: null,
       category: "GYM",
+      modules: ["TRAINING"],
       createdAt: "2024-01-01T00:00:00Z",
     });
 
@@ -156,6 +158,7 @@ describe("space vocabulary UI", () => {
       primaryColor: null,
       bio: null,
       category: "NUTRITION",
+      modules: ["NUTRITION"],
       createdAt: "2024-01-01T00:00:00Z",
     });
 

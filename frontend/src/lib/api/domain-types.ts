@@ -288,6 +288,8 @@ export type WorkoutRequest = {
 
 export type SpaceCategory = "NUTRITION" | "GYM" | "CROSSFIT" | "PILATES" | "OTHER";
 
+export type SpaceModule = "TRAINING" | "NUTRITION";
+
 export type CreatorSpaceResponse = {
   id: string;
   creatorId: string;
@@ -297,6 +299,7 @@ export type CreatorSpaceResponse = {
   primaryColor: string | null;
   bio: string | null;
   category: SpaceCategory | null;
+  modules: SpaceModule[];
   createdAt: string;
 };
 
@@ -307,6 +310,7 @@ export type CreatorSpaceRequest = {
   primaryColor?: string | null;
   bio?: string | null;
   category?: SpaceCategory | null;
+  modules?: SpaceModule[];
 };
 
 export type CopilotAskRequest = {

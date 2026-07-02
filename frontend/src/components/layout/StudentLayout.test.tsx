@@ -48,6 +48,7 @@ describe("StudentLayout bottom nav", () => {
       primaryColor: "#5b8cff",
       bio: "Treinos sob medida.",
       category: "GYM",
+      modules: ["TRAINING"],
       createdAt: "2024-01-01T00:00:00Z",
     });
   });

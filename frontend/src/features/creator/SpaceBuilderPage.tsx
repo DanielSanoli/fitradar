@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SpaceBuilderStepper } from "@/components/creator/space/SpaceBuilderStepper";
 import { SpaceAreaSelector } from "@/components/creator/space/SpaceAreaSelector";
+import { SpaceModuleSelector } from "@/components/creator/space/SpaceModuleSelector";
 import { SpaceFieldLabel } from "@/components/creator/space/SpaceFieldLabel";
 import { SpaceLivePreview } from "@/components/creator/space/SpaceLivePreview";
 import { FitnessEmptyIcon } from "@/components/fitness/FitnessEmptyIcon";
@@ -18,9 +19,10 @@ import {
 import { programsApi } from "@/lib/api/programs-api";
 import { spaceApi } from "@/lib/api/space-api";
 import { studentsApi } from "@/lib/api/students-api";
-import type { CreatorSpaceRequest, SpaceCategory } from "@/lib/api/domain-types";
+import type { CreatorSpaceRequest, SpaceCategory, SpaceModule } from "@/lib/api/domain-types";
 import { ApiError } from "@/lib/api/types";
 import { DEFAULT_SPACE_CATEGORY, normalizeSpaceCategory } from "@/lib/creator/space-categories";
+import { defaultModulesForCategory, normalizeSpaceModules } from "@/lib/creator/space-modules";
 import {
   foregroundOnAccent,
   normalizeAccentColor,
@@ -123,6 +125,7 @@ export function SpaceBuilderPage() {
   const [accent, setAccent] = useState<string>(SPACE_SWATCHES[0]);
   const [bio, setBio] = useState("");
   const [category, setCategory] = useState<SpaceCategory>(DEFAULT_SPACE_CATEGORY);
+  const [modules, setModules] = useState<SpaceModule[]>(defaultModulesForCategory(DEFAULT_SPACE_CATEGORY));
 
   const [programName, setProgramName] = useState("");
   const [programWeeks, setProgramWeeks] = useState<(typeof PROGRAM_DURATIONS)[number]["weeks"]>("8");
@@ -170,6 +173,7 @@ export function SpaceBuilderPage() {
         setAccent(normalizeAccentColor(space.primaryColor));
         setBio(space.bio ?? "");
         setCategory(normalizeSpaceCategory(space.category));
+        setModules(normalizeSpaceModules(space.modules ?? defaultModulesForCategory(space.category)));
         if (space.slug && space.name) setPublished(true);
       }
 
@@ -206,8 +210,9 @@ export function SpaceBuilderPage() {
       primaryColor: accent,
       bio: bio.trim() || null,
       category,
+      modules,
     };
-  }, [name, slugComputed, logoUrl, accent, bio, category]);
+  }, [name, slugComputed, logoUrl, accent, bio, category, modules]);
 
   const saveDraft = async () => {
     if (!name.trim()) {
@@ -484,6 +489,21 @@ export function SpaceBuilderPage() {
                   value={category}
                   onChange={(next) => {
                     setCategory(next);
+                    setPublished(false);
+                  }}
+                  accent={accent}
+                />
+              </div>
+
+              <div className="space-y-2.5">
+                <SpaceFieldLabel icon="programs">O que você oferece?</SpaceFieldLabel>
+                <p className="text-[13px] text-muted-foreground">
+                  Escolha Treino, Nutrição ou ambos. Você precisa de ao menos um módulo ativo.
+                </p>
+                <SpaceModuleSelector
+                  value={modules}
+                  onChange={(next) => {
+                    setModules(next);
                     setPublished(false);
                   }}
                   accent={accent}

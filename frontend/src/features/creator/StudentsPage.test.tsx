@@ -90,6 +90,7 @@ describe("StudentsPage", () => {
       primaryColor: "#1ed7a6",
       bio: null,
       category: "OTHER",
+      modules: ["TRAINING"],
       createdAt: "2026-01-01",
     });
   });
