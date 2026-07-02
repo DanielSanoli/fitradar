@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { useAuth } from "@/hooks/useAuth";
 import type { UserRole } from "@/lib/api/types";
 
@@ -11,11 +12,7 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const location = useLocation();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6" role="status" aria-label="Carregando">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!isAuthenticated || !user) {
@@ -57,11 +54,7 @@ export function PublicOnlyRoute() {
   const location = useLocation();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6" role="status" aria-label="Carregando">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (isAuthenticated && user) {
@@ -87,11 +80,7 @@ export function GuestOnlyRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6" role="status" aria-label="Carregando">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (isAuthenticated && user) {

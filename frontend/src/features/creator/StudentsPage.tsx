@@ -10,6 +10,7 @@ import { RiskBadge } from "@/components/radar/RiskBadge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
+import { StaggerItem } from "@/components/motion/StaggerList";
 import { useToast } from "@/components/ui/toast";
 import { gamificationApi } from "@/lib/api/gamification-api";
 import { retentionApi } from "@/lib/api/retention-api";
@@ -243,7 +244,7 @@ export function StudentsPage() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-5 animate-in fade-in duration-300">
+    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-tight">Alunos</h1>
@@ -325,7 +326,7 @@ export function StudentsPage() {
                   </span>
                 ))}
               </div>
-              {filtered.map((row) => {
+              {filtered.map((row, rowIndex) => {
                 const inactive = parseInactiveDays(row.risk?.assumptions);
                 const hasCheckIns = row.totalCheckIns > 0;
                 const isNew = !hasCheckIns;
@@ -333,10 +334,10 @@ export function StudentsPage() {
                 const uiLevel = row.risk ? riskUi(row.risk.level) : null;
 
                 return (
+                  <StaggerItem key={row.student.id} index={rowIndex} className="contents">
                   <Link
-                    key={row.student.id}
                     to={`/app/students/${row.student.id}`}
-                    className="grid grid-cols-1 gap-3 border-b border-border/80 px-5 py-4 transition-colors last:border-b-0 hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(160px,2.4fr)_minmax(110px,1.5fr)_minmax(140px,1.2fr)_122px_140px_120px] md:items-center md:gap-2"
+                    className="app-list-item-interactive grid grid-cols-1 gap-3 border-b border-border/80 px-5 py-4 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(160px,2.4fr)_minmax(110px,1.5fr)_minmax(140px,1.2fr)_122px_140px_120px] md:items-center md:gap-2"
                     aria-label={`Ver detalhes de ${row.student.name}`}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -428,21 +429,21 @@ export function StudentsPage() {
                       </div>
                     ) : null}
                   </Link>
+                  </StaggerItem>
                 );
               })}
             </div>
           )}
         </>
-      ) : (
+      ) : state !== "content" || rows.length > 0 ? (
         <PanelState
-          state={state === "content" && rows.length === 0 ? "empty" : state}
+          state={state}
           message={error}
           onRetry={load}
           rows={4}
-        >
-          {null}
-        </PanelState>
-      )}
+          iconContext="students"
+        />
+      ) : null}
 
       {state === "content" && rows.length === 0 ? (
         <div className="flex flex-col items-center gap-5 py-16 text-center">

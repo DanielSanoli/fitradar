@@ -5,6 +5,7 @@ import { CreatorEmptyRings } from "@/components/creator/CreatorEmptyRings";
 import { CreatorSpaceRequiredPrompt } from "@/components/creator/CreatorSpaceRequiredPrompt";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PanelState } from "@/components/ui/PanelState";
+import { StaggerItem } from "@/components/motion/StaggerList";
 import { Button } from "@/components/ui/button";
 import { programsApi } from "@/lib/api/programs-api";
 import { studentsApi } from "@/lib/api/students-api";
@@ -90,7 +91,7 @@ export function ProgramsListPage() {
       : formatProgramItemSummary(programs.length, totalWorkouts, v);
 
   return (
-    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-5 animate-in fade-in duration-300">
+    <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-tight">{v.programsAndItems}</h1>
@@ -114,17 +115,21 @@ export function ProgramsListPage() {
         </Alert>
       ) : null}
 
-      <PanelState
-        state={state === "content" && programs.length === 0 ? "empty" : state}
-        message={error}
-        onRetry={load}
-        rows={3}
-      >
+      {state === "loading" || state === "error" ? (
+        <PanelState
+          state={state}
+          message={error}
+          onRetry={load}
+          skeletonVariant="cards"
+          rows={3}
+          iconContext="programs"
+        />
+      ) : programs.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {programs.map((p, i) => (
+            <StaggerItem key={p.id} index={i}>
             <article
-              key={p.id}
-              className="flex flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_6px_24px_rgba(0,0,0,0.28)] transition-shadow hover:shadow-[0_10px_32px_rgba(0,0,0,0.38)]"
+              className="app-card-interactive flex h-full flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_6px_24px_rgba(0,0,0,0.28)]"
             >
               <div
                 className="h-1"
@@ -169,9 +174,10 @@ export function ProgramsListPage() {
                 </Button>
               </div>
             </article>
+            </StaggerItem>
           ))}
         </div>
-      </PanelState>
+      ) : null}
 
       {state === "content" && programs.length === 0 ? (
         canWrite ? (

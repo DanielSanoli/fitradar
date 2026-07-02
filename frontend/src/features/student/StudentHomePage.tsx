@@ -9,6 +9,7 @@ import { PoweredByFitRadar } from "@/components/student/PoweredByFitRadar";
 import { PushOptInBanner } from "@/components/pwa/PushPrompt";
 import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
+import { StaggerItem } from "@/components/motion/StaggerList";
 import { useToast } from "@/components/ui/toast";
 import { memberApi } from "@/lib/api/member-api";
 import type {
@@ -199,7 +200,7 @@ export function StudentHomePage() {
     exTotal > 0 || Boolean(displayWorkout?.contentMarkdown?.trim());
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 motion-safe:animate-in motion-safe:fade-in md:pb-8">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 md:pb-8">
       <CheckInCelebrationOverlay
         show={celebrate}
         streak={celebrateStreak}
@@ -214,7 +215,13 @@ export function StudentHomePage() {
         </div>
       </header>
 
-      <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
+      <PanelState
+        state={state}
+        message={error}
+        onRetry={load}
+        emptyVariant="student"
+        skeletonVariant="student-home"
+      >
         {progress ? (
           <>
             <div className="flex items-center gap-3.5 rounded-[14px] border border-primary/30 bg-gradient-to-br from-primary/15 to-card px-4 py-3.5">
@@ -289,19 +296,24 @@ export function StudentHomePage() {
                 <Button
                   size="lg"
                   disabled={todayDoneFlag || submitting || !nextWorkout}
+                  loading={submitting && !todayDoneFlag}
                   onClick={() => void quickCheckIn()}
                   className={cn(
-                    "h-14 gap-2.5 rounded-[14px] text-base font-bold shadow-[0_6px_20px_hsl(var(--primary)/0.36)]",
+                    "h-14 min-h-[56px] gap-2.5 rounded-[14px] text-base font-bold shadow-[0_6px_20px_hsl(var(--primary)/0.36)] transition-transform duration-200 active:scale-[0.97]",
                     todayDoneFlag &&
                       "border border-primary/35 bg-primary/10 text-primary shadow-none hover:bg-primary/10",
                   )}
                 >
-                  {todayDoneFlag ? (
+                  {submitting && !todayDoneFlag ? null : todayDoneFlag ? (
                     <Check className="size-5" strokeWidth={3} aria-hidden />
                   ) : (
                     <CalendarCheck className="size-5" strokeWidth={2.5} aria-hidden />
                   )}
-                  {todayDoneFlag ? v.checkInDoneToday : v.checkInButton}
+                  {todayDoneFlag
+                    ? v.checkInDoneToday
+                    : submitting
+                      ? "Registrando…"
+                      : v.checkInButton}
                 </Button>
 
                 {!todayDoneFlag && nextWorkout ? (
@@ -380,11 +392,12 @@ export function StudentHomePage() {
               <section className="space-y-2.5" aria-label={v.upcomingItems}>
                 <h2 className="text-sm font-bold text-foreground/90">{v.upcomingItems}</h2>
                 <ul className="space-y-2">
-                  {upcoming.map(({ workout, dayLabel, exCount }) => (
+                  {upcoming.map(({ workout, dayLabel, exCount }, index) => (
                     <li key={workout.id}>
+                      <StaggerItem index={index}>
                       <Link
                         to={`/student/workouts/${workout.id}`}
-                        className="flex items-center gap-3 rounded-[13px] border border-border bg-card/80 px-3.5 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+                        className="app-list-item-interactive flex items-center gap-3 rounded-[13px] border border-border bg-card/80 px-3.5 py-3"
                       >
                         <span className="inline-flex min-w-[52px] items-center justify-center rounded-lg border border-border bg-secondary px-2 py-1 text-[11.5px] font-bold text-muted-foreground">
                           {dayLabel}
@@ -398,6 +411,7 @@ export function StudentHomePage() {
                         </div>
                         <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
                       </Link>
+                      </StaggerItem>
                     </li>
                   ))}
                 </ul>

@@ -108,10 +108,10 @@ function StudentLayoutShell() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium",
+                  "relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-[colors,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-safe:hover:translate-x-0.5",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60",
+                    ? "bg-sidebar-accent pl-4 font-semibold text-sidebar-accent-foreground before:absolute before:bottom-2 before:left-0 before:top-2 before:w-0.5 before:rounded-full before:bg-primary before:shadow-[0_0_10px_hsl(var(--primary))]"
+                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
                 )
               }
             >

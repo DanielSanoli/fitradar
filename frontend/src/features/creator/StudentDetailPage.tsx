@@ -208,7 +208,7 @@ export function StudentDetailPage() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 animate-in fade-in duration-300">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5">
       <Button variant="outline" size="sm" asChild className="h-9 w-fit gap-2 rounded-[9px]">
         <Link to="/app/students">
           <ChevronLeft className="size-4" aria-hidden />
@@ -216,7 +216,7 @@ export function StudentDetailPage() {
         </Link>
       </Button>
 
-      <PanelState state={state} message={error} onRetry={load}>
+      <PanelState state={state} message={error} onRetry={load} skeletonVariant="cards" rows={3}>
         {student ? (
           <>
             <div className="flex flex-wrap items-start justify-between gap-5 rounded-[14px] border border-border bg-card p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] md:p-6">

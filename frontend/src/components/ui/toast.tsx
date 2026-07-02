@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { cn } from "@/lib/utils";
 
 type ToastItem = {
   id: number;
@@ -36,17 +37,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-4 left-1/2 z-[100] flex w-[min(92vw,24rem)] -translate-x-1/2 flex-col gap-2"
+        className="pointer-events-none fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[100] flex w-[min(92vw,24rem)] -translate-x-1/2 flex-col gap-2 md:bottom-6"
         aria-live="polite"
       >
         {items.map((item) => (
           <div
             key={item.id}
-            className={`toast-enter rounded-[10px] px-4 py-3 text-sm font-medium shadow-lg ${
+            className={cn(
+              "toast-enter rounded-[10px] px-4 py-3 text-sm font-medium shadow-[0_8px_28px_rgba(0,0,0,0.38)] backdrop-blur-sm",
               item.variant === "error"
                 ? "border border-destructive/40 bg-destructive/15 text-destructive"
-                : "border border-primary/30 bg-card text-foreground"
-            }`}
+                : "border border-primary/30 bg-card/95 text-foreground",
+            )}
             role="status"
           >
             {item.message}

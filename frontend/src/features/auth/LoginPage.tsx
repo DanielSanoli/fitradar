@@ -100,8 +100,8 @@ export function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Entrando…" : "Entrar"}
+            <Button type="submit" className="w-full" loading={loading}>
+              Entrar
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">

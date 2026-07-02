@@ -9,6 +9,7 @@ import { WorkoutThumbnail } from "@/components/fitness/WorkoutThumbnail";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PanelState } from "@/components/ui/PanelState";
+import { StaggerItem } from "@/components/motion/StaggerList";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -191,7 +192,7 @@ export function ProgramDetailPage() {
   }));
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 animate-in fade-in duration-300">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5">
       {confirmDialog}
 
       <Button variant="outline" size="sm" asChild className="h-9 w-fit gap-2 rounded-[9px]">
@@ -201,7 +202,7 @@ export function ProgramDetailPage() {
         </Link>
       </Button>
 
-      <PanelState state={state} message={error} onRetry={load}>
+      <PanelState state={state} message={error} onRetry={load} skeletonVariant="cards" rows={2}>
         {program ? (
           <>
             {enrollWarning ? (
@@ -261,17 +262,25 @@ export function ProgramDetailPage() {
             </div>
 
             {hasNutrition && !hasTraining ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tipo de plano alimentar">
                 <Button
                   size="sm"
+                  role="tab"
+                  aria-selected={nutritionTab === "markdown"}
                   variant={nutritionTab === "markdown" ? "default" : "outline"}
+                  className="app-section-tab"
+                  data-active={nutritionTab === "markdown"}
                   onClick={() => setNutritionTab("markdown")}
                 >
                   Refeições em texto
                 </Button>
                 <Button
                   size="sm"
+                  role="tab"
+                  aria-selected={nutritionTab === "structured"}
                   variant={nutritionTab === "structured" ? "default" : "outline"}
+                  className="app-section-tab"
+                  data-active={nutritionTab === "structured"}
                   onClick={() => setNutritionTab("structured")}
                 >
                   Plano com macros (TACO)
@@ -320,8 +329,8 @@ export function ProgramDetailPage() {
                   aria-label={`Lista de ${v.item.plural} do ${v.program.singular}`}
                 >
                   {workouts.map((w, index) => (
+                    <StaggerItem key={w.id} index={index} className="contents">
                     <div
-                      key={w.id}
                       role="listitem"
                       draggable={canWriteWorkouts}
                       onDragStart={() => setDraggingId(w.id)}
@@ -338,7 +347,7 @@ export function ProgramDetailPage() {
                         setDragOverId(null);
                       }}
                       className={cn(
-                        "flex cursor-grab items-center gap-3.5 border-b border-border/80 px-5 py-3.5 last:border-b-0 active:cursor-grabbing",
+                        "app-list-item-interactive flex cursor-grab items-center gap-3.5 border-b border-border/80 px-5 py-3.5 last:border-b-0 active:cursor-grabbing",
                         draggingId === w.id && "opacity-40",
                         dragOverId === w.id && "border-t-2 border-t-primary pt-[13px]",
                       )}
@@ -388,6 +397,7 @@ export function ProgramDetailPage() {
                         ) : null}
                       </div>
                     </div>
+                    </StaggerItem>
                   ))}
                 </div>
               </div>

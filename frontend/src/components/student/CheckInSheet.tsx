@@ -147,14 +147,15 @@ export function CheckInSheet({
 
         <Button
           size="lg"
-          className="h-14 gap-2 rounded-[14px] text-base font-bold shadow-[0_6px_20px_hsl(var(--primary)/0.36)]"
+          className="h-14 min-h-[56px] gap-2 rounded-[14px] text-base font-bold shadow-[0_6px_20px_hsl(var(--primary)/0.36)] active:scale-[0.97]"
+          loading={submitting}
           disabled={submitting}
           onClick={onConfirm}
         >
-          <CalendarCheck className="size-5" strokeWidth={2.5} aria-hidden />
+          {!submitting ? <CalendarCheck className="size-5" strokeWidth={2.5} aria-hidden /> : null}
           Confirmar check-in
         </Button>
-        <Button variant="ghost" disabled={submitting} onClick={onSkip}>
+        <Button variant="ghost" loading={submitting} disabled={submitting} onClick={onSkip}>
           {v.checkInSkipButton}
         </Button>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClipboardList } from "lucide-react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,11 +121,7 @@ export function StudentAnamnesePage() {
   }
 
   if (loadState === "loading") {
-    return (
-      <div className="flex min-h-[70vh] items-center justify-center p-6" role="status" aria-label="Carregando">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

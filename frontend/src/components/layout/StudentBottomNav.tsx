@@ -11,7 +11,7 @@ export function StudentBottomNav() {
   return (
     <nav
       data-testid="student-bottom-nav"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)] max-md:block md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur-md max-md:block md:hidden"
       aria-label="Navegação inferior do aluno"
     >
       <ul className="mx-auto flex w-full max-w-lg list-none divide-x divide-border p-0">
@@ -22,8 +22,9 @@ export function StudentBottomNav() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-semibold transition-colors",
+                  "app-nav-active-indicator flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-semibold transition-[color,background-color,transform] duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                  "active:scale-[0.97]",
                   isActive
                     ? "bg-primary/15 text-primary"
                     : "bg-secondary/50 text-foreground/80 hover:bg-secondary hover:text-foreground",

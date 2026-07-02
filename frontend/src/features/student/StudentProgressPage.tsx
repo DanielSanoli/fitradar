@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PushSettingsCard } from "@/components/pwa/PushPrompt";
 import { PanelState } from "@/components/ui/PanelState";
+import { StaggerItem } from "@/components/motion/StaggerList";
 import { useRadarCopilot } from "@/features/radar/RadarCopilotProvider";
 import { memberApi } from "@/lib/api/member-api";
 import type {
@@ -155,7 +156,7 @@ export function StudentProgressPage() {
   const firstName = progress?.studentName?.split(" ")[0] ?? "Aluno";
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 motion-safe:animate-in motion-safe:fade-in md:pb-8">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 md:pb-8">
       <header className="px-1">
         <div className="mb-2 flex items-center justify-between md:hidden">
           <span className="inline-flex items-center gap-1.5 text-[15px] font-extrabold tracking-tight">
@@ -178,7 +179,14 @@ export function StudentProgressPage() {
         </p>
       </header>
 
-      <PanelState state={state} message={error} onRetry={load} emptyVariant="student">
+      <PanelState
+        state={state}
+        message={error}
+        onRetry={load}
+        emptyVariant="student"
+        skeletonVariant="student-home"
+        iconContext="activity"
+      >
         {progress ? (
           <>
             {gamificationWarning ? (
@@ -330,11 +338,12 @@ export function StudentProgressPage() {
                       Abra qualquer treino do programa e registre check-in.
                     </p>
                     <ul className="mt-3 space-y-2">
-                      {workouts.map((workout) => (
+                      {workouts.map((workout, index) => (
                         <li key={workout.id}>
+                          <StaggerItem index={index}>
                           <Link
                             to={`/student/workouts/${workout.id}`}
-                            className="flex items-center gap-3 rounded-[13px] border border-border bg-muted/20 px-3.5 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+                            className="app-list-item-interactive flex items-center gap-3 rounded-[13px] border border-border bg-muted/20 px-3.5 py-3"
                           >
                             <ClipboardList className="size-4 shrink-0 text-primary/70" aria-hidden />
                             <div className="min-w-0 flex-1">
@@ -346,6 +355,7 @@ export function StudentProgressPage() {
                               </p>
                             </div>
                           </Link>
+                          </StaggerItem>
                         </li>
                       ))}
                     </ul>
@@ -470,15 +480,17 @@ export function StudentProgressPage() {
                   <section className="rounded-[18px] border border-border bg-card p-[18px] shadow-[0_6px_20px_rgba(0,0,0,0.28)]">
                     <h2 className="text-sm font-bold">Todos os treinos</h2>
                     <ul className="mt-3 space-y-2">
-                      {workouts.map((workout) => (
+                      {workouts.map((workout, index) => (
                         <li key={workout.id}>
+                          <StaggerItem index={index}>
                           <Link
                             to={`/student/workouts/${workout.id}`}
-                            className="flex items-center gap-3 rounded-[13px] border border-border bg-muted/20 px-3.5 py-3"
+                            className="app-list-item-interactive flex items-center gap-3 rounded-[13px] border border-border bg-muted/20 px-3.5 py-3"
                           >
                             <ClipboardList className="size-4 shrink-0 text-primary/70" aria-hidden />
                             <span className="truncate text-sm font-semibold">{workout.title}</span>
                           </Link>
+                          </StaggerItem>
                         </li>
                       ))}
                     </ul>

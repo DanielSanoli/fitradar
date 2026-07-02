@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import type { AnamneseResponse } from "@/lib/api/domain-types";
 import {
   labelExperienciaTreino,
@@ -28,8 +29,12 @@ type StudentAnamnesePanelProps = {
 export function StudentAnamnesePanel({ anamnese, loading, error }: StudentAnamnesePanelProps) {
   if (loading) {
     return (
-      <div className="rounded-[14px] border border-border bg-card p-6 text-sm text-muted-foreground">
-        Carregando anamnese…
+      <div className="space-y-3 rounded-[14px] border border-border bg-card p-6" aria-busy="true">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+        <Skeleton className="h-3 w-3/5" />
+        <span className="sr-only">Carregando anamnese…</span>
       </div>
     );
   }
