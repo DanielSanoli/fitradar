@@ -138,7 +138,7 @@ export function CreatorDashboardPage() {
             className="size-2.5 rotate-45 rounded-sm bg-primary shadow-[0_0_12px_hsl(var(--primary))]"
             aria-hidden
           />
-          <h2 id="insights-heading" className="text-sm font-bold text-foreground">
+              <h2 id="insights-heading" className="font-display text-sm font-bold text-foreground">
             Insights do Radar
           </h2>
           <span className="text-xs text-muted-foreground">leitura inteligente dos seus sinais</span>

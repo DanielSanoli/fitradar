@@ -104,7 +104,7 @@ export function AttentionTodayPanel({
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-5 md:px-[22px]">
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-base font-bold tracking-tight text-foreground">Atenção hoje</h2>
+              <h2 className="font-display text-base font-bold tracking-tight text-foreground">Atenção hoje</h2>
               {state === "alerts" && riskCount > 0 ? (
                 <span
                   className="inline-flex min-h-[22px] min-w-[22px] items-center justify-center rounded-full border border-[hsl(var(--risk-high)/0.34)] bg-[hsl(var(--risk-high)/0.16)] px-1.5 text-xs font-bold text-[hsl(0_82%_80%)]"
@@ -211,12 +211,13 @@ export function AttentionTodayPanel({
               rows={3}
             >
               <ul className="flex flex-col gap-0.5" aria-label="Alunos que precisam de atenção">
-                {sorted.slice(0, 5).map((student) => {
+                {sorted.slice(0, 5).map((student, index) => {
                   const sent = sentIds.has(student.studentId);
                   return (
                     <li
                       key={student.studentId}
-                      className="attention-row-interactive flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3 sm:flex-nowrap sm:gap-3.5"
+                      className="attention-row-interactive motion-safe:animate-fade-in-up flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3 sm:flex-nowrap sm:gap-3.5"
+                      style={{ animationDelay: `${index * 60}ms` }}
                     >
                       <div className="flex size-[42px] shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-sm font-bold text-foreground">
                         {initials(student.studentName)}
@@ -229,7 +230,10 @@ export function AttentionTodayPanel({
                           >
                             {student.studentName}
                           </Link>
-                          <RiskBadge level={riskLevelToUi(student.level)} />
+                          <RiskBadge
+                            level={riskLevelToUi(student.level)}
+                            pulse={student.level === "HIGH"}
+                          />
                         </div>
                         <p className="mt-1.5 flex items-start gap-1.5 text-[13px] text-muted-foreground">
                           <Flame className="mt-0.5 size-3.5 shrink-0 text-[hsl(var(--risk-high))]" aria-hidden />
