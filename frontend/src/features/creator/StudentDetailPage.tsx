@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { CheckInHistorySummary } from "@/components/creator/CheckInHistorySummary";
 import { ReminderModal } from "@/components/creator/ReminderModal";
 import { StudentAnamnesePanel } from "@/components/creator/StudentAnamnesePanel";
+import { StudentSharedProgressPhotosPanel } from "@/components/creator/StudentSharedProgressPhotosPanel";
 import { StudentAvatar } from "@/components/creator/StudentAvatar";
 import { AdherenceRing } from "@/components/fitness/AdherenceRing";
 import { StreakFlame } from "@/components/fitness/StreakFlame";
@@ -335,6 +336,8 @@ export function StudentDetailPage() {
             </div>
 
             <StudentAnamnesePanel anamnese={anamnese} error={anamneseError} />
+
+            {id ? <StudentSharedProgressPhotosPanel studentId={id} /> : null}
 
             {showRiskPanel ? (
               <div className="overflow-hidden rounded-[14px] border border-destructive/30 bg-destructive/5">

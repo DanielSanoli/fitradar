@@ -37,6 +37,12 @@ public class StudentGamificationProfile {
     @Column(name = "last_activity_date")
     private LocalDate lastActivityDate;
 
+    @Column(name = "streak_shields", nullable = false)
+    private int streakShields;
+
+    @Column(name = "shield_earn_progress", nullable = false)
+    private int shieldEarnProgress;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -101,6 +107,22 @@ public class StudentGamificationProfile {
 
     public void setLastActivityDate(LocalDate lastActivityDate) {
         this.lastActivityDate = lastActivityDate;
+    }
+
+    public int getStreakShields() {
+        return streakShields;
+    }
+
+    public void setStreakShields(int streakShields) {
+        this.streakShields = streakShields;
+    }
+
+    public int getShieldEarnProgress() {
+        return shieldEarnProgress;
+    }
+
+    public void setShieldEarnProgress(int shieldEarnProgress) {
+        this.shieldEarnProgress = shieldEarnProgress;
     }
 
     public Instant getCreatedAt() {

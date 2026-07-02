@@ -80,6 +80,8 @@ export type StudentProgressResult = {
   adherence: string | null;
   currentStreak: number;
   weeklyDone: number;
+  streakShields?: number;
+  shieldEarnProgress?: number;
   nextWorkoutId: string | null;
   nextWorkoutTitle: string | null;
   message: string | null;
@@ -371,6 +373,10 @@ export type CheckInResponse = {
   status: CheckInStatus;
   feeling: number | null;
   notes: string | null;
+  streakShields?: number;
+  shieldEarnProgress?: number;
+  shieldEarned?: boolean;
+  shieldConsumed?: boolean;
 };
 
 export type CheckInRequest = {
@@ -392,6 +398,8 @@ export type GamificationProfileResponse = {
   currentStreak: number;
   longestStreak: number;
   totalCheckInsDone: number;
+  streakShields?: number;
+  shieldEarnProgress?: number;
   badges: BadgeResponse[];
   rank: number;
 };
@@ -402,6 +410,47 @@ export type LeaderboardEntryResponse = {
   studentName: string;
   currentStreak: number;
   totalCheckInsDone: number;
+};
+
+export type MonthlyRecapComparison = {
+  workoutsDoneDelta: number | null;
+  adherenceDelta: string | null;
+  longestStreakDelta: number | null;
+};
+
+export type MonthlyRecapBranding = {
+  spaceName: string;
+  logoUrl: string | null;
+  primaryColor: string | null;
+};
+
+export type MonthlyRecapResult = {
+  year: number;
+  month: number;
+  monthLabel: string;
+  hasData: boolean;
+  workoutsDone: number;
+  adherence: string | null;
+  longestStreakInMonth: number;
+  xpEarned: number;
+  highlightBadge: BadgeResponse | null;
+  comparison: MonthlyRecapComparison;
+  branding: MonthlyRecapBranding;
+  assumptions: string[];
+};
+
+export type ProgressPhotoResponse = {
+  id: string;
+  date: string;
+  note: string | null;
+  weight: string | null;
+  sharedWithCoach: boolean;
+  createdAt: string;
+};
+
+export type ProgressPhotoConsentResponse = {
+  consented: boolean;
+  consentedAt: string | null;
 };
 
 export type ProgramCheckoutResponse = {

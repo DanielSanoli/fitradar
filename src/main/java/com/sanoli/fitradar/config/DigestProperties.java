@@ -8,6 +8,7 @@ public class DigestProperties {
     private boolean enabled = true;
     private String weeklyCron = "0 0 8 * * MON";
     private String nudgeCron = "0 0 9 * * *";
+    private String monthlyRecapCron = "0 0 9 1 * *";
 
     public boolean isEnabled() {
         return enabled;
@@ -31,5 +32,13 @@ public class DigestProperties {
 
     public void setNudgeCron(String nudgeCron) {
         this.nudgeCron = nudgeCron;
+    }
+
+    public String getMonthlyRecapCron() {
+        return monthlyRecapCron;
+    }
+
+    public void setMonthlyRecapCron(String monthlyRecapCron) {
+        this.monthlyRecapCron = monthlyRecapCron;
     }
 }

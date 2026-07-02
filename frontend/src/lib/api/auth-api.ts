@@ -1,7 +1,7 @@
 import { apiRequestPublic, api, apiRequest } from "@/lib/api/client";
 import type { AuthResponse, LoginRequest, RegisterRequest, User, UserSession } from "@/lib/api/types";
 import { API_PREFIX } from "@/lib/auth/constants";
-import { getAccessToken, persistAuth, persistUser } from "@/lib/auth/storage";
+import { getAccessToken, persistAuth } from "@/lib/auth/storage";
 import { ApiError } from "@/lib/api/types";
 
 export async function login(credentials: LoginRequest): Promise<AuthResponse> {

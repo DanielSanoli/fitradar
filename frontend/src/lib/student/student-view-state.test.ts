@@ -12,6 +12,8 @@ const baseProgress: StudentProgressResult = {
   adherence: "80.00",
   currentStreak: 3,
   weeklyDone: 2,
+  streakShields: 0,
+  shieldEarnProgress: 0,
   nextWorkoutId: "w1",
   nextWorkoutTitle: "Lower Body",
   message: null,

@@ -64,6 +64,16 @@ const RetentionPage = lazy(() =>
 const RankingPage = lazy(() =>
   import("@/features/creator/RankingPage").then((m) => ({ default: m.RankingPage })),
 );
+const StudentMonthlyRecapPage = lazy(() =>
+  import("@/features/student/StudentMonthlyRecapPage").then((m) => ({
+    default: m.StudentMonthlyRecapPage,
+  })),
+);
+const StudentEvolutionPage = lazy(() =>
+  import("@/features/student/StudentEvolutionPage").then((m) => ({
+    default: m.StudentEvolutionPage,
+  })),
+);
 const StudentSettingsPage = lazy(() =>
   import("@/features/student/StudentSettingsPage").then((m) => ({
     default: m.StudentSettingsPage,
@@ -297,6 +307,22 @@ export const router = createBrowserRouter([
                 element: (
                   <Lazy>
                     <StudentProgressPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "recap",
+                element: (
+                  <Lazy>
+                    <StudentMonthlyRecapPage />
+                  </Lazy>
+                ),
+              },
+              {
+                path: "evolution",
+                element: (
+                  <Lazy>
+                    <StudentEvolutionPage />
                   </Lazy>
                 ),
               },

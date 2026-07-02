@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ClipboardList, Flame, History, Trophy, Zap } from "lucide-react";
+import { Check, ClipboardList, Flame, History, Images, Sparkles, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AdherenceRing } from "@/components/fitness/AdherenceRing";
 import { StudentCommunityRanking } from "@/components/student/StudentCommunityRanking";
+import { StreakShieldsBadge } from "@/components/student/StreakShieldsBadge";
 import { WeeklyActivityChart } from "@/components/student/WeeklyActivityChart";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -153,7 +154,18 @@ export function StudentProgressPage() {
     void ask(question);
   };
 
+  const streakShields =
+    gamification?.streakShields ?? progress?.streakShields ?? 0;
+  const shieldEarnProgress =
+    gamification?.shieldEarnProgress ?? progress?.shieldEarnProgress ?? 0;
+
   const firstName = progress?.studentName?.split(" ")[0] ?? "Aluno";
+
+  const recapLink = useMemo(() => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `/student/recap?year=${d.getFullYear()}&month=${d.getMonth() + 1}`;
+  }, []);
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 md:pb-8">
@@ -197,6 +209,36 @@ export function StudentProgressPage() {
               </Alert>
             ) : null}
 
+            <Link
+              to="/student/evolution"
+              className="flex items-center gap-3 rounded-[18px] border border-border bg-card px-4 py-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.28)] transition-colors hover:border-primary/35"
+            >
+              <div className="flex size-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/15">
+                <Images className="size-5 text-primary" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold">Minha evolução</p>
+                <p className="text-xs text-muted-foreground">
+                  Timeline privada de fotos, peso e comparador antes/depois.
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to={recapLink}
+              className="flex items-center gap-3 rounded-[18px] border border-primary/30 bg-gradient-to-br from-primary/10 to-card px-4 py-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.28)] transition-colors hover:border-primary/45"
+            >
+              <div className="flex size-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/15">
+                <Sparkles className="size-5 text-primary" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold">Sua retrospectiva mensal</p>
+                <p className="text-xs text-muted-foreground">
+                  Veja seus números do mês anterior e compartilhe o card.
+                </p>
+              </div>
+            </Link>
+
             {!showEarly ? (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -215,9 +257,16 @@ export function StudentProgressPage() {
 
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-1 flex-col justify-between rounded-[18px] border border-primary/30 bg-gradient-to-br from-primary/15 to-card px-3.5 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.28)]">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80">
-                        Sequência
-                      </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80">
+                          Sequência
+                        </span>
+                        <StreakShieldsBadge
+                          count={streakShields}
+                          earnProgress={shieldEarnProgress}
+                          compact
+                        />
+                      </div>
                       <div>
                         <div className="flex items-center gap-1.5">
                           <Flame
@@ -396,6 +445,13 @@ export function StudentProgressPage() {
                         <p className="text-2xl font-extrabold text-primary tabular-nums">{streak}</p>
                       </div>
                       <p className="text-[11px] font-semibold text-muted-foreground">dias seguidos</p>
+                      <div className="mt-2 flex justify-center">
+                        <StreakShieldsBadge
+                          count={streakShields}
+                          earnProgress={shieldEarnProgress}
+                          compact
+                        />
+                      </div>
                     </div>
                     <div className="rounded-[14px] border border-border bg-muted/30 px-2.5 py-3.5">
                       <p className="text-2xl font-extrabold tabular-nums">{totalDone}</p>

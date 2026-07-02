@@ -61,7 +61,8 @@ class AccountPrivacyServiceTest {
                 mock(PushSubscriptionRepository.class),
                 mock(RefreshTokenRepository.class),
                 mock(UserActionTokenRepository.class),
-                new BCryptPasswordEncoder()
+                new BCryptPasswordEncoder(),
+                mock(ProgressPhotoService.class)
         );
     }
 

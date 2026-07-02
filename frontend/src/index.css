@@ -562,6 +562,19 @@
     animation: celebration-ring 0.9s ease-out 0.1s both;
   }
 
+  .celebration-ring-close {
+    animation: celebration-ring-close 1s ease-out 0.15s forwards;
+  }
+
+  @keyframes celebration-ring-close {
+    from {
+      stroke-dashoffset: 339.292;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
   @keyframes celebration-ring {
     0% {
       transform: scale(0.3);
@@ -595,8 +608,13 @@
   @media (prefers-reduced-motion: reduce) {
     .streak-flame-pulse,
     .celebration-pop,
-    .celebration-ring {
+    .celebration-ring,
+    .celebration-ring-close {
       animation: none;
+    }
+
+    .check-in-confetti {
+      display: none;
     }
   }
 

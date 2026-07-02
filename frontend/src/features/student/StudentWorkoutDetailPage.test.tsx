@@ -11,8 +11,13 @@ vi.mock("@/lib/api/member-api", () => ({
     myWorkouts: vi.fn(),
     myCheckIns: vi.fn(),
     myProgress: vi.fn(),
+    myGamification: vi.fn(),
     createCheckIn: vi.fn(),
   },
+}));
+
+vi.mock("@/hooks/useScreenWakeLock", () => ({
+  useScreenWakeLock: vi.fn(),
 }));
 
 function renderPage(workoutId = "w1") {
@@ -29,6 +34,7 @@ function renderPage(workoutId = "w1") {
 
 describe("StudentWorkoutDetailPage", () => {
   beforeEach(() => {
+    sessionStorage.clear();
     vi.mocked(memberApi.myWorkouts).mockResolvedValue([
       {
         id: "w1",
@@ -58,6 +64,15 @@ describe("StudentWorkoutDetailPage", () => {
       nextWorkoutTitle: "Other",
       message: null,
       assumptions: [],
+    });
+    vi.mocked(memberApi.myGamification).mockResolvedValue({
+      studentId: "s1",
+      currentStreak: 3,
+      longestStreak: 5,
+      totalCheckInsDone: 10,
+      streakShields: 0,
+      badges: [],
+      rank: 1,
     });
   });
 
@@ -90,5 +105,22 @@ describe("StudentWorkoutDetailPage", () => {
         notes: null,
       });
     });
+  });
+
+  it("opens workout player and flows to check-in sheet on finish", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /iniciar treino/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /iniciar treino/i }));
+
+    expect(screen.getByRole("dialog", { name: /modo treino/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /marcar como feito/i }));
+    await user.click(screen.getByRole("button", { name: /finalizar treino/i }));
+
+    expect(await screen.findByText("Como foi o treino?")).toBeInTheDocument();
   });
 });

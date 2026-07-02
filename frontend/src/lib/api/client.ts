@@ -267,6 +267,38 @@ export const api = {
   delete: <T>(path: string) => apiRequest<T>("DELETE", path),
 };
 
+export async function apiFetchBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  const token = getAccessToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  let res = await fetch(`${baseUrl()}${path}`, {
+    method: "GET",
+    headers,
+    credentials: "include",
+  });
+  if (res.status === 401) {
+    const refreshed = await refreshOnce();
+    if (refreshed) {
+      const retryHeaders = { ...headers, Authorization: `Bearer ${getAccessToken()}` };
+      res = await fetch(`${baseUrl()}${path}`, {
+        method: "GET",
+        headers: retryHeaders,
+        credentials: "include",
+      });
+    } else {
+      handleAuthFailure();
+      throw new ApiError(401, "Sessão expirada. Faça login novamente.");
+    }
+  }
+  if (!res.ok) {
+    const data = await parseBody(res);
+    throw new ApiError(res.status, errorMessage(data, `Erro ${res.status}`), data as ApiErrorBody);
+  }
+  return res.blob();
+}
+
 export async function apiRequestPublic<T>(
   method: string,
   path: string,

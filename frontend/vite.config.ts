@@ -92,6 +92,16 @@ export default defineConfig({
               networkTimeoutSeconds: 5,
             },
           },
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/api/v1/my/workouts"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "student-workouts-api",
+              expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 },
+              networkTimeoutSeconds: 3,
+            },
+          },
         ],
       },
       devOptions: {

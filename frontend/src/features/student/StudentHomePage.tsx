@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { BedDouble, CalendarCheck, Check, ChevronRight, Flame } from "lucide-react";
 import { CheckInCelebrationOverlay } from "@/components/student/CheckInCelebrationOverlay";
 import { CheckInSheet } from "@/components/student/CheckInSheet";
+import { StreakShieldsBadge } from "@/components/student/StreakShieldsBadge";
 import { WorkoutExerciseList } from "@/components/student/WorkoutExerciseList";
 import { StudentSpaceHero } from "@/components/student/StudentSpaceHero";
 import { PoweredByFitRadar } from "@/components/student/PoweredByFitRadar";
@@ -14,6 +15,7 @@ import { useToast } from "@/components/ui/toast";
 import { memberApi } from "@/lib/api/member-api";
 import type {
   CheckInResponse,
+  GamificationProfileResponse,
   StudentProgressResult,
   StudentProgramResponse,
   WorkoutResponse,
@@ -22,6 +24,7 @@ import { ApiError } from "@/lib/api/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentSpace } from "@/hooks/useStudentSpace";
 import { useSpaceVocabulary } from "@/hooks/useSpaceVocabulary";
+import { resolveCheckInCelebrationMessage } from "@/lib/student/check-in-celebration";
 import { formatItemContentCount } from "@/lib/space/vocabulary";
 import { formatGreetingDate, localDateKey } from "@/lib/student/date-utils";
 import { streakSubtitle } from "@/lib/student/student-copy";
@@ -37,6 +40,7 @@ export function StudentHomePage() {
   const ItemIcon = v.itemIcon;
   const { space } = useStudentSpace();
   const [progress, setProgress] = useState<StudentProgressResult | null>(null);
+  const [gamification, setGamification] = useState<GamificationProfileResponse | null>(null);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [programs, setPrograms] = useState<StudentProgramResponse[]>([]);
   const [checkIns, setCheckIns] = useState<CheckInResponse[]>([]);
@@ -50,8 +54,11 @@ export function StudentHomePage() {
   const [submitting, setSubmitting] = useState(false);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
-  const [celebrateStreak, setCelebrateStreak] = useState(0);
+  const [celebrationCopy, setCelebrationCopy] = useState({ headline: "", subtitle: "", streak: 0 });
   const streakBeforeCheckIn = useRef(0);
+  const longestStreakBeforeCheckIn = useRef(0);
+  const weeklyDoneBeforeCheckIn = useRef(0);
+  const totalCheckInsBeforeCheckIn = useRef(0);
   const { toast } = useToast();
 
   const today = localDateKey();
@@ -72,16 +79,18 @@ export function StudentHomePage() {
       setError(undefined);
     }
     try {
-      const [p, w, ci, prog] = await Promise.all([
+      const [p, w, ci, prog, g] = await Promise.all([
         memberApi.myProgress(),
         memberApi.myWorkouts(),
         memberApi.myCheckIns().then((r) => r.content),
         memberApi.myPrograms().catch(() => [] as StudentProgramResponse[]),
+        memberApi.myGamification().catch(() => null),
       ]);
       setProgress(p);
       setWorkouts(w);
       setCheckIns(ci);
       setPrograms(prog);
+      setGamification(g);
       if (!silent) {
         setState("content");
       }
@@ -123,6 +132,13 @@ export function StudentHomePage() {
     ]);
   };
 
+  const capturePreCheckInSnapshot = () => {
+    streakBeforeCheckIn.current = progress?.currentStreak ?? 0;
+    longestStreakBeforeCheckIn.current = gamification?.longestStreak ?? 0;
+    weeklyDoneBeforeCheckIn.current = progress?.weeklyDone ?? 0;
+    totalCheckInsBeforeCheckIn.current = gamification?.totalCheckInsDone ?? 0;
+  };
+
   const finishCheckIn = async (skipped: boolean, created: CheckInResponse) => {
     setSheetOpen(false);
     mergeCheckIn(created);
@@ -131,8 +147,30 @@ export function StudentHomePage() {
       toast(v.checkInRegistered);
       const updated = await load({ silent: true });
       mergeCheckIn(created);
-      const newStreak = updated?.currentStreak ?? progress?.currentStreak ?? 0;
-      setCelebrateStreak(newStreak);
+      let latestGamification = gamification;
+      try {
+        latestGamification = await memberApi.myGamification();
+        setGamification(latestGamification);
+      } catch {
+        // mantém gamificação anterior para mensagem
+      }
+
+      const currentStreak = updated?.currentStreak ?? progress?.currentStreak ?? 0;
+      const copy = resolveCheckInCelebrationMessage({
+        currentStreak,
+        longestStreak: latestGamification?.longestStreak ?? currentStreak,
+        totalCheckInsDone: latestGamification?.totalCheckInsDone ?? 0,
+        weeklyDone: updated?.weeklyDone ?? 0,
+        shieldEarned: created.shieldEarned ?? false,
+        shieldConsumed: created.shieldConsumed ?? false,
+        before: {
+          streak: streakBeforeCheckIn.current,
+          longestStreak: longestStreakBeforeCheckIn.current,
+          weeklyDone: weeklyDoneBeforeCheckIn.current,
+          totalCheckInsDone: totalCheckInsBeforeCheckIn.current,
+        },
+      });
+      setCelebrationCopy({ headline: copy.headline, subtitle: copy.subtitle, streak: currentStreak });
       setCelebrate(true);
     } else {
       toast("Check-in registrado.");
@@ -166,7 +204,7 @@ export function StudentHomePage() {
 
   const quickCheckIn = async () => {
     if (!nextWorkout || doneToday.has(nextWorkout.id)) return;
-    streakBeforeCheckIn.current = progress?.currentStreak ?? 0;
+    capturePreCheckInSnapshot();
     setActiveWorkout(nextWorkout);
     setSubmitting(true);
     try {
@@ -186,7 +224,7 @@ export function StudentHomePage() {
 
   const openCheckInSheet = () => {
     if (!nextWorkout) return;
-    streakBeforeCheckIn.current = progress?.currentStreak ?? 0;
+    capturePreCheckInSnapshot();
     setActiveWorkout(nextWorkout);
     setRating(3);
     setNotes("");
@@ -199,11 +237,18 @@ export function StudentHomePage() {
   const hasExercises =
     exTotal > 0 || Boolean(displayWorkout?.contentMarkdown?.trim());
 
+  const streakShields =
+    gamification?.streakShields ?? progress?.streakShields ?? 0;
+  const shieldEarnProgress =
+    gamification?.shieldEarnProgress ?? progress?.shieldEarnProgress ?? 0;
+
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-4 pb-28 md:pb-8">
       <CheckInCelebrationOverlay
         show={celebrate}
-        streak={celebrateStreak}
+        streak={celebrationCopy.streak}
+        headline={celebrationCopy.headline}
+        subtitle={celebrationCopy.subtitle}
         onClose={() => setCelebrate(false)}
       />
 
@@ -239,6 +284,11 @@ export function StudentHomePage() {
                   {streakSubtitle(progress.currentStreak, progress.message)}
                 </p>
               </div>
+              <StreakShieldsBadge
+                count={streakShields}
+                earnProgress={shieldEarnProgress}
+                compact
+              />
             </div>
 
             {viewMode === "workout" && displayWorkout ? (

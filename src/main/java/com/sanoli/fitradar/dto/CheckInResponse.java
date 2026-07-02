@@ -13,7 +13,11 @@ public record CheckInResponse(
         LocalDate date,
         CheckInStatus status,
         Integer feeling,
-        String notes
+        String notes,
+        int streakShields,
+        int shieldEarnProgress,
+        boolean shieldEarned,
+        boolean shieldConsumed
 ) {
     public static CheckInResponse fromEntity(CheckIn checkIn) {
         return new CheckInResponse(
@@ -23,7 +27,27 @@ public record CheckInResponse(
                 checkIn.getDate(),
                 checkIn.getStatus(),
                 checkIn.getFeeling(),
-                checkIn.getNotes()
+                checkIn.getNotes(),
+                0,
+                0,
+                false,
+                false
+        );
+    }
+
+    public static CheckInResponse fromCheckIn(CheckIn checkIn, CheckInGamificationOutcome outcome) {
+        return new CheckInResponse(
+                checkIn.getId(),
+                checkIn.getStudentId(),
+                checkIn.getWorkoutId(),
+                checkIn.getDate(),
+                checkIn.getStatus(),
+                checkIn.getFeeling(),
+                checkIn.getNotes(),
+                outcome.streakShields(),
+                outcome.shieldEarnProgress(),
+                outcome.shieldEarned(),
+                outcome.shieldConsumed()
         );
     }
 }

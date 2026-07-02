@@ -10,6 +10,7 @@ import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.domain.Workout;
 import com.sanoli.fitradar.repository.CheckInRepository;
 import com.sanoli.fitradar.repository.EnrollmentRepository;
+import com.sanoli.fitradar.repository.StudentGamificationProfileRepository;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.repository.WorkoutRepository;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,7 @@ public class RetentionEngineService {
     private final EnrollmentRepository enrollmentRepository;
     private final WorkoutRepository workoutRepository;
     private final UserRepository userRepository;
+    private final StudentGamificationProfileRepository gamificationProfileRepository;
     private final RetentionProperties properties;
     private final Clock clock;
 
@@ -55,6 +57,7 @@ public class RetentionEngineService {
             EnrollmentRepository enrollmentRepository,
             WorkoutRepository workoutRepository,
             UserRepository userRepository,
+            StudentGamificationProfileRepository gamificationProfileRepository,
             RetentionProperties properties,
             Clock clock
     ) {
@@ -62,6 +65,7 @@ public class RetentionEngineService {
         this.enrollmentRepository = enrollmentRepository;
         this.workoutRepository = workoutRepository;
         this.userRepository = userRepository;
+        this.gamificationProfileRepository = gamificationProfileRepository;
         this.properties = properties;
         this.clock = clock;
     }
@@ -406,7 +410,7 @@ public class RetentionEngineService {
         if (activeEnrollments.isEmpty()) {
             assumptions.add("Sem matrícula ativa");
             return new StudentProgressResult(
-                    studentId, name, false, null, 0, 0, null, null,
+                    studentId, name, false, null, 0, 0, 0, 0, null, null,
                     "Comece um programa para acompanhar seu progresso.", assumptions);
         }
 
@@ -415,6 +419,13 @@ public class RetentionEngineService {
                 studentId, CheckInStatus.DONE, today.minusDays(6), today);
         int streak = currentStreak(studentId, today);
         Workout nextWorkout = nextWorkout(studentId, activeEnrollments);
+        int streakShields = 0;
+        int shieldEarnProgress = 0;
+        var gamificationProfile = gamificationProfileRepository.findById(studentId).orElse(null);
+        if (gamificationProfile != null) {
+            streakShields = gamificationProfile.getStreakShields();
+            shieldEarnProgress = gamificationProfile.getShieldEarnProgress();
+        }
 
         assumptions.add("Aderência dos últimos 30 dias");
         assumptions.add(String.format("Streak = dias consecutivos com check-in até %s", today));
@@ -426,6 +437,8 @@ public class RetentionEngineService {
                 adherence,
                 streak,
                 weeklyDone,
+                streakShields,
+                shieldEarnProgress,
                 nextWorkout != null ? nextWorkout.getId() : null,
                 nextWorkout != null ? nextWorkout.getTitle() : null,
                 "Continue treinando para manter seu streak!",

@@ -10,6 +10,7 @@ import com.sanoli.fitradar.domain.UserRole;
 import com.sanoli.fitradar.domain.Workout;
 import com.sanoli.fitradar.repository.CheckInRepository;
 import com.sanoli.fitradar.repository.EnrollmentRepository;
+import com.sanoli.fitradar.repository.StudentGamificationProfileRepository;
 import com.sanoli.fitradar.repository.UserRepository;
 import com.sanoli.fitradar.repository.WorkoutRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ class RetentionEngineServiceTest {
     private EnrollmentRepository enrollmentRepository;
     private WorkoutRepository workoutRepository;
     private UserRepository userRepository;
+    private StudentGamificationProfileRepository gamificationProfileRepository;
     private RetentionEngineService engine;
 
     @BeforeEach
@@ -50,9 +52,11 @@ class RetentionEngineServiceTest {
         enrollmentRepository = mock(EnrollmentRepository.class);
         workoutRepository = mock(WorkoutRepository.class);
         userRepository = mock(UserRepository.class);
+        gamificationProfileRepository = mock(StudentGamificationProfileRepository.class);
         Clock clock = Clock.fixed(Instant.parse("2026-06-18T12:00:00Z"), ZoneOffset.UTC);
         engine = new RetentionEngineService(
                 checkInRepository, enrollmentRepository, workoutRepository, userRepository,
+                gamificationProfileRepository,
                 new RetentionProperties(), clock);
     }
 

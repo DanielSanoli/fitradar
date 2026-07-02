@@ -15,6 +15,10 @@ describe("buildWeekBars", () => {
         status: "DONE",
         feeling: null,
         notes: null,
+        streakShields: 0,
+        shieldEarnProgress: 0,
+        shieldEarned: false,
+        shieldConsumed: false,
       },
     ];
 

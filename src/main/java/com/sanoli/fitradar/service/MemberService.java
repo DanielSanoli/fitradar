@@ -115,7 +115,8 @@ public class MemberService {
         checkIn.setNotes(request.notes());
         CheckIn saved = checkInRepository.save(checkIn);
         if (saved.getStatus() == CheckInStatus.DONE) {
-            gamificationService.recordCheckIn(student, saved.getDate(), saved.getStatus());
+            var outcome = gamificationService.recordCheckIn(student, saved.getDate(), saved.getStatus());
+            return CheckInResponse.fromCheckIn(saved, outcome);
         }
         return CheckInResponse.fromEntity(saved);
     }

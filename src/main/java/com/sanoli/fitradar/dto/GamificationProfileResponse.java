@@ -10,6 +10,8 @@ public record GamificationProfileResponse(
         int currentStreak,
         int longestStreak,
         int totalCheckInsDone,
+        int streakShields,
+        int shieldEarnProgress,
         List<BadgeResponse> badges,
         int rank
 ) {
@@ -23,6 +25,8 @@ public record GamificationProfileResponse(
                 profile.getCurrentStreak(),
                 profile.getLongestStreak(),
                 profile.getTotalCheckInsDone(),
+                profile.getStreakShields(),
+                profile.getShieldEarnProgress(),
                 badges,
                 rank
         );

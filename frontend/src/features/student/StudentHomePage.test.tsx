@@ -13,6 +13,7 @@ import { localDateKey } from "@/lib/student/date-utils";
 vi.mock("@/lib/api/member-api", () => ({
   memberApi: {
     myProgress: vi.fn(),
+    myGamification: vi.fn(),
     myWorkouts: vi.fn(),
     myCheckIns: vi.fn(),
     mySpace: vi.fn(),
@@ -52,6 +53,8 @@ const workoutProgress = {
   adherence: "82.00",
   currentStreak: 5,
   weeklyDone: 3,
+  streakShields: 1,
+  shieldEarnProgress: 3,
   nextWorkoutId: "w1",
   nextWorkoutTitle: "Lower Body A",
   message: "Bora treinar!",
@@ -97,6 +100,16 @@ function renderHome() {
 
 describe("StudentHomePage", () => {
   beforeEach(() => {
+    vi.mocked(memberApi.myGamification).mockResolvedValue({
+      studentId: "1",
+      currentStreak: 5,
+      longestStreak: 5,
+      totalCheckInsDone: 12,
+      streakShields: 1,
+      shieldEarnProgress: 3,
+      badges: [],
+      rank: 1,
+    });
     vi.mocked(memberApi.myCheckIns).mockResolvedValue({
       content: [],
       page: 0,
@@ -125,6 +138,10 @@ describe("StudentHomePage", () => {
       status: "DONE",
       feeling: null,
       notes: null,
+      streakShields: 1,
+      shieldEarnProgress: 4,
+      shieldEarned: false,
+      shieldConsumed: false,
     });
   });
 
@@ -183,10 +200,42 @@ describe("StudentHomePage", () => {
       status: "DONE" as const,
       feeling: null,
       notes: null,
+      streakShields: 1,
+      shieldEarnProgress: 4,
+      shieldEarned: false,
+      shieldConsumed: false,
     };
     vi.mocked(memberApi.myProgress).mockResolvedValue(workoutProgress);
     vi.mocked(memberApi.myWorkouts).mockResolvedValue(workoutList);
     vi.mocked(memberApi.createCheckIn).mockResolvedValue(doneCheckIn);
+    vi.mocked(memberApi.myGamification)
+      .mockResolvedValueOnce({
+        studentId: "1",
+        currentStreak: 5,
+        longestStreak: 5,
+        totalCheckInsDone: 12,
+        streakShields: 1,
+        shieldEarnProgress: 3,
+        badges: [],
+        rank: 1,
+      })
+      .mockResolvedValue({
+        studentId: "1",
+        currentStreak: 6,
+        longestStreak: 6,
+        totalCheckInsDone: 13,
+        streakShields: 1,
+        shieldEarnProgress: 4,
+        badges: [],
+        rank: 1,
+      });
+    vi.mocked(memberApi.myProgress)
+      .mockResolvedValueOnce(workoutProgress)
+      .mockResolvedValue({
+        ...workoutProgress,
+        currentStreak: 6,
+        weeklyDone: 4,
+      });
     vi.mocked(memberApi.myCheckIns)
       .mockResolvedValueOnce({
         content: [],

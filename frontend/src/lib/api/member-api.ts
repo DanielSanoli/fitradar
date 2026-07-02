@@ -7,6 +7,7 @@ import type {
   EnrollmentResponse,
   GamificationProfileResponse,
   LeaderboardEntryResponse,
+  MonthlyRecapResult,
   PageResponse,
   ProgramCheckoutResponse,
   StudentProgramResponse,
@@ -18,6 +19,9 @@ export const memberApi = {
   myProgress: () => api.get<StudentProgressResult>(`${API_PREFIX}/my/progress`),
 
   myGamification: () => api.get<GamificationProfileResponse>(`${API_PREFIX}/my/gamification`),
+
+  myRecap: (year: number, month: number) =>
+    api.get<MonthlyRecapResult>(`${API_PREFIX}/my/recap?year=${year}&month=${month}`),
 
   myLeaderboard: (limit = 20) =>
     api.get<LeaderboardEntryResponse[]>(`${API_PREFIX}/my/leaderboard?limit=${limit}`),

@@ -11,6 +11,8 @@ public record StudentProgressResult(
         BigDecimal adherence,        // últimos 30 dias; null se sem matrícula/dados
         int currentStreak,
         int weeklyDone,
+        int streakShields,
+        int shieldEarnProgress,
         UUID nextWorkoutId,
         String nextWorkoutTitle,
         String message,

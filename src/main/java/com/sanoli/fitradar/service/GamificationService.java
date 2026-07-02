@@ -6,6 +6,7 @@ import com.sanoli.fitradar.domain.CheckInStatus;
 import com.sanoli.fitradar.domain.StudentBadge;
 import com.sanoli.fitradar.domain.StudentGamificationProfile;
 import com.sanoli.fitradar.dto.BadgeResponse;
+import com.sanoli.fitradar.dto.CheckInGamificationOutcome;
 import com.sanoli.fitradar.dto.GamificationProfileResponse;
 import com.sanoli.fitradar.dto.LeaderboardEntryResponse;
 import com.sanoli.fitradar.repository.StudentBadgeRepository;
@@ -15,12 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class GamificationService {
+
+    static final int MAX_STREAK_SHIELDS = 2;
+    static final int DAYS_PER_SHIELD = 7;
 
     private final StudentGamificationProfileRepository profileRepository;
     private final StudentBadgeRepository badgeRepository;
@@ -37,22 +42,42 @@ public class GamificationService {
     }
 
     @Transactional
-    public void recordCheckIn(AppUser student, LocalDate date, CheckInStatus status) {
+    public CheckInGamificationOutcome recordCheckIn(AppUser student, LocalDate date, CheckInStatus status) {
         if (status != CheckInStatus.DONE || student.getCreatorId() == null) {
-            return;
+            return CheckInGamificationOutcome.none();
         }
 
         StudentGamificationProfile profile = profileRepository.findById(student.getId())
                 .orElseGet(() -> newProfile(student));
 
-        if (profile.getLastActivityDate() == null) {
+        boolean shieldEarned = false;
+        boolean shieldConsumed = false;
+        boolean advanceShieldProgress = false;
+
+        LocalDate lastActivity = profile.getLastActivityDate();
+        if (lastActivity == null) {
             profile.setCurrentStreak(1);
-        } else if (date.equals(profile.getLastActivityDate())) {
+            advanceShieldProgress = true;
+        } else if (date.equals(lastActivity)) {
             // Mesmo dia: mantém streak, só incrementa total.
-        } else if (date.equals(profile.getLastActivityDate().plusDays(1))) {
+        } else if (date.equals(lastActivity.plusDays(1))) {
             profile.setCurrentStreak(profile.getCurrentStreak() + 1);
-        } else if (date.isAfter(profile.getLastActivityDate())) {
-            profile.setCurrentStreak(1);
+            advanceShieldProgress = true;
+        } else if (date.isAfter(lastActivity)) {
+            long daysBetween = ChronoUnit.DAYS.between(lastActivity, date);
+            if (daysBetween == 2 && profile.getStreakShields() > 0) {
+                profile.setStreakShields(profile.getStreakShields() - 1);
+                shieldConsumed = true;
+                profile.setCurrentStreak(profile.getCurrentStreak() + 1);
+                advanceShieldProgress = true;
+            } else {
+                profile.setCurrentStreak(1);
+                profile.setShieldEarnProgress(0);
+            }
+        }
+
+        if (advanceShieldProgress) {
+            shieldEarned = advanceShieldEarnProgress(profile);
         }
 
         profile.setLastActivityDate(date);
@@ -61,6 +86,31 @@ public class GamificationService {
         profileRepository.save(profile);
 
         awardBadges(student, profile);
+
+        return new CheckInGamificationOutcome(
+                profile.getStreakShields(),
+                profile.getShieldEarnProgress(),
+                shieldEarned,
+                shieldConsumed
+        );
+    }
+
+    /**
+     * Incrementa progresso semanal (0–6) e concede escudo a cada 7 dias de streak, cap 2.
+     */
+    private boolean advanceShieldEarnProgress(StudentGamificationProfile profile) {
+        int progress = profile.getShieldEarnProgress() + 1;
+        if (progress < DAYS_PER_SHIELD) {
+            profile.setShieldEarnProgress(progress);
+            return false;
+        }
+
+        profile.setShieldEarnProgress(0);
+        if (profile.getStreakShields() >= MAX_STREAK_SHIELDS) {
+            return false;
+        }
+        profile.setStreakShields(profile.getStreakShields() + 1);
+        return true;
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +122,7 @@ public class GamificationService {
 
         if (profile == null) {
             return new GamificationProfileResponse(
-                    student.getId(), 0, 0, 0, badges, 0);
+                    student.getId(), 0, 0, 0, 0, 0, badges, 0);
         }
 
         int rank = rankForStudent(student.getCreatorId(), student.getId());

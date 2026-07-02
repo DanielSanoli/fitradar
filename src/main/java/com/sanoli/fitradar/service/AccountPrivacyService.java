@@ -56,6 +56,7 @@ public class AccountPrivacyService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserActionTokenRepository userActionTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ProgressPhotoService progressPhotoService;
 
     public AccountPrivacyService(
             UserRepository userRepository,
@@ -70,7 +71,8 @@ public class AccountPrivacyService {
             PushSubscriptionRepository pushSubscriptionRepository,
             RefreshTokenRepository refreshTokenRepository,
             UserActionTokenRepository userActionTokenRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            ProgressPhotoService progressPhotoService
     ) {
         this.userRepository = userRepository;
         this.userSettingsRepository = userSettingsRepository;
@@ -85,6 +87,7 @@ public class AccountPrivacyService {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userActionTokenRepository = userActionTokenRepository;
         this.passwordEncoder = passwordEncoder;
+        this.progressPhotoService = progressPhotoService;
     }
 
     @Transactional(readOnly = true)
@@ -169,6 +172,7 @@ public class AccountPrivacyService {
 
     private void purgeStudent(AppUser user) {
         UUID studentId = user.getId();
+        progressPhotoService.purgeStudentData(studentId);
         checkInRepository.deleteAll(checkInRepository.findByStudentIdOrderByDateDesc(studentId));
         enrollmentRepository.deleteAll(enrollmentRepository.findByStudentId(studentId));
         studentBadgeRepository.deleteAll(studentBadgeRepository.findByStudentIdOrderByEarnedAtDesc(studentId));
@@ -259,6 +263,8 @@ public class AccountPrivacyService {
         map.put("longestStreak", profile.getLongestStreak());
         map.put("totalCheckInsDone", profile.getTotalCheckInsDone());
         map.put("lastActivityDate", profile.getLastActivityDate());
+        map.put("streakShields", profile.getStreakShields());
+        map.put("shieldEarnProgress", profile.getShieldEarnProgress());
         return map;
     }
 

@@ -4,14 +4,18 @@ import com.sanoli.fitradar.domain.AppUser;
 import com.sanoli.fitradar.dto.EnrollmentRequest;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.PageResponse;
+import com.sanoli.fitradar.dto.ProgressPhotoResponse;
 import com.sanoli.fitradar.dto.StudentInviteRequest;
 import com.sanoli.fitradar.dto.StudentInviteResponse;
 import com.sanoli.fitradar.dto.StudentResendInviteResponse;
 import com.sanoli.fitradar.dto.StudentResponse;
 import com.sanoli.fitradar.security.CurrentUserService;
+import com.sanoli.fitradar.service.ProgressPhotoService;
 import com.sanoli.fitradar.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,10 +35,16 @@ import java.util.UUID;
 public class StudentController {
 
     private final StudentService studentService;
+    private final ProgressPhotoService progressPhotoService;
     private final CurrentUserService currentUserService;
 
-    public StudentController(StudentService studentService, CurrentUserService currentUserService) {
+    public StudentController(
+            StudentService studentService,
+            ProgressPhotoService progressPhotoService,
+            CurrentUserService currentUserService
+    ) {
         this.studentService = studentService;
+        this.progressPhotoService = progressPhotoService;
         this.currentUserService = currentUserService;
     }
 
@@ -85,5 +95,26 @@ public class StudentController {
     public ResponseEntity<Void> deactivateEnrollment(@PathVariable UUID id, @PathVariable UUID enrollmentId) {
         studentService.deactivateEnrollment(currentUserService.requireCreator().getId(), id, enrollmentId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/progress-photos")
+    @Operation(summary = "Fotos de progresso compartilhadas pelo aluno (visão 360º)")
+    public ResponseEntity<List<ProgressPhotoResponse>> listSharedProgressPhotos(@PathVariable UUID id) {
+        return ResponseEntity.ok(progressPhotoService.listSharedForCreator(
+                currentUserService.requireCreator(), id));
+    }
+
+    @GetMapping("/{id}/progress-photos/{photoId}/content")
+    @Operation(summary = "Conteúdo de foto compartilhada (somente coach do aluno)")
+    public ResponseEntity<Resource> sharedProgressPhotoContent(
+            @PathVariable UUID id,
+            @PathVariable UUID photoId
+    ) {
+        ProgressPhotoService.PhotoContent content = progressPhotoService.loadForCreator(
+                currentUserService.requireCreator(), id, photoId);
+        return ResponseEntity.ok()
+                .contentType(content.mediaType())
+                .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .body(content.resource());
     }
 }

@@ -18,6 +18,8 @@ app:
   storage:
     logo:
       directory: ${java.io.tmpdir}/fitradar-test-logos
+    progress-photo:
+      directory: ${java.io.tmpdir}/fitradar-test-progress-photos
   runtime:
     production: false
   copilot:

@@ -70,6 +70,9 @@ app:
     logo:
       directory: ${LOGO_STORAGE_DIR:data/uploads/logos}
       max-bytes: ${LOGO_MAX_BYTES:2097152}
+    progress-photo:
+      directory: ${PROGRESS_PHOTO_STORAGE_DIR:data/uploads/progress-photos}
+      max-bytes: ${PROGRESS_PHOTO_MAX_BYTES:5242880}
   runtime:
     production: ${APP_PRODUCTION:false}
     demo-seed-enabled: ${DEMO_SEED_ENABLED:true}
@@ -124,6 +127,7 @@ app:
     enabled: ${DIGEST_ENABLED:true}
     weekly-cron: ${DIGEST_WEEKLY_CRON:0 0 8 * * MON}
     nudge-cron: ${DIGEST_NUDGE_CRON:0 0 9 * * *}
+    monthly-recap-cron: ${DIGEST_MONTHLY_RECAP_CRON:0 0 9 1 * *}
   push:
     enabled: ${PUSH_ENABLED:false}
     vapid-public-key: ${VAPID_PUBLIC_KEY:}

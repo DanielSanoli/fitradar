@@ -6,6 +6,7 @@ import com.sanoli.fitradar.dto.CheckInResponse;
 import com.sanoli.fitradar.dto.CreatorSpaceResponse;
 import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.GamificationProfileResponse;
+import com.sanoli.fitradar.dto.MonthlyRecapResult;
 import com.sanoli.fitradar.dto.LeaderboardEntryResponse;
 import com.sanoli.fitradar.dto.NutritionPlanResponse;
 import com.sanoli.fitradar.dto.PageResponse;
@@ -19,6 +20,7 @@ import com.sanoli.fitradar.service.GamificationService;
 import com.sanoli.fitradar.service.MarketplaceBillingService;
 import com.sanoli.fitradar.service.MealPlanService;
 import com.sanoli.fitradar.service.MemberService;
+import com.sanoli.fitradar.service.MonthlyRecapService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -43,6 +45,7 @@ public class MemberController {
     private final MarketplaceBillingService marketplaceBillingService;
     private final GamificationService gamificationService;
     private final MealPlanService mealPlanService;
+    private final MonthlyRecapService monthlyRecapService;
     private final CurrentUserService currentUserService;
 
     public MemberController(
@@ -51,6 +54,7 @@ public class MemberController {
             MarketplaceBillingService marketplaceBillingService,
             GamificationService gamificationService,
             MealPlanService mealPlanService,
+            MonthlyRecapService monthlyRecapService,
             CurrentUserService currentUserService
     ) {
         this.memberService = memberService;
@@ -58,6 +62,7 @@ public class MemberController {
         this.marketplaceBillingService = marketplaceBillingService;
         this.gamificationService = gamificationService;
         this.mealPlanService = mealPlanService;
+        this.monthlyRecapService = monthlyRecapService;
         this.currentUserService = currentUserService;
     }
 
@@ -102,6 +107,16 @@ public class MemberController {
     @Operation(summary = "Badges, streak persistido e ranking do aluno")
     public ResponseEntity<GamificationProfileResponse> myGamification() {
         return ResponseEntity.ok(gamificationService.profileForStudent(currentUserService.requireStudent()));
+    }
+
+    @GetMapping("/recap")
+    @Operation(summary = "Retrospectiva mensal do aluno (mês encerrado)")
+    public ResponseEntity<MonthlyRecapResult> myRecap(
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        AppUser student = currentUserService.requireStudent();
+        return ResponseEntity.ok(monthlyRecapService.recapForStudent(student, year, month));
     }
 
     @GetMapping("/leaderboard")
