@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Search, UserPlus } from "lucide-react";
+import { ChevronRight, Mail, Search, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CreatorEmptyRings } from "@/components/creator/CreatorEmptyRings";
 import { FilterPill } from "@/components/creator/FilterPill";
@@ -94,7 +94,9 @@ export function StudentsPage() {
     name: string;
     email: string;
     temporaryPassword: string;
+    emailSent: boolean;
   } | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [spaceLink, setSpaceLink] = useState<string | null>(null);
   const [copiedSpace, setCopiedSpace] = useState(false);
 
@@ -193,12 +195,31 @@ export function StudentsPage() {
         name: r.name,
         email: r.email,
         temporaryPassword: r.temporaryPassword,
+        emailSent: r.emailSent,
       });
       await load();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : "Erro ao convidar.", "error");
     } finally {
       setInviting(false);
+    }
+  };
+
+  const resendInvite = async (student: StudentResponse) => {
+    setResendingId(student.id);
+    try {
+      const r = await studentsApi.resendInvite(student.id);
+      setInviteResult({
+        name: student.name,
+        email: student.email,
+        temporaryPassword: r.temporaryPassword,
+        emailSent: r.emailSent,
+      });
+      setShowInvite(true);
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "Erro ao reenviar convite.", "error");
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -294,7 +315,7 @@ export function StudentsPage() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-              <div className="hidden grid-cols-[minmax(160px,2.4fr)_minmax(110px,1.5fr)_minmax(140px,1.2fr)_122px_140px_40px] gap-2 border-b border-border bg-secondary/30 px-5 py-0 md:grid md:h-10 md:items-center">
+              <div className="hidden grid-cols-[minmax(160px,2.4fr)_minmax(110px,1.5fr)_minmax(140px,1.2fr)_122px_140px_120px] gap-2 border-b border-border bg-secondary/30 px-5 py-0 md:grid md:h-10 md:items-center">
                 {["Aluno", "Programa", "Aderência", "Risco", "Última atividade", ""].map((h) => (
                   <span
                     key={h || "chevron"}
@@ -315,14 +336,16 @@ export function StudentsPage() {
                   <Link
                     key={row.student.id}
                     to={`/app/students/${row.student.id}`}
-                    className="grid grid-cols-1 gap-3 border-b border-border/80 px-5 py-4 transition-colors last:border-b-0 hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(160px,2.4fr)_minmax(110px,1.5fr)_minmax(140px,1.2fr)_122px_140px_40px] md:items-center md:gap-2"
+                    className="grid grid-cols-1 gap-3 border-b border-border/80 px-5 py-4 transition-colors last:border-b-0 hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(160px,2.4fr)_minmax(110px,1.5fr)_minmax(140px,1.2fr)_122px_140px_120px] md:items-center md:gap-2"
                     aria-label={`Ver detalhes de ${row.student.name}`}
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <StudentAvatar name={row.student.name} />
                       <div className="min-w-0">
                         <p className="truncate text-[14.5px] font-semibold">{row.student.name}</p>
-                        {isNew ? (
+                        {row.student.mustChangePassword ? (
+                          <p className="text-[11.5px] font-medium text-amber-400/90">Convite pendente</p>
+                        ) : isNew ? (
                           <p className="text-[11.5px] text-muted-foreground">
                             Entrou {formatJoinedStr(row.student.createdAt)}
                           </p>
@@ -365,9 +388,45 @@ export function StudentsPage() {
                       </span>
                       {last.label}
                     </span>
-                    <div className="hidden justify-end md:flex">
+                    <div className="hidden items-center justify-end gap-1 md:flex">
+                      {row.student.mustChangePassword ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5 px-2.5 text-xs"
+                          disabled={resendingId === row.student.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            void resendInvite(row.student);
+                          }}
+                        >
+                          <Mail className="size-3.5" aria-hidden />
+                          {resendingId === row.student.id ? "Reenviando…" : "Reenviar convite"}
+                        </Button>
+                      ) : null}
                       <ChevronRight className="size-[17px] text-muted-foreground" aria-hidden />
                     </div>
+                    {row.student.mustChangePassword ? (
+                      <div className="md:hidden">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 w-full gap-2 text-xs"
+                          disabled={resendingId === row.student.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            void resendInvite(row.student);
+                          }}
+                        >
+                          <Mail className="size-3.5" aria-hidden />
+                          {resendingId === row.student.id ? "Reenviando…" : "Reenviar convite"}
+                        </Button>
+                      </div>
+                    ) : null}
                   </Link>
                 );
               })}

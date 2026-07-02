@@ -216,7 +216,7 @@ export function AttentionTodayPanel({
                   return (
                     <li
                       key={student.studentId}
-                      className="flex flex-wrap items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-secondary/80 sm:flex-nowrap sm:gap-3.5"
+                      className="attention-row-interactive flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3 sm:flex-nowrap sm:gap-3.5"
                     >
                       <div className="flex size-[42px] shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-sm font-bold text-foreground">
                         {initials(student.studentName)}

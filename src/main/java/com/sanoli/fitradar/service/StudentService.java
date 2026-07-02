@@ -10,6 +10,7 @@ import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.StudentInviteRequest;
 import com.sanoli.fitradar.dto.StudentInviteResponse;
+import com.sanoli.fitradar.dto.StudentResendInviteResponse;
 import com.sanoli.fitradar.dto.StudentResponse;
 import com.sanoli.fitradar.exception.BusinessException;
 import com.sanoli.fitradar.exception.ResourceNotFoundException;
@@ -87,13 +88,26 @@ public class StudentService {
         student.setMustChangePassword(true);
         AppUser saved = userRepository.save(student);
 
-        try {
-            emailService.sendStudentInvite(email, creator.getName(), publicBaseUrl + "/login", tempPassword);
-        } catch (RuntimeException exception) {
-            log.warn("Falha ao enviar convite para conta terminando em {}", maskEmail(email));
+        boolean emailSent = sendInviteEmail(email, creator.getName(), tempPassword);
+
+        return new StudentInviteResponse(
+                saved.getId(), saved.getName(), saved.getEmail(), tempPassword, emailSent);
+    }
+
+    @Transactional
+    public StudentResendInviteResponse resendInvite(AppUser creator, UUID studentId) {
+        AppUser student = requireStudent(creator.getId(), studentId);
+        if (!student.isMustChangePassword()) {
+            throw new BusinessException("Aluno já ativou o acesso");
         }
 
-        return new StudentInviteResponse(saved.getId(), saved.getName(), saved.getEmail(), tempPassword);
+        String tempPassword = generateTempPassword();
+        student.setPasswordHash(passwordEncoder.encode(tempPassword));
+        student.setMustChangePassword(true);
+        userRepository.save(student);
+
+        boolean emailSent = sendInviteEmail(student.getEmail(), creator.getName(), tempPassword);
+        return new StudentResendInviteResponse(tempPassword, emailSent);
     }
 
     @Transactional(readOnly = true)
@@ -163,6 +177,16 @@ public class StudentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Matrícula não encontrada: " + enrollmentId));
         enrollment.setActive(false);
         enrollmentRepository.save(enrollment);
+    }
+
+    private boolean sendInviteEmail(String email, String creatorName, String tempPassword) {
+        try {
+            emailService.sendStudentInvite(email, creatorName, publicBaseUrl + "/login", tempPassword);
+            return true;
+        } catch (RuntimeException exception) {
+            log.warn("Falha ao enviar convite para conta terminando em {}", maskEmail(email));
+            return false;
+        }
     }
 
     private String generateTempPassword() {

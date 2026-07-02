@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { StudentBottomNav } from "@/components/layout/StudentBottomNav";
 import { PoweredByFitRadar } from "@/components/student/PoweredByFitRadar";
@@ -53,7 +53,7 @@ function StudentSidebarBrand() {
   if (isLoading) {
     return (
       <div className="px-4 pb-3">
-        <div className="h-10 animate-pulse rounded-lg bg-sidebar-accent/60" aria-hidden />
+        <div className="h-10 rounded-lg skeleton-shimmer motion-safe:animate-shimmer" aria-hidden />
       </div>
     );
   }
@@ -93,6 +93,7 @@ function StudentLayoutShell() {
   const { logout } = useAuth();
   const { vocabulary } = useSpaceVocabulary();
   const navItems = getStudentNavItems(vocabulary);
+  const location = useLocation();
 
   return (
     <>
@@ -136,7 +137,9 @@ function StudentLayoutShell() {
           id="main-content"
           className="flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:p-6 md:pb-6"
         >
-          <Outlet />
+          <div key={location.pathname} className="app-page-enter motion-safe:animate-fade-in-up">
+            <Outlet />
+          </div>
         </main>
 
         <div className="pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:hidden">

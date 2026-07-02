@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { StudentLayout } from "@/components/layout/StudentLayout";
@@ -14,6 +14,7 @@ type AppLayoutProps = {
 export function AppLayout({ variant }: AppLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const title = useResolvedPageTitle();
+  const location = useLocation();
 
   if (variant === "student") {
     return <StudentLayout />;
@@ -41,7 +42,9 @@ export function AppLayout({ variant }: AppLayoutProps) {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar title={title} showMenu onMenuClick={() => setMobileOpen(true)} />
         <main id="main-content" className={cn("flex-1 p-4 md:p-6")}>
-          <Outlet />
+          <div key={location.pathname} className="app-page-enter motion-safe:animate-fade-in-up">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

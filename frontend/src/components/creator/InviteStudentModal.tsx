@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Info, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Check, Info, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,8 @@ type InviteStudentModalProps = {
   onClose: () => void;
   onInvite: (name: string, email: string) => Promise<void>;
   inviting?: boolean;
-  /** After successful invite */
-  result?: { name: string; email: string; temporaryPassword: string } | null;
+  /** After successful invite or resend */
+  result?: { name: string; email: string; temporaryPassword: string; emailSent: boolean } | null;
   onClearResult?: () => void;
   spaceLink?: string | null;
 };
@@ -28,6 +28,7 @@ export function InviteStudentModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedCredentials, setCopiedCredentials] = useState(false);
   const [mode, setMode] = useState<"form" | "success">("form");
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function InviteStudentModal({
       setEmail("");
       setMode("form");
       setCopied(false);
+      setCopiedCredentials(false);
     }
   }, [open]);
 
@@ -50,6 +52,15 @@ export function InviteStudentModal({
     await navigator.clipboard.writeText(spaceLink);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2200);
+  };
+
+  const copyCredentials = async () => {
+    if (!result) return;
+    await navigator.clipboard.writeText(
+      `E-mail: ${result.email}\nSenha: ${result.temporaryPassword}`,
+    );
+    setCopiedCredentials(true);
+    window.setTimeout(() => setCopiedCredentials(false), 2200);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -138,17 +149,56 @@ export function InviteStudentModal({
         ) : (
           <div className="flex flex-col gap-4 px-6 py-5">
             {result ? (
-              <div className="space-y-3 rounded-[12px] border border-primary/25 bg-primary/5 p-4 text-sm">
-                <p>
-                  <span className="font-semibold">{result.name}</span> convidado com sucesso.
-                </p>
-                <p>
-                  E-mail: <strong>{result.email}</strong>
-                </p>
-                <p>
-                  Senha temporária: <strong className="font-mono">{result.temporaryPassword}</strong>
-                </p>
-              </div>
+              result.emailSent ? (
+                <div className="space-y-3 rounded-[12px] border border-primary/25 bg-primary/5 p-4 text-sm">
+                  <p>
+                    <span className="font-semibold">{result.name}</span> convidado com sucesso.
+                  </p>
+                  <p>
+                    E-mail: <strong>{result.email}</strong>
+                  </p>
+                  <p>
+                    Senha temporária:{" "}
+                    <strong className="font-mono">{result.temporaryPassword}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    As credenciais também foram enviadas por e-mail.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 rounded-[12px] border border-amber-500/35 bg-amber-500/10 p-4 text-sm">
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden />
+                    <div className="space-y-2">
+                      <p className="font-semibold text-amber-100">
+                        Não conseguimos enviar o e-mail.
+                      </p>
+                      <p className="leading-relaxed text-foreground/90">
+                        Passe estas credenciais ao aluno: e-mail{" "}
+                        <strong>{result.email}</strong> + senha{" "}
+                        <strong className="font-mono">{result.temporaryPassword}</strong>
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "h-10 gap-2",
+                      copiedCredentials && "border-primary/40 text-primary",
+                    )}
+                    onClick={() => void copyCredentials()}
+                  >
+                    {copiedCredentials ? (
+                      <>
+                        <Check className="size-4" aria-hidden /> Copiado
+                      </>
+                    ) : (
+                      "Copiar credenciais"
+                    )}
+                  </Button>
+                </div>
+              )
             ) : null}
             <div className="flex items-start gap-2.5 rounded-[11px] border border-border bg-secondary/40 px-3.5 py-3">
               <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

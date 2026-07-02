@@ -24,7 +24,7 @@ describe("ProgramsListPage", () => {
       },
     ]);
     vi.mocked(studentsApi.list).mockResolvedValue({
-      content: [{ id: "s1", name: "Ana", email: "a@test.com", emailVerified: true, createdAt: "2026-01-01" }],
+      content: [{ id: "s1", name: "Ana", email: "a@test.com", emailVerified: true, mustChangePassword: false, createdAt: "2026-01-01" }],
       page: 0,
       size: 200,
       totalElements: 1,

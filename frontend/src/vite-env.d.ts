@@ -18,3 +18,9 @@ declare module "virtual:pwa-register" {
   }
   export function registerSW(options?: RegisterSWOptions): (reloadPage?: boolean) => Promise<void>;
 }
+
+declare module "@fontsource-variable/sora";
+declare module "@fontsource/inter/400.css";
+declare module "@fontsource/inter/500.css";
+declare module "@fontsource/inter/600.css";
+declare module "@fontsource/inter/700.css";

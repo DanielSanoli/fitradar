@@ -46,7 +46,7 @@ export function PanelState({
         {Array.from({ length: rows }).map((_, i) => (
           <div
             key={i}
-            className="h-14 animate-pulse rounded-xl border border-border bg-muted/40"
+            className="h-14 rounded-xl border border-border skeleton-shimmer motion-safe:animate-shimmer"
           />
         ))}
         <span className="sr-only">

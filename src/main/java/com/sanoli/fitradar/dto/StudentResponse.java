@@ -10,6 +10,7 @@ public record StudentResponse(
         String name,
         String email,
         boolean emailVerified,
+        boolean mustChangePassword,
         LocalDateTime createdAt
 ) {
     public static StudentResponse fromEntity(AppUser user) {
@@ -18,6 +19,7 @@ public record StudentResponse(
                 user.getName(),
                 user.getEmail(),
                 user.isEmailVerified(),
+                user.isMustChangePassword(),
                 user.getCreatedAt()
         );
     }

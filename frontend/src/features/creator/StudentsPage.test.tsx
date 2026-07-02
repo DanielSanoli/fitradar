@@ -33,6 +33,7 @@ describe("StudentsPage", () => {
           name: "Lucas Ferreira",
           email: "lucas@test.com",
           emailVerified: true,
+          mustChangePassword: false,
           createdAt: "2026-06-17T00:00:00Z",
         },
       ],
@@ -132,6 +133,7 @@ describe("StudentsPage", () => {
           name: "Lucas Ferreira",
           email: "l@test.com",
           emailVerified: true,
+          mustChangePassword: false,
           createdAt: "2026-06-01T00:00:00Z",
         },
         {
@@ -139,6 +141,7 @@ describe("StudentsPage", () => {
           name: "Ana Prado",
           email: "a@test.com",
           emailVerified: true,
+          mustChangePassword: false,
           createdAt: "2026-06-01T00:00:00Z",
         },
       ],

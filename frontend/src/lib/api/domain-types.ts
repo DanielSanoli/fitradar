@@ -99,6 +99,7 @@ export type StudentResponse = {
   name: string;
   email: string;
   emailVerified: boolean;
+  mustChangePassword: boolean;
   createdAt: string;
 };
 
@@ -112,6 +113,12 @@ export type StudentInviteResponse = {
   name: string;
   email: string;
   temporaryPassword: string;
+  emailSent: boolean;
+};
+
+export type StudentResendInviteResponse = {
+  temporaryPassword: string;
+  emailSent: boolean;
 };
 
 export type EnrollmentResponse = {

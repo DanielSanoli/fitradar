@@ -32,6 +32,7 @@ describe("StudentDetailPage", () => {
       name: "Marcos Vieira",
       email: "marcos@test.com",
       emailVerified: true,
+      mustChangePassword: false,
       createdAt: "2026-04-01T00:00:00Z",
     });
     vi.mocked(retentionApi.studentRisk).mockResolvedValue({

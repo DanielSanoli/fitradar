@@ -6,6 +6,7 @@ import com.sanoli.fitradar.dto.EnrollmentResponse;
 import com.sanoli.fitradar.dto.PageResponse;
 import com.sanoli.fitradar.dto.StudentInviteRequest;
 import com.sanoli.fitradar.dto.StudentInviteResponse;
+import com.sanoli.fitradar.dto.StudentResendInviteResponse;
 import com.sanoli.fitradar.dto.StudentResponse;
 import com.sanoli.fitradar.security.CurrentUserService;
 import com.sanoli.fitradar.service.StudentService;
@@ -42,6 +43,13 @@ public class StudentController {
     public ResponseEntity<StudentInviteResponse> invite(@Valid @RequestBody StudentInviteRequest request) {
         AppUser creator = currentUserService.requireCreator();
         return ResponseEntity.status(HttpStatus.CREATED).body(studentService.invite(creator, request));
+    }
+
+    @PostMapping("/{id}/resend-invite")
+    @Operation(summary = "Reenvia convite com nova senha temporária (aluno ainda não ativou o acesso)")
+    public ResponseEntity<StudentResendInviteResponse> resendInvite(@PathVariable UUID id) {
+        AppUser creator = currentUserService.requireCreator();
+        return ResponseEntity.ok(studentService.resendInvite(creator, id));
     }
 
     @GetMapping

@@ -239,7 +239,7 @@ export function RetentionPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-6 md:gap-[26px]">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
           Central de retenção
         </h1>
         <p className="mt-1.5 text-sm text-pretty text-muted-foreground md:text-[14.5px]">
@@ -283,6 +283,7 @@ export function RetentionPage() {
                   : undefined
               }
               glowColor={atRiskGlow}
+              entryDelay={0}
             />
             <InsightCard
               label="Aderência média"
@@ -293,12 +294,14 @@ export function RetentionPage() {
               delta={trendDelta}
               trend={trendFromChange(trend?.changePoints)}
               spark={trendSpark}
+              entryDelay={60}
             />
             <InsightCard
               label="Check-ins na semana"
               value={overview?.checkInsThisWeek ?? "—"}
               icon={CalendarCheck}
               glowColor="hsl(var(--glow-accent))"
+              entryDelay={120}
             />
           </div>
         </PanelState>

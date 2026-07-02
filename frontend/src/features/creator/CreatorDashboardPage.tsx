@@ -121,7 +121,7 @@ export function CreatorDashboardPage() {
     <div className="mx-auto flex w-full max-w-[1340px] flex-col gap-6 md:gap-[26px]">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
             Painel do criador
           </h1>
           <p className="mt-1.5 text-sm text-pretty text-muted-foreground md:text-[14.5px]">
@@ -165,6 +165,7 @@ export function CreatorDashboardPage() {
               value={overview?.activeStudents ?? "—"}
               icon={Users}
               glowColor="hsl(var(--glow-accent))"
+              entryDelay={0}
             />
             <InsightCard
               label="Aderência média"
@@ -172,6 +173,7 @@ export function CreatorDashboardPage() {
               unit={adhDisplay !== "—" ? "%" : ""}
               icon={HeartPulse}
               glowColor="hsl(var(--glow-accent))"
+              entryDelay={60}
             />
             <InsightCard
               label="Alunos em risco"
@@ -190,12 +192,14 @@ export function CreatorDashboardPage() {
                   : undefined
               }
               glowColor={atRiskGlow}
+              entryDelay={120}
             />
             <InsightCard
               label="Check-ins na semana"
               value={overview?.checkInsThisWeek ?? "—"}
               icon={CalendarCheck}
               glowColor="hsl(var(--glow-accent))"
+              entryDelay={180}
             />
           </div>
         </PanelState>

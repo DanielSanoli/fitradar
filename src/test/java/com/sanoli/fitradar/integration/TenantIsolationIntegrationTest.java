@@ -103,6 +103,13 @@ class TenantIsolationIntegrationTest extends AbstractIntegrationTest {
     // ------------------------- escrita: criador vs criador -------------------------
 
     @Test
+    void creatorBCannotResendInviteForCreatorAStudent() throws Exception {
+        mockMvc.perform(post("/api/v1/students/" + studentA.studentId() + "/resend-invite")
+                        .header("Authorization", "Bearer " + creatorB.token()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void creatorBCannotEnrollCreatorAStudent() throws Exception {
         IntegrationTestSupport.ProgramContext programB =
                 support.createProgramWithWorkout(creatorB.token(), "Programa B");

@@ -32,16 +32,19 @@ export type RiskBadgeProps = {
   level: UiRiskLevel;
   label?: string;
   className?: string;
+  pulse?: boolean;
 };
 
-export function RiskBadge({ level, label, className }: RiskBadgeProps) {
+export function RiskBadge({ level, label, className, pulse = false }: RiskBadgeProps) {
   const m = styles[level] ?? styles.alto;
   const text = label?.trim() ? label : m.label;
+  const shouldPulse = pulse || level === "alto";
 
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold leading-none",
+        shouldPulse && "motion-safe:animate-pulse-soft",
         className,
       )}
       style={{

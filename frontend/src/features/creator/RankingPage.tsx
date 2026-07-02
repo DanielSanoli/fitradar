@@ -89,7 +89,7 @@ export function RankingPage() {
             <span className="flex size-9 items-center justify-center rounded-xl border border-primary/30 bg-primary/10">
               <Trophy className="size-[18px] text-primary" aria-hidden />
             </span>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground md:text-[27px]">
               Ranking
             </h1>
           </div>

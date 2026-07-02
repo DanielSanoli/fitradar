@@ -6,6 +6,7 @@ import type {
   PageResponse,
   StudentInviteRequest,
   StudentInviteResponse,
+  StudentResendInviteResponse,
   StudentResponse,
 } from "@/lib/api/domain-types";
 
@@ -17,6 +18,9 @@ export const studentsApi = {
 
   invite: (body: StudentInviteRequest) =>
     api.post<StudentInviteResponse>(`${API_PREFIX}/students`, body),
+
+  resendInvite: (studentId: string) =>
+    api.post<StudentResendInviteResponse>(`${API_PREFIX}/students/${studentId}/resend-invite`),
 
   enrollments: (studentId: string) =>
     api.get<EnrollmentResponse[]>(`${API_PREFIX}/students/${studentId}/enrollments`),

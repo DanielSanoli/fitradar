@@ -10,6 +10,7 @@ public record StudentInviteResponse(
         UUID studentId,
         String name,
         String email,
-        String temporaryPassword
+        String temporaryPassword,
+        boolean emailSent
 ) {
 }

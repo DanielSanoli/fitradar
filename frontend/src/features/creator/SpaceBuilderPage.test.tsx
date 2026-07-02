@@ -173,6 +173,60 @@ describe("SpaceBuilderPage", () => {
       expect(screen.getByText("Convide seu primeiro aluno")).toBeInTheDocument();
     });
     expect(screen.getAllByRole("button", { name: /Copiar link/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByLabelText(/Nome do aluno/i)).toBeInTheDocument();
+  });
+
+  it("requires student name before sending invite from onboarding", async () => {
+    const user = userEvent.setup();
+    vi.mocked(spaceApi.get).mockResolvedValue({
+      id: "s1",
+      creatorId: "c1",
+      name: "Studio",
+      slug: "studio",
+      logoUrl: null,
+      primaryColor: "#1ed7a6",
+      bio: "Bio",
+      category: "OTHER",
+      createdAt: "2026-01-01",
+    });
+    vi.mocked(studentsApi.invite).mockResolvedValue({
+      studentId: "st1",
+      name: "Lucas Ferreira",
+      email: "lucas@test.com",
+      temporaryPassword: "temp123",
+      emailSent: true,
+    });
+
+    renderBuilder();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Convidar aluno/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Convidar aluno/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Nome do aluno/i)).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByLabelText(/E-mail/i), "lucas@test.com");
+    await user.click(screen.getByRole("button", { name: /Enviar convite/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Informe o nome do aluno.")).toBeInTheDocument();
+    });
+    expect(studentsApi.invite).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText(/Nome do aluno/i), "Lucas Ferreira");
+    await user.click(screen.getByRole("button", { name: /Enviar convite/i }));
+
+    await waitFor(() => {
+      expect(studentsApi.invite).toHaveBeenCalledWith({
+        name: "Lucas Ferreira",
+        email: "lucas@test.com",
+      });
+    });
+    expect(screen.getByLabelText(/Nome do aluno/i)).toHaveValue("");
+    expect(screen.getByLabelText(/E-mail/i)).toHaveValue("");
   });
 
   it("uploads logo file and persists returned url on save", async () => {

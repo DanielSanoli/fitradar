@@ -129,6 +129,7 @@ export function SpaceBuilderPage() {
   const [programDesc, setProgramDesc] = useState("");
   const [programId, setProgramId] = useState<string | null>(null);
 
+  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [memberCount, setMemberCount] = useState(0);
@@ -343,15 +344,18 @@ export function SpaceBuilderPage() {
   };
 
   const sendInvite = async () => {
+    if (!inviteName.trim()) {
+      toast("Informe o nome do aluno.", "error");
+      return;
+    }
     if (!inviteEmail.trim()) {
       toast("Informe o e-mail do aluno.", "error");
       return;
     }
     setInviting(true);
     try {
-      const local = inviteEmail.split("@")[0]?.replace(/\W+/g, " ") || "Aluno";
-      const nameGuess = local.charAt(0).toUpperCase() + local.slice(1);
-      await studentsApi.invite({ name: nameGuess, email: inviteEmail.trim() });
+      await studentsApi.invite({ name: inviteName.trim(), email: inviteEmail.trim() });
+      setInviteName("");
       setInviteEmail("");
       toast("Convite enviado.");
     } catch (e) {
@@ -711,28 +715,45 @@ export function SpaceBuilderPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <SpaceFieldLabel htmlFor="invite-email" icon="students">
-                  Ou convide por e-mail
-                </SpaceFieldLabel>
-                <div className="flex gap-2.5">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <SpaceFieldLabel htmlFor="invite-name" icon="students">
+                    Nome do aluno
+                  </SpaceFieldLabel>
                   <input
-                    id="invite-email"
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="aluno@email.com"
-                    className={cn(inputClass, "min-w-0 flex-1")}
+                    id="invite-name"
+                    type="text"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    placeholder="Ex.: Lucas Ferreira"
+                    className={inputClass}
+                    autoComplete="name"
                   />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="h-[46px] shrink-0 rounded-[11px] px-4"
-                    disabled={inviting}
-                    onClick={() => void sendInvite()}
-                  >
-                    {inviting ? "Enviando…" : "Enviar convite"}
-                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <SpaceFieldLabel htmlFor="invite-email" icon="students">
+                    Ou convide por e-mail
+                  </SpaceFieldLabel>
+                  <div className="flex gap-2.5">
+                    <input
+                      id="invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="aluno@email.com"
+                      className={cn(inputClass, "min-w-0 flex-1")}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="h-[46px] shrink-0 rounded-[11px] px-4"
+                      disabled={inviting}
+                      onClick={() => void sendInvite()}
+                    >
+                      {inviting ? "Enviando…" : "Enviar convite"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
